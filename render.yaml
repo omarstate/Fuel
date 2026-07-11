@@ -6,7 +6,10 @@ services:
     rootDir: backend
     plan: free
     buildCommand: npm install
-    startCommand: npm start
+    # Not `npm start` — that script uses `node --env-file=.env`, which
+    # requires a local .env file that doesn't exist on Render (env vars
+    # are injected directly as process env vars there instead).
+    startCommand: node server.js
     healthCheckPath: /api/health
     envVars:
       - key: SUPABASE_URL
