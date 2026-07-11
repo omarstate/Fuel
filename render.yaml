@@ -1,0 +1,42 @@
+services:
+  # Express API (backend/)
+  - type: web
+    name: fuel-backend
+    runtime: node
+    rootDir: backend
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: ADMIN_EMAILS
+        sync: false
+      # Set this to the frontend's Render URL once it's deployed,
+      # e.g. https://fuel-frontend.onrender.com
+      - key: CORS_ORIGIN
+        sync: false
+
+  # Vite/React static build (frontend/)
+  - type: web
+    name: fuel-frontend
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_SUPABASE_URL
+        sync: false
+      - key: VITE_SUPABASE_ANON_KEY
+        sync: false
+      # Set this to the backend's Render URL once it's deployed,
+      # e.g. https://fuel-backend.onrender.com/api
+      - key: VITE_API_URL
+        sync: false
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
