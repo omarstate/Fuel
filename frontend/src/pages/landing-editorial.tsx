@@ -1,5 +1,6 @@
-import { useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Link } from "react-router-dom"
+import { AnimatePresence, motion } from "framer-motion"
 import gsap from "gsap"
 import { ScrollTrigger } from "gsap/ScrollTrigger"
 import { useGSAP } from "@gsap/react"
@@ -9,6 +10,8 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { EtheralShadow } from "@/components/ui/etheral-shadow"
+import { type Mode } from "@/components/site/mode-context"
+import { editorialAccent } from "@/app-editorial/theme"
 
 gsap.registerPlugin(ScrollTrigger, useGSAP)
 
@@ -109,21 +112,23 @@ function WindowChrome({ label, children }: { label: string; children: React.Reac
   )
 }
 
-function NutritionPanel() {
+function NutritionPanel({ showHeader = true }: { showHeader?: boolean }) {
   return (
     <>
-      <div className="flex items-center justify-between">
-        <span className="font-mono text-xs text-[var(--muted)]">Monday · Today</span>
-        <Badge className="gap-1 border-0 bg-[var(--citrus-tint)] text-[var(--citrus-ink)]">
-          <BoltIcon className="size-3" /> 6-day streak
-        </Badge>
-      </div>
-      <div className="mt-5 flex items-center gap-5">
+      {showHeader && (
+        <div className="flex items-center justify-between">
+          <span className="font-mono text-xs text-[var(--muted)]">Monday · Today</span>
+          <Badge className="gap-1 border-0 bg-[color:rgba(111,158,74,0.16)] text-[#4f7320]">
+            <BoltIcon className="size-3" /> 6-day streak
+          </Badge>
+        </div>
+      )}
+      <div className={showHeader ? "mt-5 flex items-center gap-5" : "flex items-center gap-5"}>
         <div
           className="relative flex size-24 shrink-0 items-center justify-center rounded-full"
           style={{
             background:
-              "conic-gradient(var(--citrus) 72%, rgba(20,18,15,0.06) 0)",
+              "conic-gradient(#6f9e4a 72%, rgba(20,18,15,0.06) 0)",
           }}
         >
           <div className="absolute inset-[6px] rounded-full bg-[var(--surface)]" />
@@ -173,13 +178,21 @@ function NutritionPanel() {
   )
 }
 
-function TrainingPanel() {
+function TrainingPanel({
+  accent = "#ff6b35",
+  accentInk = "#b5431c",
+}: {
+  /** Solid accent (progress bar highlight). */
+  accent?: string
+  /** Readable ink tone for text/badges on the pale tint. */
+  accentInk?: string
+}) {
   const bars = [40, 55, 48, 70, 62, 85, 78]
   return (
     <>
       <div className="flex items-center justify-between rounded-lg border border-[var(--line)] px-3 py-2.5">
         <span className="text-sm font-medium text-[var(--ink)]">Push day</span>
-        <span className="flex items-center gap-1 font-mono text-xs text-[var(--citrus-ink)]">
+        <span className="flex items-center gap-1 font-mono text-xs" style={{ color: accentInk }}>
           <PulseIcon className="size-3.5" /> +2.5 kg PR
         </span>
       </div>
@@ -194,7 +207,10 @@ function TrainingPanel() {
               <div className="font-mono text-xs text-[var(--muted)]">{l.detail}</div>
             </div>
             {l.pr && (
-              <Badge className="border-0 bg-[var(--citrus-tint)] text-[0.65rem] text-[var(--citrus-ink)]">
+              <Badge
+                className="border-0 text-[0.65rem]"
+                style={{ backgroundColor: `${accent}1f`, color: accentInk }}
+              >
                 PR
               </Badge>
             )}
@@ -208,8 +224,7 @@ function TrainingPanel() {
             className="flex-1 rounded-sm"
             style={{
               height: `${h}%`,
-              backgroundColor:
-                i === bars.length - 1 ? "var(--citrus)" : "rgba(20,18,15,0.10)",
+              backgroundColor: i === bars.length - 1 ? accent : "rgba(20,18,15,0.10)",
             }}
           />
         ))}
@@ -304,6 +319,16 @@ const faqs = [
 
 export function LandingEditorial() {
   const root = useRef<HTMLDivElement>(null)
+  const [heroMode, setHeroMode] = useState<Mode>("nutrition")
+
+  /* Auto-cycle the headline word (meal ↔ set) every few seconds. */
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
+    const id = window.setInterval(() => {
+      setHeroMode((m) => (m === "nutrition" ? "workouts" : "nutrition"))
+    }, 2600)
+    return () => window.clearInterval(id)
+  }, [])
 
   useGSAP(
     () => {
@@ -319,25 +344,18 @@ export function LandingEditorial() {
             "-=0.3"
           )
           .from(".hero-sub", { autoAlpha: 0, y: 16, duration: 0.7 }, "-=0.5")
-          .from(
+          .fromTo(
             ".hero-cta",
-            { autoAlpha: 0, y: 16, duration: 0.6, stagger: 0.08 },
+            { autoAlpha: 0, y: 16 },
+            {
+              autoAlpha: 1,
+              y: 0,
+              duration: 0.6,
+              stagger: 0.08,
+              clearProps: "visibility,opacity,transform",
+            },
             "-=0.4"
           )
-          .from(
-            ".hero-window",
-            { autoAlpha: 0, y: 30, scale: 0.97, duration: 1, ease: "power4.out" },
-            "-=0.8"
-          )
-
-        // gentle float on the product window
-        gsap.to(".hero-window", {
-          y: -12,
-          duration: 4,
-          ease: "sine.inOut",
-          repeat: -1,
-          yoyo: true,
-        })
       } else {
         gsap.set(".hero-line > span", { yPercent: 0 })
       }
@@ -410,14 +428,12 @@ export function LandingEditorial() {
         })
       })
 
-      /* --- Nav solidifies after hero --- */
+      /* --- Nav gains a glass backing as soon as the page scrolls --- */
       ScrollTrigger.create({
-        trigger: ".hero-section",
-        start: "bottom top+=80",
+        start: 24,
+        end: "max",
         onToggle: (self) =>
-          document
-            .querySelector(".site-nav")
-            ?.classList.toggle("is-scrolled", self.isActive === false && self.progress === 1),
+          document.querySelector(".site-nav")?.classList.toggle("is-scrolled", self.isActive),
       })
     },
     { scope: root }
@@ -430,7 +446,7 @@ export function LandingEditorial() {
       style={{ backgroundColor: "var(--paper)", color: "var(--ink)" }}
     >
       {/* ---------------- Nav ---------------- */}
-      <header className="site-nav sticky top-0 z-50 transition-all duration-300 [&.is-scrolled]:border-b [&.is-scrolled]:border-[var(--line)] [&.is-scrolled]:bg-[color:rgba(247,243,234,0.8)] [&.is-scrolled]:backdrop-blur-md">
+      <header className="site-nav sticky top-0 z-50 transition-[background-color,border-color,backdrop-filter] duration-300">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-2">
             <span className="grid size-7 place-items-center rounded-md bg-[var(--ink)] text-[var(--paper)]">
@@ -465,12 +481,20 @@ export function LandingEditorial() {
       <section className="hero-section relative overflow-hidden">
         <div className="pointer-events-none absolute inset-0">
           <EtheralShadow
-            color="rgba(128, 128, 128, 1)"
+            color="rgba(178, 168, 148, 1)"
             animation={{ scale: 100, speed: 90 }}
-            noise={{ opacity: 1, scale: 1.2 }}
+            noise={{ opacity: 0.42, scale: 1.2 }}
             sizing="fill"
           />
         </div>
+        {/* legibility scrim — clean reading base on the left, fades before the figure */}
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(100deg, var(--paper) 0%, rgba(247,243,234,0.92) 26%, rgba(247,243,234,0.55) 46%, rgba(247,243,234,0) 66%)",
+          }}
+        />
         {/* ambient warm light */}
         <div
           className="pointer-events-none absolute -top-40 left-1/2 h-[520px] w-[820px] -translate-x-1/2 rounded-full"
@@ -479,8 +503,8 @@ export function LandingEditorial() {
               "radial-gradient(closest-side, rgba(255,107,53,0.10), transparent 70%)",
           }}
         />
-        <div className="relative mx-auto grid max-w-6xl gap-14 px-6 py-20 md:grid-cols-[1.05fr_0.95fr] md:items-center md:py-28">
-          <div>
+        <div className="relative mx-auto max-w-6xl px-6 py-20 md:py-28">
+          <div className="relative z-20 max-w-2xl">
             <div className="hero-eyebrow mb-6 inline-flex items-center gap-2 rounded-full border border-[var(--line)] bg-[var(--surface)] px-3 py-1">
               <span className="size-1.5 rounded-full bg-[var(--citrus)]" />
               <span className="font-mono text-[0.7rem] uppercase tracking-[0.14em] text-[var(--muted)]">
@@ -489,28 +513,32 @@ export function LandingEditorial() {
             </div>
 
             <h1 className="font-heading text-[clamp(2.9rem,7vw,5.2rem)] font-semibold leading-[0.98] tracking-[-0.035em]">
-              <span className="hero-line block overflow-hidden">
-                <span className="block">Track every meal</span>
+              <span className="hero-line -my-[0.12em] block overflow-hidden py-[0.12em]">
+                <span className="block">Log every</span>
               </span>
-              <span className="hero-line block overflow-hidden">
-                <span className="block">
-                  and every{" "}
-                  <span className="relative whitespace-nowrap">
-                    lift
-                    <span
-                      className="absolute inset-x-0 bottom-1 -z-0 h-3 -rotate-1"
-                      style={{ backgroundColor: "var(--volt)" }}
-                    />
-                    <span className="relative">.</span>
-                  </span>
+              <span className="hero-line -my-[0.12em] block overflow-hidden py-[0.12em]">
+                <span className="relative block">
+                  <AnimatePresence mode="wait">
+                    <motion.span
+                      key={heroMode}
+                      initial={{ opacity: 0, y: 14 }}
+                      animate={{ opacity: 1, y: 0, color: editorialAccent[heroMode] }}
+                      exit={{ opacity: 0, y: -14 }}
+                      transition={{ duration: 0.28, ease: "easeOut" }}
+                      className="inline-block"
+                    >
+                      {heroMode === "nutrition" ? "meal" : "set"}
+                    </motion.span>
+                  </AnimatePresence>
+                  .
                 </span>
               </span>
-              <span className="hero-line block overflow-hidden">
-                <span className="block text-[var(--muted)]">In one place.</span>
+              <span className="hero-line -my-[0.12em] block overflow-hidden py-[0.12em]">
+                <span className="block text-[color:rgba(20,18,15,0.6)]">Build the streak.</span>
               </span>
             </h1>
 
-            <p className="hero-sub mt-7 max-w-md text-lg leading-relaxed text-[var(--muted)]">
+            <p className="hero-sub mt-7 max-w-md text-lg leading-relaxed text-[color:#57534a]">
               Fuel is the logbook for your body — macros and meals on one side,
               sets and PRs on the other. Logged in seconds, kept on a single
               timeline.
@@ -534,7 +562,7 @@ export function LandingEditorial() {
               </a>
             </div>
 
-            <div className="hero-cta mt-8 flex items-center gap-6 font-mono text-[0.72rem] text-[var(--muted)]">
+            <div className="hero-cta mt-8 flex items-center gap-6 font-mono text-[0.72rem] text-[color:#57534a]">
               <span className="flex items-center gap-1.5">
                 <CheckIcon className="size-3.5 text-[var(--citrus)]" /> No setup
               </span>
@@ -544,15 +572,6 @@ export function LandingEditorial() {
               <span className="flex items-center gap-1.5">
                 <CheckIcon className="size-3.5 text-[var(--citrus)]" /> Your data stays yours
               </span>
-            </div>
-          </div>
-
-          {/* product window */}
-          <div className="relative">
-            <div className="hero-window relative z-10">
-              <WindowChrome label="fuel · today">
-                <NutritionPanel />
-              </WindowChrome>
             </div>
           </div>
         </div>

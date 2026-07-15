@@ -149,6 +149,14 @@
     }
 }
 
+/* Landing nav: transparent at the top, glass backing once scrolled. */
+.site-nav.is-scrolled {
+  border-bottom: 1px solid var(--line, rgba(20, 18, 15, 0.1));
+  background: rgba(247, 243, 234, 0.82);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+
 @keyframes marquee {
   from {
     transform: translateX(0);

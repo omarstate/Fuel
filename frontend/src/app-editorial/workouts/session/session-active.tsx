@@ -68,7 +68,7 @@ function AddExerciseControl({
               key={w.id}
               type="button"
               onClick={() => onAdd({ name: w.name, workoutId: w.id })}
-              className="rounded-full border border-border bg-card px-3 py-1.5 text-sm text-foreground transition-colors hover:border-[var(--accent-ink)]/40 hover:bg-[var(--accent-tint)]"
+              className="rounded-full border border-border bg-card px-3.5 py-2.5 text-sm text-foreground transition-colors hover:border-[var(--accent-ink)]/40 hover:bg-[var(--accent-tint)] sm:py-1.5"
             >
               {w.name}
             </button>
@@ -81,9 +81,9 @@ function AddExerciseControl({
           placeholder="Custom exercise name"
           value={customName}
           onChange={(e) => setCustomName(e.target.value)}
-          className="h-9"
+          className="h-11 text-base sm:h-9 sm:text-sm"
         />
-        <Button type="submit" disabled={!customName.trim()}>
+        <Button type="submit" disabled={!customName.trim()} className="h-11 sm:h-9">
           <Plus /> Add
         </Button>
       </form>
@@ -140,16 +140,16 @@ export function SessionActive() {
 
   return (
     <div style={themeVars} className="min-h-svh bg-background text-foreground">
-      <div className="mx-auto flex min-h-svh max-w-3xl flex-col gap-6 px-6 py-8 sm:px-10">
+      <div className="mx-auto flex min-h-svh max-w-3xl flex-col gap-6 px-4 py-6 sm:px-10 sm:py-8">
         {/* top bar */}
         <header className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-5">
           <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => navigate("/dashboard/workouts")}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground sm:py-1.5 sm:text-xs"
             >
-              <ArrowLeft className="size-3.5" /> Minimize
+              <ArrowLeft className="size-4 sm:size-3.5" /> Minimize
             </button>
             <div>
               <div className="font-mono text-[0.65rem] uppercase tracking-[0.16em] text-[var(--accent-ink)]">
@@ -173,7 +173,12 @@ export function SessionActive() {
                 />
               </div>
             )}
-            <Button type="button" onClick={() => setConfirmEndOpen(true)} disabled={!session}>
+            <Button
+              type="button"
+              onClick={() => setConfirmEndOpen(true)}
+              disabled={!session}
+              className="h-10 sm:h-8"
+            >
               <Square className="size-3.5" /> End session
             </Button>
           </div>

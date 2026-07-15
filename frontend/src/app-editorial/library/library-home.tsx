@@ -16,7 +16,7 @@ const fade = (delay = 0) => ({
 
 function LoadingGrid() {
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {[0, 1, 2, 3, 4, 5].map((i) => (
         <div
           key={i}
@@ -183,7 +183,7 @@ export function LibraryHome() {
               No meals match your search.
             </div>
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {filteredMeals.map((meal, i) => (
                 <MealCatalogCard
                   key={meal.id}
@@ -209,7 +209,7 @@ export function LibraryHome() {
               {group.meals.length === 0 ? (
                 <p className="text-sm text-muted-foreground">No meals in this category yet.</p>
               ) : (
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {group.meals.map((meal, i) => (
                     <MealCatalogCard
                       key={meal.id}

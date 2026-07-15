@@ -67,11 +67,11 @@ export function MealCatalogCard({
           navigate(`/dashboard/library/${meal.id}`)
         }
       }}
-      className="group relative flex cursor-pointer flex-col justify-between gap-4 rounded-xl border border-border bg-card p-5 transition-all hover:border-[var(--accent-ink)]/40 hover:shadow-md"
+      className="group relative flex min-w-0 cursor-pointer flex-col justify-between gap-4 rounded-xl border border-border bg-card p-5 transition-all hover:border-[var(--accent-ink)]/40 hover:shadow-md"
     >
       {canEdit && (
         <div
-          className="absolute right-3 top-3 z-10 flex items-center gap-1 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100"
+          className="absolute right-3 top-3 z-10 flex items-center gap-1.5 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
           onClick={(e) => e.stopPropagation()}
           onKeyDown={(e) => e.stopPropagation()}
         >
@@ -82,9 +82,9 @@ export function MealCatalogCard({
               <button
                 type="button"
                 aria-label={`Edit ${meal.name}`}
-                className="grid size-7 place-items-center rounded-md border border-border bg-card text-muted-foreground transition-colors hover:text-foreground"
+                className="grid size-9 place-items-center rounded-md border border-border bg-card text-muted-foreground transition-colors hover:text-foreground sm:size-7"
               >
-                <Pencil className="size-3.5" />
+                <Pencil className="size-4 sm:size-3.5" />
               </button>
             }
           />
@@ -92,9 +92,9 @@ export function MealCatalogCard({
             type="button"
             aria-label={`Delete ${meal.name}`}
             onClick={() => setConfirmOpen(true)}
-            className="grid size-7 place-items-center rounded-md border border-border bg-card text-muted-foreground transition-colors hover:border-destructive/40 hover:text-destructive"
+            className="grid size-9 place-items-center rounded-md border border-border bg-card text-muted-foreground transition-colors hover:border-destructive/40 hover:text-destructive sm:size-7"
           >
-            <Trash2 className="size-3.5" />
+            <Trash2 className="size-4 sm:size-3.5" />
           </button>
         </div>
       )}
@@ -108,30 +108,24 @@ export function MealCatalogCard({
         onConfirm={handleDelete}
       />
 
-      <div>
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <div className="truncate text-[0.95rem] font-medium text-foreground">
-              {meal.name}
-            </div>
+      <div className={canEdit ? "pr-20 sm:pr-0" : ""}>
+        <div className="truncate text-[0.95rem] font-medium text-foreground">
+          {meal.name}
+        </div>
+        {(meal.category || meal.servingSize) && (
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+            {meal.category && (
+              <span className="rounded-md bg-[var(--accent-tint)] px-2 py-0.5 font-mono text-[0.6rem] uppercase tracking-wide text-[var(--accent-ink)]">
+                {meal.category.name}
+              </span>
+            )}
             {meal.servingSize && (
-              <div className="mt-0.5 font-mono text-[0.7rem] uppercase tracking-[0.12em] text-muted-foreground">
+              <span className="font-mono text-[0.7rem] uppercase tracking-[0.12em] text-muted-foreground">
                 {meal.servingSize}
-              </div>
+              </span>
             )}
           </div>
-          {meal.category && (
-            <span
-              className={`shrink-0 rounded-md bg-[var(--accent-tint)] px-2 py-0.5 font-mono text-[0.65rem] uppercase tracking-wide text-[var(--accent-ink)] ${
-                canEdit
-                  ? "transition-opacity duration-150 group-hover:opacity-0 group-focus-within:opacity-0"
-                  : ""
-              }`}
-            >
-              {meal.category.name}
-            </span>
-          )}
-        </div>
+        )}
 
         {meal.description && (
           <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
@@ -140,8 +134,8 @@ export function MealCatalogCard({
         )}
       </div>
 
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3 font-mono text-xs text-muted-foreground">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs text-muted-foreground">
           <span className="text-sm font-semibold text-foreground">
             {meal.calories}
             <span className="ml-1 text-[0.65rem] font-normal text-muted-foreground">
@@ -163,9 +157,9 @@ export function MealCatalogCard({
           type="button"
           onClick={handleAdd}
           disabled={adding}
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-[#14120f] px-3 py-1.5 text-xs font-medium text-[#f7f3ea] transition-colors hover:bg-[#2a251d] disabled:opacity-60"
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-[#14120f] px-3.5 py-2.5 text-sm font-medium text-[#f7f3ea] transition-colors hover:bg-[#2a251d] disabled:opacity-60 sm:px-3 sm:py-1.5 sm:text-xs"
         >
-          <Plus className="size-3.5" />
+          <Plus className="size-4 sm:size-3.5" />
           {adding ? "Adding…" : "Add to today"}
         </button>
       </div>

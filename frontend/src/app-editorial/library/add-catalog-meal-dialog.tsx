@@ -275,10 +275,15 @@ export function AddCatalogMealDialog({
           </FieldGroup>
 
           <DialogFooter className="mt-6">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+              className="h-11 w-full sm:h-9 sm:w-auto"
+            >
               Cancel
             </Button>
-            <Button type="submit" disabled={submitting}>
+            <Button type="submit" disabled={submitting} className="h-11 w-full sm:h-9 sm:w-auto">
               {isEdit
                 ? submitting
                   ? "Saving…"

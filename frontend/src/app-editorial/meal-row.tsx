@@ -16,7 +16,7 @@ export function MealRow({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, height: 0, marginTop: 0 }}
       transition={{ duration: 0.22 }}
-      className="group grid grid-cols-[1fr_auto] items-center gap-4 border-b border-border py-3.5 last:border-b-0 sm:grid-cols-[1.4fr_1fr_auto_auto]"
+      className="group grid grid-cols-[1fr_auto_auto] items-center gap-3 border-b border-border py-3.5 last:border-b-0 sm:grid-cols-[1.4fr_1fr_auto_auto] sm:gap-4"
     >
       {/* name + type */}
       <div className="min-w-0">
@@ -55,9 +55,9 @@ export function MealRow({
         type="button"
         onClick={onDelete}
         aria-label={`Remove ${meal.name}`}
-        className="ml-2 grid size-7 shrink-0 place-items-center rounded-md text-muted-foreground opacity-0 transition-all hover:bg-muted hover:text-destructive group-hover:opacity-100"
+        className="grid size-9 shrink-0 place-items-center rounded-md text-muted-foreground opacity-100 transition-all hover:bg-muted hover:text-destructive sm:ml-2 sm:size-7 sm:opacity-0 sm:group-hover:opacity-100"
       >
-        <Trash2 className="size-3.5" />
+        <Trash2 className="size-4 sm:size-3.5" />
       </button>
     </motion.div>
   )

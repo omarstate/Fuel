@@ -288,7 +288,7 @@ export function MealDetail() {
                 {meal.category.name}
               </span>
             )}
-            <h1 className="font-heading text-4xl font-semibold tracking-tight text-foreground">
+            <h1 className="font-heading text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
               {meal.name}
             </h1>
           </div>
@@ -300,18 +300,18 @@ export function MealDetail() {
                 trigger={
                   <button
                     type="button"
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-muted"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted sm:py-1.5 sm:text-xs"
                   >
-                    <Pencil className="size-3.5" /> Edit
+                    <Pencil className="size-4 sm:size-3.5" /> Edit
                   </button>
                 }
               />
               <button
                 type="button"
                 onClick={() => setConfirmOpen(true)}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-destructive transition-colors hover:bg-destructive/10"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10 sm:py-1.5 sm:text-xs"
               >
-                <Trash2 className="size-3.5" /> Delete
+                <Trash2 className="size-4 sm:size-3.5" /> Delete
               </button>
             </div>
           )}
@@ -437,7 +437,7 @@ export function MealDetail() {
             Nobody's logged this meal yet — be the first.
           </p>
         )}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
           <StatCard
             icon={Flame}
             label="Logged today"

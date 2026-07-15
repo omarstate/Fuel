@@ -36,7 +36,7 @@ export const LogAction = React.forwardRef<
       ref={ref}
       type="button"
       className={cn(
-        "inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors",
+        "inline-flex items-center gap-2 rounded-lg px-3.5 py-2.5 text-sm font-medium transition-colors sm:py-2",
         primary
           ? "bg-[#14120f] text-[#f7f3ea] hover:bg-[#2a251d]"
           : "text-foreground hover:bg-muted",

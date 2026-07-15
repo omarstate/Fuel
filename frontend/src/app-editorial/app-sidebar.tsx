@@ -27,6 +27,7 @@ import {
   SidebarMenuItem,
   SidebarFooter,
   SidebarSeparator,
+  useSidebar,
 } from "@/components/ui/sidebar"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { LogoMark } from "@/app-editorial/logo-mark"
@@ -59,6 +60,7 @@ const toggleOptions: { value: Mode; label: string; icon: typeof Utensils }[] = [
 function SegmentedModeToggle() {
   const { mode } = useMode()
   const navigate = useNavigate()
+  const { setOpenMobile } = useSidebar()
 
   return (
     <div className="flex rounded-full border border-sidebar-border bg-secondary p-1">
@@ -66,9 +68,12 @@ function SegmentedModeToggle() {
         <button
           key={value}
           type="button"
-          onClick={() => navigate(`/dashboard/${value}`)}
+          onClick={() => {
+            navigate(`/dashboard/${value}`)
+            setOpenMobile(false)
+          }}
           className={cn(
-            "relative flex-1 rounded-full px-3 py-1.5 text-sm font-medium transition-colors",
+            "relative flex-1 rounded-full px-3 py-2 text-sm font-medium transition-colors md:py-1.5",
             mode === value ? "text-[#14120f]" : "text-muted-foreground"
           )}
         >
@@ -97,6 +102,7 @@ export function AppSidebar() {
   const location = useLocation()
   const { mode } = useMode()
   const { user, signOut } = useAuth()
+  const { setOpenMobile } = useSidebar()
   const spark = editorialSpark[mode]
 
   const email = user?.email ?? ""
@@ -134,11 +140,14 @@ export function AppSidebar() {
                     asChild
                     isActive={!item.soon && location.pathname === item.href}
                     tooltip={item.label}
+                    className="h-11 text-[0.95rem] md:h-8 md:text-sm"
                     onClick={(e) => {
                       if (item.soon) {
                         e.preventDefault()
                         toast(`${item.label} is coming soon.`)
+                        return
                       }
+                      setOpenMobile(false)
                     }}
                   >
                     <Link to={item.href}>
@@ -164,11 +173,14 @@ export function AppSidebar() {
                     asChild
                     isActive={!item.soon && location.pathname === item.href}
                     tooltip={item.label}
+                    className="h-11 text-[0.95rem] md:h-8 md:text-sm"
                     onClick={(e) => {
                       if (item.soon) {
                         e.preventDefault()
                         toast(`${item.label} is coming soon.`)
+                        return
                       }
+                      setOpenMobile(false)
                     }}
                   >
                     <Link to={item.href}>

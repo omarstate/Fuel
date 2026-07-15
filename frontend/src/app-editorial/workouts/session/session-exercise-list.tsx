@@ -41,7 +41,7 @@ function SetRow({
   }
 
   return (
-    <div className="grid grid-cols-[2rem_1fr_1fr_2fr_2rem] items-center gap-2 py-1.5">
+    <div className="grid grid-cols-[1.25rem_1fr_1fr_auto] items-center gap-2 py-1 sm:grid-cols-[2rem_1fr_1fr_2fr_2rem]">
       <span className="font-mono text-xs text-muted-foreground">#{index + 1}</span>
       <Input
         type="number"
@@ -55,7 +55,7 @@ function SetRow({
           const next = weight.trim() === "" ? null : Number(weight)
           if (next !== set.weight) onUpdate?.({ weight: Number.isNaN(next as number) ? null : next })
         }}
-        className="h-8 px-2 text-sm"
+        className="h-11 px-2 text-base sm:h-9 sm:text-sm"
       />
       <Input
         type="number"
@@ -68,7 +68,7 @@ function SetRow({
           const next = reps.trim() === "" ? null : Number(reps)
           if (next !== set.reps) onUpdate?.({ reps: Number.isNaN(next as number) ? null : next })
         }}
-        className="h-8 px-2 text-sm"
+        className="h-11 px-2 text-base sm:h-9 sm:text-sm"
       />
       <Input
         placeholder="Note (optional)"
@@ -78,15 +78,15 @@ function SetRow({
           const next = note.trim() || null
           if (next !== set.note) onUpdate?.({ note: next })
         }}
-        className="h-8 px-2 text-sm"
+        className="hidden h-11 px-2 text-base sm:block sm:h-9 sm:text-sm"
       />
       <button
         type="button"
         aria-label={`Remove set ${index + 1}`}
         onClick={onRemove}
-        className="grid size-8 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-destructive"
+        className="grid size-11 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-destructive sm:size-9"
       >
-        <Trash2 className="size-3.5" />
+        <Trash2 className="size-4 sm:size-3.5" />
       </button>
     </div>
   )
@@ -112,7 +112,7 @@ function AddSetForm({ onAdd }: { onAdd: (input: { weight: number | null; reps: n
   return (
     <form
       onSubmit={submit}
-      className="grid grid-cols-[2rem_1fr_1fr_2fr_auto] items-center gap-2 border-t border-dashed border-border pt-2"
+      className="grid grid-cols-[1.25rem_1fr_1fr_auto] items-center gap-2 border-t border-dashed border-border pt-2 sm:grid-cols-[2rem_1fr_1fr_2fr_auto]"
     >
       <span className="font-mono text-xs text-muted-foreground">+</span>
       <Input
@@ -123,7 +123,7 @@ function AddSetForm({ onAdd }: { onAdd: (input: { weight: number | null; reps: n
         placeholder="kg"
         value={weight}
         onChange={(e) => setWeight(e.target.value)}
-        className="h-8 px-2 text-sm"
+        className="h-11 px-2 text-base sm:h-9 sm:text-sm"
       />
       <Input
         type="number"
@@ -132,19 +132,19 @@ function AddSetForm({ onAdd }: { onAdd: (input: { weight: number | null; reps: n
         placeholder="reps"
         value={reps}
         onChange={(e) => setReps(e.target.value)}
-        className="h-8 px-2 text-sm"
+        className="h-11 px-2 text-base sm:h-9 sm:text-sm"
       />
       <Input
         placeholder="Note (optional)"
         value={note}
         onChange={(e) => setNote(e.target.value)}
-        className="h-8 px-2 text-sm"
+        className="hidden h-11 px-2 text-base sm:block sm:h-9 sm:text-sm"
       />
       <button
         type="submit"
-        className="inline-flex h-8 shrink-0 items-center gap-1 rounded-md bg-[var(--accent-tint)] px-2.5 text-xs font-medium text-[var(--accent-ink)] transition-colors hover:brightness-95"
+        className="inline-flex h-11 shrink-0 items-center gap-1 rounded-md bg-[var(--accent-tint)] px-3 text-sm font-medium text-[var(--accent-ink)] transition-colors hover:brightness-95 sm:h-9 sm:px-2.5 sm:text-xs"
       >
-        <Plus className="size-3.5" /> Add set
+        <Plus className="size-4 sm:size-3.5" /> Add
       </button>
     </form>
   )
@@ -202,9 +202,9 @@ export function SessionExerciseList({
                 type="button"
                 aria-label={`Remove ${exercise.name}`}
                 onClick={() => onRemoveExercise?.(exercise.id)}
-                className="grid size-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-destructive"
+                className="grid size-9 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-destructive sm:size-7"
               >
-                <Trash2 className="size-3.5" />
+                <Trash2 className="size-4 sm:size-3.5" />
               </button>
             )}
           </div>
