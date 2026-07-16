@@ -7,6 +7,7 @@ import { AppSidebar } from "@/app-editorial/app-sidebar"
 import { LogoMark } from "@/app-editorial/logo-mark"
 import { editorialAccent, editorialAccentInk, editorialSpark } from "@/app-editorial/theme"
 import { MeProvider } from "@/app-editorial/use-me"
+import { OnboardingDialog } from "@/app-editorial/onboarding-dialog"
 
 /** Mobile-only top bar: hamburger opens the sidebar sheet + brand. Hidden on md+. */
 function MobileTopBar() {
@@ -74,6 +75,7 @@ function AppShellInner() {
         <div className="px-4 py-5 sm:px-8 sm:py-8 lg:px-10">
           <MeProvider>
             <Outlet />
+            <OnboardingDialog />
           </MeProvider>
         </div>
       </SidebarInset>

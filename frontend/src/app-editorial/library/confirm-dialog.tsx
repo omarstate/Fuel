@@ -1,3 +1,4 @@
+import * as React from "react"
 import {
   Dialog,
   DialogContent,
@@ -17,6 +18,7 @@ export function ConfirmDialog({
   loadingLabel = "Deleting…",
   loading = false,
   onConfirm,
+  confirmSlot,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -26,6 +28,9 @@ export function ConfirmDialog({
   loadingLabel?: string
   loading?: boolean
   onConfirm: () => void
+  /** When provided, renders in place of the default destructive confirm
+   * button — used to swap in a MorphButton as the confirm action. */
+  confirmSlot?: React.ReactNode
 }) {
   return (
     <Dialog open={open} onOpenChange={(next) => !loading && onOpenChange(next)}>
@@ -43,9 +48,11 @@ export function ConfirmDialog({
           >
             Cancel
           </Button>
-          <Button type="button" variant="destructive" disabled={loading} onClick={onConfirm}>
-            {loading ? loadingLabel : confirmLabel}
-          </Button>
+          {confirmSlot ?? (
+            <Button type="button" variant="destructive" disabled={loading} onClick={onConfirm}>
+              {loading ? loadingLabel : confirmLabel}
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

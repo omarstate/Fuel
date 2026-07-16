@@ -104,20 +104,23 @@ export function useMealHistory() {
     load()
   }, [load])
 
-  const removeMeal = React.useCallback(async (id: string) => {
-    let snapshot: MealHistoryDay[] = []
-    setDays((prev) => {
-      snapshot = prev
-      return prev
-        .map((day) => ({ ...day, meals: day.meals.filter((m) => m.id !== id) }))
-        .filter((day) => day.meals.length > 0)
-    })
+  /** DB delete only — does not touch local state, so the row can morph in
+   * place before `dropMeal` removes it (see MealRow's inline MorphButton). */
+  const deleteMeal = React.useCallback(async (id: string): Promise<boolean> => {
     const { error: err } = await supabase.from("meals").delete().eq("id", id)
     if (err) {
       toast.error("Couldn't delete that meal.")
-      setDays(snapshot)
     }
+    return !err
   }, [])
 
-  return { days, loading, error, reload: load, removeMeal }
+  const dropMeal = React.useCallback((id: string) => {
+    setDays((prev) =>
+      prev
+        .map((day) => ({ ...day, meals: day.meals.filter((m) => m.id !== id) }))
+        .filter((day) => day.meals.length > 0)
+    )
+  }, [])
+
+  return { days, loading, error, reload: load, deleteMeal, dropMeal }
 }

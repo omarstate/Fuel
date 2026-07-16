@@ -2,6 +2,7 @@
 // Personal-log writes still go straight through supabase-js — see use-meals.ts.
 
 import { supabase } from "@/lib/supabase"
+import type { ActivityLevel, Pace, Sex } from "@/lib/nutrition"
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:4000/api"
 
@@ -154,6 +155,48 @@ export async function deleteCatalogMeal(id: string): Promise<void> {
 
 export function getMe(): Promise<{ id: string; email: string; isAdmin: boolean }> {
   return request("/me")
+}
+
+export async function deleteAccount(): Promise<void> {
+  await request<{ deleted: boolean }>("/me", { method: "DELETE" })
+}
+
+export type Profile = {
+  userId: string
+  sex: Sex
+  age: number
+  heightCm: number
+  weightKg: number
+  goalWeightKg: number
+  activityLevel: ActivityLevel
+  pace: Pace
+  targetCalories: number
+  targetProtein: number
+  targetCarbs: number
+  targetFat: number
+  onboardedAt: string
+  updatedAt: string
+}
+
+export function getProfile(): Promise<Profile | null> {
+  return request<Profile | null>("/profile")
+}
+
+export type UpsertProfileInput = {
+  sex: Sex
+  age: number
+  heightCm: number
+  weightKg: number
+  goalWeightKg: number
+  activityLevel: ActivityLevel
+  pace: Pace
+}
+
+export function saveProfile(input: UpsertProfileInput): Promise<Profile> {
+  return request<Profile>("/profile", {
+    method: "PUT",
+    body: JSON.stringify(input),
+  })
 }
 
 export function getMyMeals(): Promise<CatalogMeal[]> {

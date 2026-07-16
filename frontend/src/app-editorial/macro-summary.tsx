@@ -1,4 +1,7 @@
-export const GOALS = { calories: 2200, protein: 165, carbs: 220, fat: 70 }
+import { DEFAULT_TARGETS, type Targets } from "@/lib/nutrition"
+
+// Kept for existing imports — now re-points to the shared default targets.
+export const GOALS = DEFAULT_TARGETS
 
 const macroMeta = [
   { key: "protein", label: "Protein", color: "#ff6b35" },
@@ -12,16 +15,18 @@ export function TodayOverview({
   protein,
   carbs,
   fat,
+  goals = DEFAULT_TARGETS,
 }: {
   accent: string
   calories: number
   protein: number
   carbs: number
   fat: number
+  goals?: Targets
 }) {
   const values = { protein, carbs, fat }
-  const pct = Math.min((calories / GOALS.calories) * 100, 100)
-  const remaining = Math.max(GOALS.calories - calories, 0)
+  const pct = Math.min((calories / goals.calories) * 100, 100)
+  const remaining = Math.max(goals.calories - calories, 0)
 
   return (
     <div className="grid gap-8 rounded-xl border border-border bg-card p-6 sm:grid-cols-[auto_1fr] sm:p-8">
@@ -47,7 +52,7 @@ export function TodayOverview({
             Consumed
           </div>
           <div className="mt-1 text-sm text-foreground">
-            of {GOALS.calories.toLocaleString()} kcal
+            of {goals.calories.toLocaleString()} kcal
           </div>
           <div className="mt-2 inline-flex items-center rounded-md bg-[var(--accent-tint)] px-2 py-0.5 font-mono text-xs font-medium text-[var(--accent-ink)]">
             {remaining.toLocaleString()} left
@@ -58,7 +63,7 @@ export function TodayOverview({
       <div className="flex flex-col justify-center gap-4 sm:border-l sm:border-border sm:pl-8">
         {macroMeta.map((m) => {
           const val = values[m.key]
-          const goal = GOALS[m.key]
+          const goal = goals[m.key]
           const p = Math.min((val / goal) * 100, 100)
           return (
             <div key={m.key}>

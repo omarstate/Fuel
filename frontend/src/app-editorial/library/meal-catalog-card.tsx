@@ -7,6 +7,8 @@ import { deleteCatalogMeal, type CatalogMeal } from "@/lib/api"
 import { useMe, canEditMeal } from "@/app-editorial/use-me"
 import { AddCatalogMealDialog } from "@/app-editorial/library/add-catalog-meal-dialog"
 import { ConfirmDialog } from "@/app-editorial/library/confirm-dialog"
+import { MorphButton } from "@/components/ui/morph-button"
+import { cn } from "@/lib/utils"
 
 export function MealCatalogCard({
   meal,
@@ -15,41 +17,27 @@ export function MealCatalogCard({
   delay = 0,
 }: {
   meal: CatalogMeal
-  onAdd: (meal: CatalogMeal) => void
+  onAdd: (meal: CatalogMeal) => Promise<boolean>
   /** Called after a successful edit or delete so the caller can refresh its list. */
   onChanged?: () => void
   delay?: number
 }) {
-  const [adding, setAdding] = React.useState(false)
   const [confirmOpen, setConfirmOpen] = React.useState(false)
-  const [deleting, setDeleting] = React.useState(false)
   const navigate = useNavigate()
   const me = useMe()
   const canEdit = canEditMeal(meal, me)
 
-  async function handleAdd(e: React.MouseEvent) {
-    e.preventDefault()
-    e.stopPropagation()
-    if (adding) return
-    setAdding(true)
-    try {
-      await onAdd(meal)
-    } finally {
-      setAdding(false)
-    }
+  async function handleAdd(): Promise<boolean> {
+    return onAdd(meal)
   }
 
-  async function handleDelete() {
-    setDeleting(true)
+  async function handleDelete(): Promise<boolean> {
     try {
       await deleteCatalogMeal(meal.id)
-      toast.success(`${meal.name} deleted`)
-      setConfirmOpen(false)
-      onChanged?.()
+      return true
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Couldn't delete that meal.")
-    } finally {
-      setDeleting(false)
+      return false
     }
   }
 
@@ -104,44 +92,71 @@ export function MealCatalogCard({
         onOpenChange={setConfirmOpen}
         title="Delete meal"
         message={`Delete "${meal.name}" from the catalog? This can't be undone.`}
-        loading={deleting}
-        onConfirm={handleDelete}
+        onConfirm={() => {}}
+        confirmSlot={
+          <MorphButton
+            intent="destructive"
+            idleLabel="Delete"
+            loadingLabel="Deleting…"
+            successLabel="Deleted"
+            onAction={handleDelete}
+            onSuccess={() => {
+              setConfirmOpen(false)
+              onChanged?.()
+            }}
+          />
+        }
       />
 
       <div className={canEdit ? "pr-20 sm:pr-0" : ""}>
-        <div className="truncate text-[0.95rem] font-medium text-foreground">
-          {meal.name}
-        </div>
-        {(meal.category || meal.servingSize) && (
-          <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
-            {meal.category && (
-              <span className="rounded-md bg-[var(--accent-tint)] px-2 py-0.5 font-mono text-[0.6rem] uppercase tracking-wide text-[var(--accent-ink)]">
-                {meal.category.name}
-              </span>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="truncate text-[0.95rem] font-medium text-foreground">
+              {meal.name}
+            </div>
+            {(meal.category || meal.servingSize) && (
+              <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+                {meal.category && (
+                  <span className="rounded-md bg-[var(--accent-tint)] px-2 py-0.5 font-mono text-[0.6rem] uppercase tracking-wide text-[var(--accent-ink)]">
+                    {meal.category.name}
+                  </span>
+                )}
+                {meal.servingSize && (
+                  <span className="font-mono text-[0.7rem] uppercase tracking-[0.12em] text-muted-foreground">
+                    {meal.servingSize}
+                  </span>
+                )}
+              </div>
             )}
-            {meal.servingSize && (
-              <span className="font-mono text-[0.7rem] uppercase tracking-[0.12em] text-muted-foreground">
-                {meal.servingSize}
-              </span>
+
+            {meal.description && (
+              <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
+                {meal.description}
+              </p>
             )}
           </div>
-        )}
 
-        {meal.description && (
-          <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
-            {meal.description}
-          </p>
-        )}
+          {/* Calories — the headline stat, pinned top-right. Fades on hover for
+              editable meals so the edit/delete overlay can take the corner. */}
+          <div
+            className={cn(
+              "shrink-0 text-right",
+              canEdit &&
+                "transition-opacity sm:group-hover:opacity-0 sm:group-focus-within:opacity-0"
+            )}
+          >
+            <div className="font-mono text-xl font-semibold leading-none text-foreground">
+              {meal.calories}
+            </div>
+            <div className="mt-1 font-mono text-[0.6rem] uppercase tracking-widest text-muted-foreground">
+              kcal
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs text-muted-foreground">
-          <span className="text-sm font-semibold text-foreground">
-            {meal.calories}
-            <span className="ml-1 text-[0.65rem] font-normal text-muted-foreground">
-              kcal
-            </span>
-          </span>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-x-3 overflow-hidden font-mono text-xs whitespace-nowrap text-muted-foreground">
           <span>
             <span className="text-[#b5431c]">P</span> {meal.protein}
           </span>
@@ -153,15 +168,20 @@ export function MealCatalogCard({
           </span>
         </div>
 
-        <button
-          type="button"
-          onClick={handleAdd}
-          disabled={adding}
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-[#14120f] px-3.5 py-2.5 text-sm font-medium text-[#f7f3ea] transition-colors hover:bg-[#2a251d] disabled:opacity-60 sm:px-3 sm:py-1.5 sm:text-xs"
+        <div
+          className="shrink-0"
+          onClick={(e) => e.stopPropagation()}
+          onKeyDown={(e) => e.stopPropagation()}
         >
-          <Plus className="size-4 sm:size-3.5" />
-          {adding ? "Adding…" : "Add to today"}
-        </button>
+          <MorphButton
+            idleIcon={Plus}
+            idleLabel="Add to today"
+            loadingLabel="Adding…"
+            successLabel="Logged"
+            onAction={handleAdd}
+            className="sm:text-xs"
+          />
+        </div>
       </div>
     </motion.div>
   )

@@ -30,10 +30,12 @@ function DayGroup({
   day,
   delay,
   onDelete,
+  onRemoved,
 }: {
   day: MealHistoryDay
   delay: number
-  onDelete: (id: string) => void
+  onDelete: (id: string) => Promise<boolean>
+  onRemoved: (id: string) => void
 }) {
   return (
     <motion.div
@@ -70,7 +72,12 @@ function DayGroup({
 
       <AnimatePresence initial={false}>
         {day.meals.map((meal) => (
-          <MealRow key={meal.id} meal={meal} onDelete={() => onDelete(meal.id)} />
+          <MealRow
+            key={meal.id}
+            meal={meal}
+            onDelete={() => onDelete(meal.id)}
+            onRemoved={() => onRemoved(meal.id)}
+          />
         ))}
       </AnimatePresence>
     </motion.div>
@@ -80,7 +87,7 @@ function DayGroup({
 /** Last 30 days of logged meals, grouped by day, most recent first. Lives
  * inside the editorial shell at /dashboard/nutrition/history. */
 export function MealHistory() {
-  const { days, loading, error, reload, removeMeal } = useMealHistory()
+  const { days, loading, error, reload, deleteMeal, dropMeal } = useMealHistory()
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
@@ -146,7 +153,13 @@ export function MealHistory() {
           </div>
         ) : (
           days.map((day, i) => (
-            <DayGroup key={day.key} day={day} delay={Math.min(i, 8) * 0.03} onDelete={removeMeal} />
+            <DayGroup
+              key={day.key}
+              day={day}
+              delay={Math.min(i, 8) * 0.03}
+              onDelete={deleteMeal}
+              onRemoved={dropMeal}
+            />
           ))
         )}
       </motion.section>

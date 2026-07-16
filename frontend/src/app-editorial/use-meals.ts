@@ -96,30 +96,32 @@ export function useMeals() {
   }, [user?.id])
 
   const addMeal = React.useCallback(
-    async (meal: Meal) => {
-      if (!user) return
+    async (meal: Meal): Promise<boolean> => {
+      if (!user) return false
       setMeals((prev) => [meal, ...prev]) // optimistic
       const { error } = await supabase.from("meals").insert(mealToRow(meal, user.id))
       if (error) {
         toast.error("Couldn't save that meal.")
         setMeals((prev) => prev.filter((m) => m.id !== meal.id)) // rollback
       }
+      return !error
     },
     [user]
   )
 
-  const removeMeal = React.useCallback(async (id: string) => {
-    let snapshot: Meal[] = []
-    setMeals((prev) => {
-      snapshot = prev
-      return prev.filter((m) => m.id !== id)
-    })
+  /** DB delete only — does not touch local state, so the row can morph in
+   * place before `dropMeal` removes it (see MealRow's inline MorphButton). */
+  const deleteMeal = React.useCallback(async (id: string): Promise<boolean> => {
     const { error } = await supabase.from("meals").delete().eq("id", id)
     if (error) {
       toast.error("Couldn't delete that meal.")
-      setMeals(snapshot) // rollback
     }
+    return !error
   }, [])
 
-  return { meals, loading, addMeal, removeMeal }
+  const dropMeal = React.useCallback((id: string) => {
+    setMeals((prev) => prev.filter((m) => m.id !== id))
+  }, [])
+
+  return { meals, loading, addMeal, deleteMeal, dropMeal }
 }

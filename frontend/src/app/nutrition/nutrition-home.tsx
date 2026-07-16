@@ -41,8 +41,9 @@ export function NutritionHome() {
     [meals]
   )
 
-  function addMeal(meal: Meal) {
+  async function addMeal(meal: Meal): Promise<boolean> {
     setMeals((prev) => [meal, ...prev])
+    return true
   }
 
   function removeMeal(id: string) {

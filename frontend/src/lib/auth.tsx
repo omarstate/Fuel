@@ -12,6 +12,7 @@ type AuthContextValue = {
     password: string
   ) => Promise<{ error: string | null; needsConfirmation: boolean }>
   signOut: () => Promise<void>
+  updateDisplayName: (name: string) => Promise<{ error: string | null }>
 }
 
 const AuthContext = React.createContext<AuthContextValue | null>(null)
@@ -52,6 +53,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       },
       async signOut() {
         await supabase.auth.signOut()
+      },
+      async updateDisplayName(name) {
+        const { error } = await supabase.auth.updateUser({
+          data: { display_name: name },
+        })
+        return { error: error?.message ?? null }
       },
     }),
     [session, loading]

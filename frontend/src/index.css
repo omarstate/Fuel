@@ -147,6 +147,26 @@
     @apply font-sans;
     scroll-behavior: smooth;
     }
+  /* Tailwind v4 no longer defaults buttons to the pointer cursor — restore it
+     for clickable buttons, button-styled controls and links (standard web
+     behavior). Non-clickable things like form labels are intentionally left
+     with the normal cursor. */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  [role="tab"],
+  [role="menuitem"],
+  [role="option"],
+  [data-slot="button"],
+  a[href],
+  summary,
+  select:not(:disabled) {
+    cursor: pointer;
+    }
+  button:disabled,
+  [role="button"][aria-disabled="true"],
+  [data-disabled] {
+    cursor: not-allowed;
+    }
 }
 
 /* Landing nav: transparent at the top, glass backing once scrolled. */
@@ -163,6 +183,12 @@
   }
   to {
     transform: translateX(-50%);
+  }
+}
+
+@keyframes badge-morph-spin {
+  to {
+    transform: rotate(360deg);
   }
 }
 

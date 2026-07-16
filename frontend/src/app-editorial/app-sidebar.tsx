@@ -14,6 +14,8 @@ import {
   ChefHat,
   ClipboardList,
   History,
+  ChevronsUpDown,
+  UserRound,
 } from "lucide-react"
 import {
   Sidebar,
@@ -29,6 +31,12 @@ import {
   SidebarSeparator,
   useSidebar,
 } from "@/components/ui/sidebar"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { LogoMark } from "@/app-editorial/logo-mark"
 import { useMode, type Mode } from "@/components/site/mode-context"
@@ -100,14 +108,16 @@ function SegmentedModeToggle() {
 
 export function AppSidebar() {
   const location = useLocation()
+  const navigate = useNavigate()
   const { mode } = useMode()
   const { user, signOut } = useAuth()
   const { setOpenMobile } = useSidebar()
   const spark = editorialSpark[mode]
 
   const email = user?.email ?? ""
-  const name = email ? email.split("@")[0] : "Account"
-  const initials = (email.slice(0, 2) || "FU").toUpperCase()
+  const displayName = (user?.user_metadata?.display_name as string | undefined)?.trim()
+  const name = displayName || (email ? email.split("@")[0] : "Account")
+  const initials = (name.slice(0, 2) || "FU").toUpperCase()
 
   return (
     <Sidebar collapsible="icon">
@@ -200,15 +210,32 @@ export function AppSidebar() {
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" onClick={() => signOut()} tooltip="Sign out">
-              <Avatar className="size-6">
-                <AvatarFallback className="bg-[var(--accent-tint)] text-xs text-[var(--accent-ink)]">
-                  {initials}
-                </AvatarFallback>
-              </Avatar>
-              <span className="truncate capitalize">{name}</span>
-              <LogOut className="ml-auto size-4 text-muted-foreground" />
-            </SidebarMenuButton>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <SidebarMenuButton size="lg" tooltip={name}>
+                  <Avatar className="size-6">
+                    <AvatarFallback className="bg-[var(--accent-tint)] text-xs text-[var(--accent-ink)]">
+                      {initials}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="truncate capitalize">{name}</span>
+                  <ChevronsUpDown className="ml-auto size-4 text-muted-foreground" />
+                </SidebarMenuButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent side="top" align="start" className="w-(--radix-dropdown-menu-trigger-width) min-w-56">
+                <DropdownMenuItem
+                  onClick={() => {
+                    navigate("/dashboard/profile")
+                    setOpenMobile(false)
+                  }}
+                >
+                  <UserRound /> Profile
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => signOut()}>
+                  <LogOut /> Sign out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>

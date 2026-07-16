@@ -5,7 +5,6 @@ import { Toaster } from "@/components/ui/sonner"
 import { AuthProvider } from "@/lib/auth"
 import { RequireAuth } from "@/lib/require-auth"
 import { LoginPage } from "@/pages/login"
-import { LandingPage } from "@/pages/landing-page"
 import { LandingEditorial } from "@/pages/landing-editorial"
 import { ToonhubPage } from "@/pages/toonhub"
 import { AppShell } from "@/app/app-shell"
@@ -17,6 +16,7 @@ import { WorkoutsHome as WorkoutsHomeEditorial } from "@/app-editorial/workouts-
 import LibraryHome from "@/app-editorial/library/library-home"
 import MealDetail from "@/app-editorial/library/meal-detail"
 import MyMeals from "@/app-editorial/library/my-meals"
+import Profile from "@/app-editorial/profile"
 import MealHistory from "@/app-editorial/meal-history"
 import WorkoutLibrary from "@/app-editorial/workouts/workout-library"
 import SessionActive from "@/app-editorial/workouts/session/session-active"
@@ -29,8 +29,7 @@ export function App() {
       <AuthProvider>
         <TooltipProvider delayDuration={200}>
           <Routes>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/editorial" element={<LandingEditorial />} />
+            <Route path="/" element={<LandingEditorial />} />
             <Route path="/toonhub" element={<ToonhubPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/app" element={<AppShell />}>
@@ -56,6 +55,7 @@ export function App() {
               <Route path="library" element={<LibraryHome />} />
               <Route path="library/:id" element={<MealDetail />} />
               <Route path="my-meals" element={<MyMeals />} />
+              <Route path="profile" element={<Profile />} />
             </Route>
             {/* Full-screen active session — outside the shell so there's no
                 sidebar; still auth-gated. */}

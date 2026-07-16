@@ -46,8 +46,8 @@ export function useActiveSession(sessionId: string | undefined) {
   }, [load])
 
   const addExercise = React.useCallback(
-    async ({ name, workoutId }: { name: string; workoutId?: string | null }) => {
-      if (!user || !session) return
+    async ({ name, workoutId }: { name: string; workoutId?: string | null }): Promise<boolean> => {
+      if (!user || !session) return false
       const tempId = `temp-${crypto.randomUUID()}`
       const position = session.exercises.length
       const optimistic = {
@@ -79,7 +79,7 @@ export function useActiveSession(sessionId: string | undefined) {
         setSession((prev) =>
           prev ? { ...prev, exercises: prev.exercises.filter((e) => e.id !== tempId) } : prev
         )
-        return
+        return false
       }
 
       const real = data as SessionExerciseRow
@@ -95,39 +95,40 @@ export function useActiveSession(sessionId: string | undefined) {
             }
           : prev
       )
+      return true
     },
     [user, session]
   )
 
-  const removeExercise = React.useCallback(
-    async (exerciseId: string) => {
-      let snapshot: SessionWithExercises | null = null
-      setSession((prev) => {
-        snapshot = prev
-        return prev
-          ? { ...prev, exercises: prev.exercises.filter((e) => e.id !== exerciseId) }
-          : prev
-      })
-      const { error: err } = await supabase
-        .from("session_exercises")
-        .delete()
-        .eq("id", exerciseId)
-      if (err) {
-        toast.error("Couldn't remove that exercise.")
-        setSession(snapshot)
-      }
-    },
-    []
-  )
+  /** DB delete only — does not touch local state, so the row can morph in
+   * place before `dropExercise` removes it. */
+  const deleteExercise = React.useCallback(async (exerciseId: string): Promise<boolean> => {
+    const { error: err } = await supabase
+      .from("session_exercises")
+      .delete()
+      .eq("id", exerciseId)
+    if (err) {
+      toast.error("Couldn't remove that exercise.")
+    }
+    return !err
+  }, [])
+
+  const dropExercise = React.useCallback((exerciseId: string) => {
+    setSession((prev) =>
+      prev
+        ? { ...prev, exercises: prev.exercises.filter((e) => e.id !== exerciseId) }
+        : prev
+    )
+  }, [])
 
   const addSet = React.useCallback(
     async (
       exerciseId: string,
       input: { weight: number | null; reps: number | null; note?: string | null }
-    ) => {
-      if (!user || !session) return
+    ): Promise<boolean> => {
+      if (!user || !session) return false
       const exercise = session.exercises.find((e) => e.id === exerciseId)
-      if (!exercise) return
+      if (!exercise) return false
       const tempId = `temp-${crypto.randomUUID()}`
       const setNumber = exercise.sets.length + 1
       const optimistic = {
@@ -179,7 +180,7 @@ export function useActiveSession(sessionId: string | undefined) {
               }
             : prev
         )
-        return
+        return false
       }
 
       const real = data as SessionSetRow
@@ -202,6 +203,7 @@ export function useActiveSession(sessionId: string | undefined) {
             }
           : prev
       )
+      return true
     },
     [user, session]
   )
@@ -233,10 +235,18 @@ export function useActiveSession(sessionId: string | undefined) {
     []
   )
 
-  const removeSet = React.useCallback(async (setId: string) => {
-    let snapshot: SessionWithExercises | null = null
+  /** DB delete only — does not touch local state, so the row can morph in
+   * place before `dropSet` removes it. */
+  const deleteSet = React.useCallback(async (setId: string): Promise<boolean> => {
+    const { error: err } = await supabase.from("session_sets").delete().eq("id", setId)
+    if (err) {
+      toast.error("Couldn't remove that set.")
+    }
+    return !err
+  }, [])
+
+  const dropSet = React.useCallback((setId: string) => {
     setSession((prev) => {
-      snapshot = prev
       if (!prev) return prev
       return {
         ...prev,
@@ -246,11 +256,6 @@ export function useActiveSession(sessionId: string | undefined) {
         })),
       }
     })
-    const { error: err } = await supabase.from("session_sets").delete().eq("id", setId)
-    if (err) {
-      toast.error("Couldn't remove that set.")
-      setSession(snapshot)
-    }
   }, [])
 
   const endSession = React.useCallback(async (): Promise<boolean> => {
@@ -289,10 +294,12 @@ export function useActiveSession(sessionId: string | undefined) {
     error,
     reload: load,
     addExercise,
-    removeExercise,
+    deleteExercise,
+    dropExercise,
     addSet,
     updateSet,
-    removeSet,
+    deleteSet,
+    dropSet,
     endSession,
   }
 }

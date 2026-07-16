@@ -5,12 +5,13 @@ import { Plus, Camera, Barcode, RotateCcw, Flame, Drumstick } from "lucide-react
 import { useMode } from "@/components/site/mode-context"
 import { editorialAccent } from "@/app-editorial/theme"
 import { AddMealDialog } from "@/app/nutrition/add-meal-dialog"
-import { TodayOverview, GOALS } from "@/app-editorial/macro-summary"
+import { TodayOverview } from "@/app-editorial/macro-summary"
 import { StatCard } from "@/app-editorial/stat-card"
 import { WeekChart } from "@/app-editorial/week-chart"
 import { LogToolbar, LogAction } from "@/app-editorial/quick-actions"
 import { MealRow } from "@/app-editorial/meal-row"
 import { useMeals } from "@/app-editorial/use-meals"
+import { useTargets } from "@/app-editorial/use-me"
 
 function comingSoon(feature: string) {
   toast(`${feature} is coming soon.`)
@@ -25,7 +26,8 @@ const fade = (delay = 0) => ({
 export function NutritionHome() {
   const { mode } = useMode()
   const accent = editorialAccent[mode]
-  const { meals, loading, addMeal, removeMeal } = useMeals()
+  const { meals, loading, addMeal, deleteMeal, dropMeal } = useMeals()
+  const targets = useTargets()
 
   const totals = React.useMemo(
     () =>
@@ -41,7 +43,7 @@ export function NutritionHome() {
     [meals]
   )
 
-  const proteinLeft = Math.max(GOALS.protein - totals.protein, 0)
+  const proteinLeft = Math.max(targets.protein - totals.protein, 0)
   const today = new Date().toLocaleDateString(undefined, {
     weekday: "long",
     month: "short",
@@ -73,7 +75,7 @@ export function NutritionHome() {
       {/* Overview + KPIs */}
       <motion.section {...fade(0.05)} className="grid gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <TodayOverview accent={accent} {...totals} />
+          <TodayOverview accent={accent} {...totals} goals={targets} />
         </div>
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-1">
           <StatCard
@@ -88,14 +90,14 @@ export function NutritionHome() {
             label="Protein left"
             value={proteinLeft}
             unit="g"
-            hint={`of ${GOALS.protein}g target`}
+            hint={`of ${targets.protein}g target`}
           />
         </div>
       </motion.section>
 
       {/* Weekly */}
       <motion.section {...fade(0.1)}>
-        <WeekChart accent={accent} calories={totals.calories} goal={GOALS.calories} />
+        <WeekChart accent={accent} calories={totals.calories} goal={targets.calories} />
       </motion.section>
 
       {/* Log + meals */}
@@ -177,7 +179,8 @@ export function NutritionHome() {
                   <MealRow
                     key={meal.id}
                     meal={meal}
-                    onDelete={() => removeMeal(meal.id)}
+                    onDelete={() => deleteMeal(meal.id)}
+                    onRemoved={() => dropMeal(meal.id)}
                   />
                 ))}
               </AnimatePresence>

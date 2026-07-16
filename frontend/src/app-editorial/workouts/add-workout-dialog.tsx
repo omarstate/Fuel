@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
+import { MorphButton, type MorphStatus } from "@/components/ui/morph-button"
 import { getWorkoutCategories, type WorkoutCategory } from "@/lib/api"
 
 const emptyForm = {
@@ -44,7 +45,7 @@ export function AddWorkoutDialog({
   const [form, setForm] = React.useState(emptyForm)
   const [categories, setCategories] = React.useState<WorkoutCategory[]>([])
   const [categoriesLoading, setCategoriesLoading] = React.useState(false)
-  const [submitting, setSubmitting] = React.useState(false)
+  const [status, setStatus] = React.useState<MorphStatus>("idle")
 
   React.useEffect(() => {
     if (!open) return
@@ -73,9 +74,10 @@ export function AddWorkoutDialog({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (status !== "idle") return
     if (!form.name.trim() || form.categoryIds.length === 0) return
 
-    setSubmitting(true)
+    setStatus("loading")
     try {
       await onCreate({
         name: form.name.trim(),
@@ -86,13 +88,16 @@ export function AddWorkoutDialog({
         targetSets: form.targetSets ? Number(form.targetSets) || undefined : undefined,
         targetReps: form.targetReps.trim() || undefined,
       })
-      toast.success(`${form.name.trim()} added to the library`)
-      setForm(emptyForm)
-      setOpen(false)
+      setStatus("success")
+      setTimeout(() => {
+        setStatus("idle")
+        setForm(emptyForm)
+        setOpen(false)
+      }, 1300)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Couldn't add that workout.")
-    } finally {
-      setSubmitting(false)
+      setStatus("error")
+      setTimeout(() => setStatus("idle"), 1300)
     }
   }
 
@@ -100,6 +105,7 @@ export function AddWorkoutDialog({
     <Dialog
       open={open}
       onOpenChange={(next) => {
+        if (status !== "idle") return
         setOpen(next)
         if (!next) setForm(emptyForm)
       }}
@@ -212,12 +218,23 @@ export function AddWorkoutDialog({
           </FieldGroup>
 
           <DialogFooter className="mt-6">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+              disabled={status !== "idle"}
+            >
               Cancel
             </Button>
-            <Button type="submit" disabled={submitting || form.categoryIds.length === 0}>
-              {submitting ? "Adding…" : "Add workout"}
-            </Button>
+            <MorphButton
+              type="submit"
+              status={status}
+              onClick={() => {}}
+              disabled={form.categoryIds.length === 0}
+              idleLabel="Add workout"
+              loadingLabel="Adding…"
+              successLabel="Created"
+            />
           </DialogFooter>
         </form>
       </DialogContent>

@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
+import { MorphButton, type MorphStatus } from "@/components/ui/morph-button"
 import {
   getCategories,
   updateCatalogMeal,
@@ -71,7 +72,7 @@ export function AddCatalogMealDialog({
   const [form, setForm] = React.useState(emptyForm)
   const [categories, setCategories] = React.useState<Category[]>([])
   const [categoriesLoading, setCategoriesLoading] = React.useState(false)
-  const [submitting, setSubmitting] = React.useState(false)
+  const [status, setStatus] = React.useState<MorphStatus>("idle")
 
   React.useEffect(() => {
     if (!open) return
@@ -107,6 +108,7 @@ export function AddCatalogMealDialog({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (status !== "idle") return
     if (!form.name.trim() || !form.categoryId || !form.calories) return
 
     const payload: CreateCatalogMealInput = {
@@ -120,23 +122,25 @@ export function AddCatalogMealDialog({
       fat: Number(form.fat) || 0,
     }
 
-    setSubmitting(true)
+    setStatus("loading")
     try {
       if (isEdit && meal) {
         await updateCatalogMeal(meal.id, payload)
-        toast.success(`${payload.name} updated`)
       } else if (onCreate) {
         await onCreate(payload)
-        toast.success(`${payload.name} added to the library`)
       }
-      setOpen(false)
-      onSaved?.()
+      setStatus("success")
+      setTimeout(() => {
+        setStatus("idle")
+        setOpen(false)
+        onSaved?.()
+      }, 1300)
     } catch (err) {
       toast.error(
         err instanceof Error ? err.message : `Couldn't ${isEdit ? "update" : "add"} that meal.`
       )
-    } finally {
-      setSubmitting(false)
+      setStatus("error")
+      setTimeout(() => setStatus("idle"), 1300)
     }
   }
 
@@ -144,6 +148,7 @@ export function AddCatalogMealDialog({
     <Dialog
       open={open}
       onOpenChange={(next) => {
+        if (status !== "idle") return
         setOpen(next)
         if (!next) setForm(emptyForm)
       }}
@@ -279,19 +284,20 @@ export function AddCatalogMealDialog({
               type="button"
               variant="outline"
               onClick={() => setOpen(false)}
+              disabled={status !== "idle"}
               className="h-11 w-full sm:h-9 sm:w-auto"
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={submitting} className="h-11 w-full sm:h-9 sm:w-auto">
-              {isEdit
-                ? submitting
-                  ? "Saving…"
-                  : "Save changes"
-                : submitting
-                  ? "Adding…"
-                  : "Add meal"}
-            </Button>
+            <MorphButton
+              type="submit"
+              status={status}
+              onClick={() => {}}
+              idleLabel={isEdit ? "Save changes" : "Add meal"}
+              loadingLabel={isEdit ? "Saving…" : "Adding…"}
+              successLabel={isEdit ? "Saved" : "Added"}
+              className="w-full sm:w-auto"
+            />
           </DialogFooter>
         </form>
       </DialogContent>

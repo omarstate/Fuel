@@ -1,13 +1,18 @@
 import { motion } from "framer-motion"
 import { Trash2 } from "lucide-react"
 import { mealTypeLabel, type Meal } from "@/app/nutrition/types"
+import { MorphButton } from "@/components/ui/morph-button"
 
 export function MealRow({
   meal,
   onDelete,
+  onRemoved,
 }: {
   meal: Meal
-  onDelete: () => void
+  /** DB delete — returns whether it succeeded so the morph can show success/error. */
+  onDelete: () => Promise<boolean>
+  /** Drops the meal from local state, called after the success beat. */
+  onRemoved: () => void
 }) {
   return (
     <motion.div
@@ -51,14 +56,16 @@ export function MealRow({
       </div>
 
       {/* delete */}
-      <button
-        type="button"
-        onClick={onDelete}
-        aria-label={`Remove ${meal.name}`}
-        className="grid size-9 shrink-0 place-items-center rounded-md text-muted-foreground opacity-100 transition-all hover:bg-muted hover:text-destructive sm:ml-2 sm:size-7 sm:opacity-0 sm:group-hover:opacity-100"
-      >
-        <Trash2 className="size-4 sm:size-3.5" />
-      </button>
+      <MorphButton
+        variant="inline"
+        intent="destructive"
+        idleIcon={Trash2}
+        idleLabel={`Remove ${meal.name}`}
+        successLabel="Deleted"
+        onAction={onDelete}
+        onSuccess={onRemoved}
+        className="opacity-100 sm:ml-2 sm:opacity-0 sm:group-hover:opacity-100"
+      />
     </motion.div>
   )
 }

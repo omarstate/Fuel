@@ -4,6 +4,7 @@ import { toast } from "sonner"
 import { ArrowLeft, Square, Plus, Dumbbell } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { MorphButton, type MorphStatus } from "@/components/ui/morph-button"
 import { ConfirmDialog } from "@/app-editorial/library/confirm-dialog"
 import { editorialAccent, editorialAccentInk } from "@/app-editorial/theme"
 import { useActiveSession } from "@/app-editorial/workouts/session/use-active-session"
@@ -16,11 +17,12 @@ function AddExerciseControl({
   onAdd,
 }: {
   categorySlug: string | null
-  onAdd: (input: { name: string; workoutId?: string | null }) => void
+  onAdd: (input: { name: string; workoutId?: string | null }) => Promise<boolean>
 }) {
   const [catalog, setCatalog] = React.useState<Workout[]>([])
   const [loading, setLoading] = React.useState(false)
   const [customName, setCustomName] = React.useState("")
+  const [status, setStatus] = React.useState<MorphStatus>("idle")
 
   React.useEffect(() => {
     if (!categorySlug) return
@@ -41,12 +43,18 @@ function AddExerciseControl({
     }
   }, [categorySlug])
 
-  function submitCustom(e: React.FormEvent) {
+  async function submitCustom(e: React.FormEvent) {
     e.preventDefault()
+    if (status !== "idle") return
     const name = customName.trim()
     if (!name) return
-    onAdd({ name, workoutId: null })
-    setCustomName("")
+    setStatus("loading")
+    const ok = await onAdd({ name, workoutId: null })
+    setStatus(ok ? "success" : "error")
+    setTimeout(() => {
+      setStatus("idle")
+      if (ok) setCustomName("")
+    }, 1300)
   }
 
   return (
@@ -83,9 +91,16 @@ function AddExerciseControl({
           onChange={(e) => setCustomName(e.target.value)}
           className="h-11 text-base sm:h-9 sm:text-sm"
         />
-        <Button type="submit" disabled={!customName.trim()} className="h-11 sm:h-9">
-          <Plus /> Add
-        </Button>
+        <MorphButton
+          type="submit"
+          status={status}
+          onClick={() => {}}
+          disabled={!customName.trim()}
+          idleLabel="Add"
+          idleIcon={Plus}
+          loadingLabel="Adding…"
+          successLabel="Added"
+        />
       </form>
     </div>
   )
@@ -102,14 +117,15 @@ export function SessionActive() {
     loading,
     error,
     addExercise,
-    removeExercise,
+    deleteExercise,
+    dropExercise,
     addSet,
     updateSet,
-    removeSet,
+    deleteSet,
+    dropSet,
     endSession,
   } = useActiveSession(id)
   const [confirmEndOpen, setConfirmEndOpen] = React.useState(false)
-  const [ending, setEnding] = React.useState(false)
 
   React.useEffect(() => {
     const root = document.documentElement
@@ -126,14 +142,8 @@ export function SessionActive() {
     "--accent-tint": `${accent}24`,
   } as React.CSSProperties
 
-  async function handleEnd() {
-    setEnding(true)
-    const ok = await endSession()
-    setEnding(false)
-    if (ok && id) {
-      setConfirmEndOpen(false)
-      navigate(`/dashboard/workouts/history/${id}`)
-    }
+  async function handleEnd(): Promise<boolean> {
+    return endSession()
   }
 
   const totalSets = session?.exercises.reduce((sum, e) => sum + e.sets.length, 0) ?? 0
@@ -232,8 +242,10 @@ export function SessionActive() {
                   editable
                   onAddSet={addSet}
                   onUpdateSet={updateSet}
-                  onRemoveSet={removeSet}
-                  onRemoveExercise={removeExercise}
+                  onDeleteSet={deleteSet}
+                  onDropSet={dropSet}
+                  onDeleteExercise={deleteExercise}
+                  onDropExercise={dropExercise}
                 />
               )}
 
@@ -248,10 +260,19 @@ export function SessionActive() {
         onOpenChange={setConfirmEndOpen}
         title="End this session?"
         message="This marks the session complete and takes you to the summary. You can't resume it afterward."
-        confirmLabel="End session"
-        loadingLabel="Ending…"
-        loading={ending}
-        onConfirm={handleEnd}
+        onConfirm={() => {}}
+        confirmSlot={
+          <MorphButton
+            idleLabel="End session"
+            loadingLabel="Finishing…"
+            successLabel="Saved"
+            onAction={handleEnd}
+            onSuccess={() => {
+              setConfirmEndOpen(false)
+              if (id) navigate(`/dashboard/workouts/history/${id}`)
+            }}
+          />
+        }
       />
     </div>
   )

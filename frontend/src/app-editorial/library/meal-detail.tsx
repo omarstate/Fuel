@@ -18,11 +18,11 @@ import {
 import { supabase } from "@/lib/supabase"
 import { useAuth } from "@/lib/auth"
 import { getMealDetail, deleteCatalogMeal, type CatalogMealDetail } from "@/lib/api"
-import { GOALS } from "@/app-editorial/macro-summary"
 import { StatCard } from "@/app-editorial/stat-card"
-import { useMe, canEditMeal } from "@/app-editorial/use-me"
+import { useMe, useTargets, canEditMeal } from "@/app-editorial/use-me"
 import { AddCatalogMealDialog } from "@/app-editorial/library/add-catalog-meal-dialog"
 import { ConfirmDialog } from "@/app-editorial/library/confirm-dialog"
+import { MorphButton } from "@/components/ui/morph-button"
 
 const fade = (delay = 0) => ({
   initial: { opacity: 0, y: 12 },
@@ -154,12 +154,11 @@ export function MealDetail() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const me = useMe()
+  const targets = useTargets()
   const [meal, setMeal] = React.useState<CatalogMealDetail | null>(null)
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
-  const [adding, setAdding] = React.useState(false)
   const [confirmOpen, setConfirmOpen] = React.useState(false)
-  const [deleting, setDeleting] = React.useState(false)
 
   const load = React.useCallback(() => {
     if (!id) return
@@ -177,61 +176,53 @@ export function MealDetail() {
     load()
   }, [load])
 
-  async function handleAdd() {
-    if (!meal || adding) return
+  async function handleAdd(): Promise<boolean> {
+    if (!meal) return false
     if (!user) {
       toast.error("Sign in to log meals.")
-      return
+      return false
     }
-    setAdding(true)
-    try {
-      const { error: insertError } = await supabase.from("meals").insert({
-        id: crypto.randomUUID(),
-        user_id: user.id,
-        name: meal.name,
-        meal_type: "lunch",
-        serving_size: meal.servingSize ?? null,
-        calories: meal.calories,
-        protein: meal.protein,
-        carbs: meal.carbs,
-        fat: meal.fat,
-        logged_at: new Date().toISOString(),
-        catalog_meal_id: meal.id,
-      })
-      if (insertError) {
-        toast.error(`Couldn't add ${meal.name} to today's log.`)
-        return
-      }
-      toast.success(`${meal.name} added to today's log`)
-      setMeal((prev) =>
-        prev
-          ? {
-              ...prev,
-              stats: {
-                ...prev.stats,
-                loggedToday: prev.stats.loggedToday + 1,
-                loggedTotal: prev.stats.loggedTotal + 1,
-                lastLoggedAt: new Date().toISOString(),
-              },
-            }
-          : prev
-      )
-    } finally {
-      setAdding(false)
+    const { error: insertError } = await supabase.from("meals").insert({
+      id: crypto.randomUUID(),
+      user_id: user.id,
+      name: meal.name,
+      meal_type: "lunch",
+      serving_size: meal.servingSize ?? null,
+      calories: meal.calories,
+      protein: meal.protein,
+      carbs: meal.carbs,
+      fat: meal.fat,
+      logged_at: new Date().toISOString(),
+      catalog_meal_id: meal.id,
+    })
+    if (insertError) {
+      toast.error(`Couldn't add ${meal.name} to today's log.`)
+      return false
     }
+    setMeal((prev) =>
+      prev
+        ? {
+            ...prev,
+            stats: {
+              ...prev.stats,
+              loggedToday: prev.stats.loggedToday + 1,
+              loggedTotal: prev.stats.loggedTotal + 1,
+              lastLoggedAt: new Date().toISOString(),
+            },
+          }
+        : prev
+    )
+    return true
   }
 
-  async function handleDelete() {
-    if (!meal) return
-    setDeleting(true)
+  async function handleDelete(): Promise<boolean> {
+    if (!meal) return false
     try {
       await deleteCatalogMeal(meal.id)
-      toast.success(`${meal.name} deleted`)
-      navigate("/dashboard/library")
+      return true
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Couldn't delete that meal.")
-    } finally {
-      setDeleting(false)
+      return false
     }
   }
 
@@ -330,8 +321,17 @@ export function MealDetail() {
         onOpenChange={setConfirmOpen}
         title="Delete meal"
         message={`Delete "${meal.name}" from the catalog? This can't be undone.`}
-        loading={deleting}
-        onConfirm={handleDelete}
+        onConfirm={() => {}}
+        confirmSlot={
+          <MorphButton
+            intent="destructive"
+            idleLabel="Delete"
+            loadingLabel="Deleting…"
+            successLabel="Deleted"
+            onAction={handleDelete}
+            onSuccess={() => navigate("/dashboard/library")}
+          />
+        }
       />
 
       {/* Hero: calories + serving vs. calorie-split bar */}
@@ -401,28 +401,28 @@ export function MealDetail() {
             label="Calories"
             value={meal.calories}
             unit="kcal"
-            pct={Math.round((meal.calories / GOALS.calories) * 100)}
+            pct={Math.round((meal.calories / targets.calories) * 100)}
           />
           <NutritionFact
             label="Protein"
             value={meal.protein}
             unit="g"
             color="#ff6b35"
-            pct={Math.round((meal.protein / GOALS.protein) * 100)}
+            pct={Math.round((meal.protein / targets.protein) * 100)}
           />
           <NutritionFact
             label="Carbs"
             value={meal.carbs}
             unit="g"
             color="#d9a441"
-            pct={Math.round((meal.carbs / GOALS.carbs) * 100)}
+            pct={Math.round((meal.carbs / targets.carbs) * 100)}
           />
           <NutritionFact
             label="Fat"
             value={meal.fat}
             unit="g"
             color="#6f9e4a"
-            pct={Math.round((meal.fat / GOALS.fat) * 100)}
+            pct={Math.round((meal.fat / targets.fat) * 100)}
           />
         </div>
       </motion.div>
@@ -471,15 +471,14 @@ export function MealDetail() {
 
       {/* CTA */}
       <motion.div {...fade(0.25)} className="flex justify-end pb-4">
-        <button
-          type="button"
-          onClick={handleAdd}
-          disabled={adding}
-          className="inline-flex items-center gap-2 rounded-lg bg-[#14120f] px-5 py-2.5 text-sm font-medium text-[#f7f3ea] transition-colors hover:bg-[#2a251d] disabled:opacity-60"
-        >
-          <Plus className="size-4" />
-          {adding ? "Adding…" : "Add to today"}
-        </button>
+        <MorphButton
+          idleIcon={Plus}
+          idleLabel="Log to today"
+          loadingLabel="Adding…"
+          successLabel="Logged"
+          onAction={handleAdd}
+          className="px-5 py-2.5"
+        />
       </motion.div>
     </div>
   )

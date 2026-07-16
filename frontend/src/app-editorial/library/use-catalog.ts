@@ -33,19 +33,18 @@ function catalogMealToLogRow(meal: CatalogMeal, userId: string) {
 export function useAddCatalogMealToLog() {
   const { user } = useAuth()
   return React.useCallback(
-    async (meal: CatalogMeal) => {
+    async (meal: CatalogMeal): Promise<boolean> => {
       if (!user) {
         toast.error("Sign in to log meals.")
-        return
+        return false
       }
       const { error: insertError } = await supabase
         .from("meals")
         .insert(catalogMealToLogRow(meal, user.id))
       if (insertError) {
         toast.error(`Couldn't add ${meal.name} to today's log.`)
-      } else {
-        toast.success(`${meal.name} added to today's log`)
       }
+      return !insertError
     },
     [user]
   )

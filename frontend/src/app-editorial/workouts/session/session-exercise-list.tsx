@@ -1,7 +1,8 @@
 import * as React from "react"
-import { motion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import { Trash2, Plus } from "lucide-react"
 import { Input } from "@/components/ui/input"
+import { MorphButton } from "@/components/ui/morph-button"
 import type { SessionExerciseWithSets, SessionSet } from "@/app-editorial/workouts/session/types"
 
 function SetRow({
@@ -9,13 +10,15 @@ function SetRow({
   index,
   editable,
   onUpdate,
-  onRemove,
+  onDelete,
+  onDropped,
 }: {
   set: SessionSet
   index: number
   editable: boolean
   onUpdate?: (patch: Partial<{ weight: number | null; reps: number | null; note: string | null }>) => void
-  onRemove?: () => void
+  onDelete?: () => Promise<boolean>
+  onDropped?: () => void
 }) {
   const [weight, setWeight] = React.useState(set.weight?.toString() ?? "")
   const [reps, setReps] = React.useState(set.reps?.toString() ?? "")
@@ -80,33 +83,48 @@ function SetRow({
         }}
         className="hidden h-11 px-2 text-base sm:block sm:h-9 sm:text-sm"
       />
-      <button
-        type="button"
-        aria-label={`Remove set ${index + 1}`}
-        onClick={onRemove}
-        className="grid size-11 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-destructive sm:size-9"
-      >
-        <Trash2 className="size-4 sm:size-3.5" />
-      </button>
+      <MorphButton
+        variant="inline"
+        intent="destructive"
+        idleIcon={Trash2}
+        idleLabel={`Remove set ${index + 1}`}
+        successLabel="Removed"
+        onAction={onDelete}
+        onSuccess={onDropped}
+        className="size-11 sm:size-9"
+      />
     </div>
   )
 }
 
-function AddSetForm({ onAdd }: { onAdd: (input: { weight: number | null; reps: number | null; note: string | null }) => void }) {
+function AddSetForm({
+  onAdd,
+}: {
+  onAdd: (input: { weight: number | null; reps: number | null; note: string | null }) => Promise<boolean>
+}) {
   const [weight, setWeight] = React.useState("")
   const [reps, setReps] = React.useState("")
   const [note, setNote] = React.useState("")
+  const [status, setStatus] = React.useState<"idle" | "loading" | "success" | "error">("idle")
 
-  function submit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent) {
     e.preventDefault()
-    onAdd({
+    if (status !== "idle") return
+    setStatus("loading")
+    const ok = await onAdd({
       weight: weight.trim() === "" ? null : Number(weight),
       reps: reps.trim() === "" ? null : Number(reps),
       note: note.trim() || null,
     })
-    setWeight("")
-    setReps("")
-    setNote("")
+    setStatus(ok ? "success" : "error")
+    setTimeout(() => {
+      setStatus("idle")
+      if (ok) {
+        setWeight("")
+        setReps("")
+        setNote("")
+      }
+    }, 900)
   }
 
   return (
@@ -140,12 +158,17 @@ function AddSetForm({ onAdd }: { onAdd: (input: { weight: number | null; reps: n
         onChange={(e) => setNote(e.target.value)}
         className="hidden h-11 px-2 text-base sm:block sm:h-9 sm:text-sm"
       />
-      <button
+      <MorphButton
         type="submit"
-        className="inline-flex h-11 shrink-0 items-center gap-1 rounded-md bg-[var(--accent-tint)] px-3 text-sm font-medium text-[var(--accent-ink)] transition-colors hover:brightness-95 sm:h-9 sm:px-2.5 sm:text-xs"
-      >
-        <Plus className="size-4 sm:size-3.5" /> Add
-      </button>
+        status={status}
+        onClick={() => {}}
+        idleIcon={Plus}
+        idleLabel="Add set"
+        loadingLabel="Logging…"
+        successLabel="Logged"
+        resetDelay={900}
+        className="h-11 sm:h-9"
+      />
     </form>
   )
 }
@@ -158,85 +181,107 @@ export function SessionExerciseList({
   editable,
   onAddSet,
   onUpdateSet,
-  onRemoveSet,
-  onRemoveExercise,
+  onDeleteSet,
+  onDropSet,
+  onDeleteExercise,
+  onDropExercise,
 }: {
   exercises: SessionExerciseWithSets[]
   editable: boolean
   onAddSet?: (
     exerciseId: string,
     input: { weight: number | null; reps: number | null; note: string | null }
-  ) => void
+  ) => Promise<boolean>
   onUpdateSet?: (
     setId: string,
     patch: Partial<{ weight: number | null; reps: number | null; note: string | null }>
   ) => void
-  onRemoveSet?: (setId: string) => void
-  onRemoveExercise?: (exerciseId: string) => void
+  /** DB delete only — returns success so the row can morph before it's dropped. */
+  onDeleteSet?: (setId: string) => Promise<boolean>
+  /** Drops the set from local state, called after the success beat. */
+  onDropSet?: (setId: string) => void
+  onDeleteExercise?: (exerciseId: string) => Promise<boolean>
+  onDropExercise?: (exerciseId: string) => void
 }) {
   if (exercises.length === 0) return null
 
   return (
     <div className="flex flex-col gap-4">
-      {exercises.map((exercise, i) => (
-        <motion.div
-          key={exercise.id}
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.25, delay: Math.min(i, 8) * 0.03 }}
-          className="rounded-xl border border-border bg-card p-5"
-        >
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <h3 className="font-heading text-lg font-semibold tracking-tight text-foreground">
-                {exercise.name}
-              </h3>
-              {exercise.workoutId === null && (
-                <span className="rounded-full border border-border px-2 py-0.5 font-mono text-[0.6rem] uppercase tracking-wide text-muted-foreground">
-                  Custom
-                </span>
+      <AnimatePresence initial={false}>
+        {exercises.map((exercise, i) => (
+          <motion.div
+            key={exercise.id}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, height: 0, marginTop: 0 }}
+            transition={{ duration: 0.25, delay: Math.min(i, 8) * 0.03 }}
+            className="rounded-xl border border-border bg-card p-5"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <h3 className="font-heading text-lg font-semibold tracking-tight text-foreground">
+                  {exercise.name}
+                </h3>
+                {exercise.workoutId === null && (
+                  <span className="rounded-full border border-border px-2 py-0.5 font-mono text-[0.6rem] uppercase tracking-wide text-muted-foreground">
+                    Custom
+                  </span>
+                )}
+              </div>
+              {editable && (
+                <MorphButton
+                  variant="inline"
+                  intent="destructive"
+                  idleIcon={Trash2}
+                  idleLabel={`Remove ${exercise.name}`}
+                  successLabel="Removed"
+                  onAction={() => onDeleteExercise?.(exercise.id) ?? Promise.resolve(false)}
+                  onSuccess={() => onDropExercise?.(exercise.id)}
+                />
               )}
             </div>
-            {editable && (
-              <button
-                type="button"
-                aria-label={`Remove ${exercise.name}`}
-                onClick={() => onRemoveExercise?.(exercise.id)}
-                className="grid size-9 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-destructive sm:size-7"
-              >
-                <Trash2 className="size-4 sm:size-3.5" />
-              </button>
-            )}
-          </div>
 
-          <div className="mt-3">
-            {exercise.sets.length === 0 ? (
-              <p className="py-1 text-xs text-muted-foreground">
-                {editable ? "No sets yet — log the first one below." : "No sets logged."}
-              </p>
-            ) : (
-              <div className="flex flex-col divide-y divide-border/60">
-                {exercise.sets.map((set, i) => (
-                  <SetRow
-                    key={set.id}
-                    set={set}
-                    index={i}
-                    editable={editable}
-                    onUpdate={(patch) => onUpdateSet?.(set.id, patch)}
-                    onRemove={() => onRemoveSet?.(set.id)}
+            <div className="mt-3">
+              {exercise.sets.length === 0 ? (
+                <p className="py-1 text-xs text-muted-foreground">
+                  {editable ? "No sets yet — log the first one below." : "No sets logged."}
+                </p>
+              ) : (
+                <div className="flex flex-col divide-y divide-border/60">
+                  <AnimatePresence initial={false}>
+                    {exercise.sets.map((set, i) => (
+                      <motion.div
+                        key={set.id}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <SetRow
+                          set={set}
+                          index={i}
+                          editable={editable}
+                          onUpdate={(patch) => onUpdateSet?.(set.id, patch)}
+                          onDelete={() => onDeleteSet?.(set.id) ?? Promise.resolve(false)}
+                          onDropped={() => onDropSet?.(set.id)}
+                        />
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                </div>
+              )}
+
+              {editable && (
+                <div className="mt-2">
+                  <AddSetForm
+                    onAdd={(input) => onAddSet?.(exercise.id, input) ?? Promise.resolve(false)}
                   />
-                ))}
-              </div>
-            )}
-
-            {editable && (
-              <div className="mt-2">
-                <AddSetForm onAdd={(input) => onAddSet?.(exercise.id, input)} />
-              </div>
-            )}
-          </div>
-        </motion.div>
-      ))}
+                </div>
+              )}
+            </div>
+          </motion.div>
+        ))}
+      </AnimatePresence>
     </div>
   )
 }

@@ -1,5 +1,4 @@
 import * as React from "react"
-import { toast } from "sonner"
 import {
   Dialog,
   DialogContent,
@@ -20,6 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
+import { MorphButton, type MorphStatus } from "@/components/ui/morph-button"
 import { mealTypeLabel, type Meal, type MealType } from "@/app/nutrition/types"
 
 const emptyForm = {
@@ -36,21 +36,24 @@ export function AddMealDialog({
   onAdd,
   trigger,
 }: {
-  onAdd: (meal: Meal) => void
+  onAdd: (meal: Meal) => Promise<boolean>
   trigger: React.ReactNode
 }) {
   const [open, setOpen] = React.useState(false)
   const [form, setForm] = React.useState(emptyForm)
+  const [status, setStatus] = React.useState<MorphStatus>("idle")
 
   function update<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
     setForm((f) => ({ ...f, [key]: value }))
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (status !== "idle") return
     if (!form.name.trim() || !form.calories) return
 
-    onAdd({
+    setStatus("loading")
+    const ok = await onAdd({
       id: crypto.randomUUID(),
       name: form.name.trim(),
       mealType: form.mealType,
@@ -61,14 +64,26 @@ export function AddMealDialog({
       fat: Number(form.fat) || 0,
       loggedAt: new Date(),
     })
+    setStatus(ok ? "success" : "error")
 
-    toast.success(`${form.name.trim()} added to today's log`)
-    setForm(emptyForm)
-    setOpen(false)
+    setTimeout(() => {
+      setStatus("idle")
+      if (ok) {
+        setForm(emptyForm)
+        setOpen(false)
+      }
+    }, 1300)
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (status !== "idle") return
+        setOpen(next)
+        if (!next) setForm(emptyForm)
+      }}
+    >
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <form onSubmit={handleSubmit}>
@@ -185,10 +200,18 @@ export function AddMealDialog({
               type="button"
               variant="outline"
               onClick={() => setOpen(false)}
+              disabled={status !== "idle"}
             >
               Cancel
             </Button>
-            <Button type="submit">Add meal</Button>
+            <MorphButton
+              type="submit"
+              status={status}
+              onClick={() => {}}
+              idleLabel="Add meal"
+              loadingLabel="Adding…"
+              successLabel="Added"
+            />
           </DialogFooter>
         </form>
       </DialogContent>
