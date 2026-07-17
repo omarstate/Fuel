@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from "react"
+import { useRef, useState } from "react"
 import { Link } from "react-router-dom"
-import { AnimatePresence, motion } from "framer-motion"
+import { motion } from "framer-motion"
 import gsap from "gsap"
 import { ScrollTrigger } from "gsap/ScrollTrigger"
 import { useGSAP } from "@gsap/react"
@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { EtheralShadow } from "@/components/ui/etheral-shadow"
+import { FuelLiquidEther } from "@/components/site/liquid-ether"
+import { RotatingText } from "@/components/site/rotating-text"
 import { type Mode } from "@/components/site/mode-context"
 import { editorialAccent } from "@/app-editorial/theme"
 
@@ -319,16 +320,9 @@ const faqs = [
 
 export function LandingEditorial() {
   const root = useRef<HTMLDivElement>(null)
+  /* heroMode only tracks which word is showing, to drive the accent color —
+     RotatingText below owns the actual rotation timing/animation. */
   const [heroMode, setHeroMode] = useState<Mode>("nutrition")
-
-  /* Auto-cycle the headline word (meal ↔ set) every few seconds. */
-  useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
-    const id = window.setInterval(() => {
-      setHeroMode((m) => (m === "nutrition" ? "workouts" : "nutrition"))
-    }, 2600)
-    return () => window.clearInterval(id)
-  }, [])
 
   useGSAP(
     () => {
@@ -480,12 +474,7 @@ export function LandingEditorial() {
       {/* ---------------- Hero ---------------- */}
       <section className="hero-section relative overflow-hidden">
         <div className="pointer-events-none absolute inset-0">
-          <EtheralShadow
-            color="rgba(178, 168, 148, 1)"
-            animation={{ scale: 100, speed: 90 }}
-            noise={{ opacity: 0.42, scale: 1.2 }}
-            sizing="fill"
-          />
+          <FuelLiquidEther />
         </div>
         {/* legibility scrim — clean reading base on the left, fades before the figure */}
         <div
@@ -518,18 +507,25 @@ export function LandingEditorial() {
               </span>
               <span className="hero-line -my-[0.12em] block overflow-hidden py-[0.12em]">
                 <span className="relative block">
-                  <AnimatePresence mode="wait">
-                    <motion.span
-                      key={heroMode}
-                      initial={{ opacity: 0, y: 14 }}
-                      animate={{ opacity: 1, y: 0, color: editorialAccent[heroMode] }}
-                      exit={{ opacity: 0, y: -14 }}
-                      transition={{ duration: 0.28, ease: "easeOut" }}
-                      className="inline-block"
-                    >
-                      {heroMode === "nutrition" ? "meal" : "set"}
-                    </motion.span>
-                  </AnimatePresence>
+                  <motion.span
+                    animate={{ color: editorialAccent[heroMode] }}
+                    transition={{ duration: 0.4, ease: "easeOut" }}
+                    className="inline-block"
+                  >
+                    <RotatingText
+                      texts={["meal", "set"]}
+                      rotationInterval={2600}
+                      // popLayout lets the exiting word animate out while the
+                      // next one animates in at the same time — "wait" (the
+                      // component default) fully finishes the exit before the
+                      // enter even starts, which reads as a hard cut.
+                      animatePresenceMode="popLayout"
+                      staggerFrom="first"
+                      staggerDuration={0.03}
+                      transition={{ type: "spring", damping: 22, stiffness: 260 }}
+                      onNext={(index) => setHeroMode(index === 0 ? "nutrition" : "workouts")}
+                    />
+                  </motion.span>
                   .
                 </span>
               </span>

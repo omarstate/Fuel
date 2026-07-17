@@ -9,6 +9,8 @@ import {
   createMeal,
   updateMeal,
   deleteMeal,
+  estimateMeals,
+  createAiCatalogMeals,
 } from "../controllers/meals.controller.js"
 
 export const mealsRouter = Router()
@@ -19,6 +21,8 @@ mealsRouter.get("/meals/grouped", asyncHandler(listMealsGrouped))
 mealsRouter.get("/meals/mine", requireAuth, asyncHandler(listMyMeals))
 mealsRouter.get("/meals", asyncHandler(listMeals))
 mealsRouter.get("/meals/:id", asyncHandler(getMealById))
+mealsRouter.post("/meals/estimate", requireAuth, asyncHandler(estimateMeals))
+mealsRouter.post("/meals/ai-catalog", requireAuth, asyncHandler(createAiCatalogMeals))
 mealsRouter.post("/meals", requireAuth, asyncHandler(createMeal))
 mealsRouter.patch("/meals/:id", requireAuth, asyncHandler(updateMeal))
 mealsRouter.delete("/meals/:id", requireAuth, asyncHandler(deleteMeal))

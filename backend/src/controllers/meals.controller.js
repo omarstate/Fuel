@@ -1,6 +1,12 @@
 import { assertSupabaseConfigured } from "../utils/assert-supabase-configured.js"
-import { createMealSchema, updateMealSchema } from "../validators/meals.validator.js"
+import {
+  createMealSchema,
+  updateMealSchema,
+  estimateMealsSchema,
+  aiCatalogMealsSchema,
+} from "../validators/meals.validator.js"
 import * as mealsService from "../services/meals.service.js"
+import { estimateMeals as estimateMealsAi } from "../services/ai-nutrition.service.js"
 
 const toPositiveInt = (value) => {
   const parsed = Number.parseInt(value, 10)
@@ -57,4 +63,20 @@ export const deleteMeal = async (req, res) => {
   assertSupabaseConfigured()
   const data = await mealsService.deleteMeal(req.params.id, req.user)
   res.json({ data })
+}
+
+// AI nutrition estimation — no Supabase dependency, just Gemini. Returns one
+// estimate per item so the client can show a review step before logging.
+export const estimateMeals = async (req, res) => {
+  const { place, items } = estimateMealsSchema.parse(req.body)
+  const data = await estimateMealsAi({ place, items })
+  res.json({ data })
+}
+
+// Commit reviewed AI meals to the shared catalog under the "AI" category.
+export const createAiCatalogMeals = async (req, res) => {
+  assertSupabaseConfigured()
+  const { meals } = aiCatalogMealsSchema.parse(req.body)
+  const data = await mealsService.createAiCatalogMeals(meals, req.user.id)
+  res.status(201).json({ data })
 }

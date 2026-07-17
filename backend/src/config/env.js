@@ -13,10 +13,11 @@ const ADMIN_EMAILS = (process.env.ADMIN_EMAILS ?? "")
   .map((email) => email.trim().toLowerCase())
   .filter(Boolean)
 
-// Gemini (Google Generative Language) — powers AI meal lookup + coach insights.
-// The key is read here but NEVER logged or forwarded to the frontend; all
-// Gemini calls happen server-side.
+// AI meal estimation (Gemini). The key stays server-side so it never ships in
+// the frontend bundle. Model defaults to gemini-2.5-flash, which supports
+// Google Search grounding used for looking up real-world nutrition data.
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY ?? ""
+const GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-2.5-flash"
 
 export const env = {
   PORT: Number(process.env.PORT) || 4000,
@@ -26,7 +27,6 @@ export const env = {
   isSupabaseConfigured: Boolean(SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY),
   adminEmails: ADMIN_EMAILS,
   GEMINI_API_KEY,
-  GEMINI_MODEL: process.env.GEMINI_MODEL ?? "gemini-3.5-flash",
-  GEMINI_FALLBACK_MODEL: process.env.GEMINI_FALLBACK_MODEL ?? "gemini-2.5-flash",
+  GEMINI_MODEL,
   isGeminiConfigured: Boolean(GEMINI_API_KEY),
 }

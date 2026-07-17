@@ -6,6 +6,7 @@ import { Plus, Camera, Barcode, RotateCcw, Flame, Drumstick, Sparkles } from "lu
 import { useMode } from "@/components/site/mode-context"
 import { editorialAccent } from "@/app-editorial/theme"
 import { AddMealDialog } from "@/app/nutrition/add-meal-dialog"
+import { AiEstimateDialog } from "@/app-editorial/ai-estimate-dialog"
 import { TodayOverview } from "@/app-editorial/macro-summary"
 import { StatCard } from "@/app-editorial/stat-card"
 import { WeekChart } from "@/app-editorial/week-chart"
@@ -126,9 +127,13 @@ export function NutritionHome() {
             </Link>
           </div>
           <LogToolbar>
+            <AiEstimateDialog
+              onAdd={addMeal}
+              trigger={<LogAction icon={Sparkles} label="AI estimate" primary />}
+            />
             <AddMealDialog
               onAdd={addMeal}
-              trigger={<LogAction icon={Plus} label="Add meal" primary />}
+              trigger={<LogAction icon={Plus} label="Add meal" />}
             />
             <AiMealLookupDialog
               trigger={<LogAction icon={Sparkles} label="AI lookup" />}
@@ -173,17 +178,30 @@ export function NutritionHome() {
                   Add your first meal to fill in today's ring and macro targets.
                 </p>
               </div>
-              <AddMealDialog
-                onAdd={addMeal}
-                trigger={
-                  <button
-                    type="button"
-                    className="mt-1 inline-flex items-center gap-2 rounded-lg bg-[#14120f] px-4 py-2 text-sm font-medium text-[#f7f3ea] transition-colors hover:bg-[#2a251d]"
-                  >
-                    <Plus className="size-4" /> Add your first meal
-                  </button>
-                }
-              />
+              <div className="mt-1 flex flex-wrap items-center justify-center gap-2">
+                <AiEstimateDialog
+                  onAdd={addMeal}
+                  trigger={
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-2 rounded-lg bg-[#14120f] px-4 py-2 text-sm font-medium text-[#f7f3ea] transition-colors hover:bg-[#2a251d]"
+                    >
+                      <Sparkles className="size-4" /> Estimate with AI
+                    </button>
+                  }
+                />
+                <AddMealDialog
+                  onAdd={addMeal}
+                  trigger={
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+                    >
+                      <Plus className="size-4" /> Add manually
+                    </button>
+                  }
+                />
+              </div>
             </div>
           ) : (
             <>

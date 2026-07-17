@@ -241,6 +241,61 @@ export function getMyMeals(): Promise<CatalogMeal[]> {
   return request<CatalogMeal[]>("/meals/mine")
 }
 
+// --- AI meal estimation (Gemini, Egypt-first) ---
+
+export type EstimatedMeal = {
+  /** The raw item text the user typed for this estimate. */
+  input: string
+  /** Whether the AI produced a usable estimate (false → fill in by hand). */
+  ok: boolean
+  name: string
+  servingSize: string
+  calories: number
+  protein: number
+  carbs: number
+  fat: number
+  /** Which market the numbers came from. */
+  source: "egypt" | "regional" | "global" | null
+  confidence: "high" | "medium" | "low" | null
+  note: string
+}
+
+/**
+ * Ask the backend to estimate nutrition for a batch of meals. `items` is the
+ * user's comma-separated list already split into entries; `place` is where they
+ * ate (e.g. "McDonald's"). Returns one estimate per item, in order.
+ */
+export function estimateMeals(input: {
+  place?: string
+  items: string[]
+}): Promise<EstimatedMeal[]> {
+  return request<EstimatedMeal[]>("/meals/estimate", {
+    method: "POST",
+    body: JSON.stringify(input),
+  })
+}
+
+export type AiCatalogMealInput = {
+  name: string
+  description?: string
+  servingSize?: string
+  calories: number
+  protein: number
+  carbs: number
+  fat: number
+}
+
+/**
+ * Save reviewed AI meals into the shared catalog under the "AI" category. The
+ * backend dedupes by name, so re-saving the same item reuses the existing entry.
+ */
+export function saveAiMealsToCatalog(meals: AiCatalogMealInput[]): Promise<CatalogMeal[]> {
+  return request<CatalogMeal[]>("/meals/ai-catalog", {
+    method: "POST",
+    body: JSON.stringify({ meals }),
+  })
+}
+
 export function getWorkoutCategories(): Promise<WorkoutCategory[]> {
   return request<WorkoutCategory[]>("/workout-categories")
 }

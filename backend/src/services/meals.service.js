@@ -146,6 +146,65 @@ export const createMeal = async (dto, userId) => {
   return rowToCatalogMeal(data)
 }
 
+const AI_CATEGORY_SLUG = "ai"
+
+const getAiCategoryId = async () => {
+  const { data, error } = await supabase
+    .from("meal_categories")
+    .select("id")
+    .eq("slug", AI_CATEGORY_SLUG)
+    .maybeSingle()
+
+  if (error) throw ApiError.badRequest("Failed to load the AI category", error.message)
+  if (!data) {
+    throw ApiError.serviceUnavailable(
+      "The 'AI' meal category is missing. Run migration 0003_ai_category.sql in Supabase."
+    )
+  }
+  return data.id
+}
+
+/**
+ * Save AI-estimated meals into the shared catalog under the "AI" category.
+ * De-duplicates by name within that category (case-insensitive): if a meal with
+ * the same name already exists there, the existing row is reused instead of
+ * inserting a duplicate — so the shared "AI" section stays clean even when many
+ * users log the same item. Returns one catalog meal per input, in order.
+ */
+export const createAiCatalogMeals = async (meals, userId) => {
+  const categoryId = await getAiCategoryId()
+
+  const results = []
+  for (const meal of meals) {
+    // Reuse an existing AI-category meal with the same name if present.
+    const { data: existing, error: findError } = await supabase
+      .from("catalog_meals")
+      .select(SELECT_WITH_CATEGORY)
+      .eq("category_id", categoryId)
+      .ilike("name", meal.name)
+      .limit(1)
+      .maybeSingle()
+
+    if (findError) throw ApiError.badRequest("Failed to check the catalog", findError.message)
+
+    if (existing) {
+      results.push(rowToCatalogMeal(existing))
+      continue
+    }
+
+    const { data, error } = await supabase
+      .from("catalog_meals")
+      .insert({ ...dtoToRow({ ...meal, categoryId }), created_by: userId })
+      .select(SELECT_WITH_CATEGORY)
+      .single()
+
+    if (error) throw ApiError.badRequest("Failed to save AI meal to catalog", error.message)
+    results.push(rowToCatalogMeal(data))
+  }
+
+  return results
+}
+
 const loadMealOrThrow = async (id) => {
   const { data, error } = await supabase
     .from("catalog_meals")

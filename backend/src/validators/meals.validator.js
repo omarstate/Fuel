@@ -18,6 +18,50 @@ export const createMealSchema = z.object({
   fat: nonNegativeInt.default(0),
 })
 
+// AI estimation input: an optional place ("McDonald's") plus one or more meal
+// items. The frontend splits the user's comma-separated text into `items`, but
+// we also split defensively here so a single "burger, fries" string still
+// becomes two meals. Empty entries are dropped; at least one must survive.
+export const estimateMealsSchema = z
+  .object({
+    place: z.string().trim().max(120).optional(),
+    items: z
+      .array(z.string())
+      .or(z.string())
+      .transform((value) =>
+        (Array.isArray(value) ? value : [value])
+          .flatMap((entry) => entry.split(","))
+          .map((entry) => entry.trim())
+          .filter(Boolean)
+      )
+      .pipe(
+        z
+          .array(z.string().min(1).max(200))
+          .min(1, "Add at least one item you ate.")
+          .max(20, "That's a lot at once — log up to 20 items at a time.")
+      ),
+  })
+
+// Reviewed AI meals being committed to the shared catalog. Same macro rules as
+// a manual catalog meal, but no categoryId (the server forces the "AI"
+// category) and the note is carried in `description`.
+const aiCatalogMealSchema = z.object({
+  name: nameSchema,
+  description: descriptionSchema.optional(),
+  servingSize: servingSizeSchema.optional(),
+  calories: nonNegativeInt,
+  protein: nonNegativeInt.default(0),
+  carbs: nonNegativeInt.default(0),
+  fat: nonNegativeInt.default(0),
+})
+
+export const aiCatalogMealsSchema = z.object({
+  meals: z
+    .array(aiCatalogMealSchema)
+    .min(1, "Provide at least one meal.")
+    .max(20, "Save up to 20 meals at a time."),
+})
+
 // Partial version of createMealSchema for PATCH — same per-field rules, but
 // every field is optional (no defaults are applied, so an omitted field is
 // left untouched rather than reset to 0/null) and at least one must be
