@@ -2,9 +2,9 @@ import * as React from "react"
 import { motion } from "framer-motion"
 import { Plus, ChefHat, RotateCcw } from "lucide-react"
 import { getMyMeals, createCatalogMeal, type CatalogMeal, type CreateCatalogMealInput } from "@/lib/api"
-import { useAddCatalogMealToLog } from "@/app-editorial/library/use-catalog"
 import { MealCatalogCard } from "@/app-editorial/library/meal-catalog-card"
 import { AddCatalogMealDialog } from "@/app-editorial/library/add-catalog-meal-dialog"
+import { invalidateMealsCache } from "@/app-editorial/library/use-paged-meals"
 
 const fade = (delay = 0) => ({
   initial: { opacity: 0, y: 12 },
@@ -30,7 +30,6 @@ export function MyMeals() {
   const [meals, setMeals] = React.useState<CatalogMeal[]>([])
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
-  const addCatalogMealToLog = useAddCatalogMealToLog()
 
   const refresh = React.useCallback(async () => {
     setLoading(true)
@@ -52,11 +51,19 @@ export function MyMeals() {
   const createMeal = React.useCallback(
     async (input: CreateCatalogMealInput) => {
       const meal = await createCatalogMeal(input)
+      // These meals live in the shared catalog too — bust its paged cache.
+      invalidateMealsCache()
       await refresh()
       return meal
     },
     [refresh]
   )
+
+  // Edits/deletes from the cards mutate the shared catalog as well.
+  const onChanged = React.useCallback(() => {
+    invalidateMealsCache()
+    refresh()
+  }, [refresh])
 
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-6">
@@ -147,8 +154,7 @@ export function MyMeals() {
               <MealCatalogCard
                 key={meal.id}
                 meal={meal}
-                onAdd={addCatalogMealToLog}
-                onChanged={refresh}
+                onChanged={onChanged}
                 delay={Math.min(i, 6) * 0.03}
               />
             ))}

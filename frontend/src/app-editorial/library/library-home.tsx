@@ -1,12 +1,18 @@
 import * as React from "react"
 import { motion } from "framer-motion"
-import { Plus, Search, BookOpen, RotateCcw } from "lucide-react"
+import { Plus, Search, BookOpen, RotateCcw, Sparkles, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
-import { useCatalog } from "@/app-editorial/library/use-catalog"
+import { Button } from "@/components/ui/button"
+import {
+  usePagedMeals,
+  useCachedCategories,
+  invalidateMealsCache,
+} from "@/app-editorial/library/use-paged-meals"
 import { MealCatalogCard } from "@/app-editorial/library/meal-catalog-card"
 import { AddCatalogMealDialog } from "@/app-editorial/library/add-catalog-meal-dialog"
-import type { CatalogMeal } from "@/lib/api"
+import { AiMealLookupDialog } from "@/app-editorial/ai/ai-meal-lookup-dialog"
+import { createCatalogMeal, type CreateCatalogMealInput } from "@/lib/api"
 
 const fade = (delay = 0) => ({
   initial: { opacity: 0, y: 12 },
@@ -29,28 +35,26 @@ function LoadingGrid() {
 }
 
 export function LibraryHome() {
-  const { grouped, categories, loading, error, refresh, createMeal, addCatalogMealToLog } =
-    useCatalog()
   const [search, setSearch] = React.useState("")
   const [activeCategory, setActiveCategory] = React.useState<string | null>(null)
 
-  const allMeals = React.useMemo<CatalogMeal[]>(
-    () => grouped.flatMap((g) => g.meals),
-    [grouped]
-  )
+  const { categories } = useCachedCategories()
+  const { meals, count, loading, loadingMore, error, hasMore, loadMore, refresh } =
+    usePagedMeals({ category: activeCategory ?? undefined, search })
 
-  const filtering = search.trim().length > 0 || activeCategory !== null
+  // Create runs the catalog insert, then invalidates the shared cache so every
+  // filter re-fetches fresh, and refreshes this list.
+  const createMeal = React.useCallback(async (input: CreateCatalogMealInput) => {
+    const meal = await createCatalogMeal(input)
+    invalidateMealsCache()
+    refresh()
+    return meal
+  }, [refresh])
 
-  const filteredMeals = React.useMemo(() => {
-    const q = search.trim().toLowerCase()
-    return allMeals.filter((meal) => {
-      const matchesSearch = q ? meal.name.toLowerCase().includes(q) : true
-      const matchesCategory = activeCategory ? meal.category?.slug === activeCategory : true
-      return matchesSearch && matchesCategory
-    })
-  }, [allMeals, search, activeCategory])
-
-  const totalCount = allMeals.length
+  const onChanged = React.useCallback(() => {
+    invalidateMealsCache()
+    refresh()
+  }, [refresh])
 
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-6">
@@ -71,17 +75,26 @@ export function LibraryHome() {
             into today's log.
           </p>
         </div>
-        <AddCatalogMealDialog
-          onCreate={createMeal}
-          trigger={
-            <button
-              type="button"
-              className="inline-flex items-center gap-2 rounded-lg bg-[#14120f] px-4 py-2 text-sm font-medium text-[#f7f3ea] transition-colors hover:bg-[#2a251d]"
-            >
-              <Plus className="size-4" /> Add meal
-            </button>
-          }
-        />
+        <div className="flex items-center gap-2">
+          <AiMealLookupDialog
+            trigger={
+              <Button variant="outline" size="lg">
+                <Sparkles className="size-4" /> AI lookup
+              </Button>
+            }
+          />
+          <AddCatalogMealDialog
+            onCreate={createMeal}
+            trigger={
+              <button
+                type="button"
+                className="inline-flex items-center gap-2 rounded-lg bg-[#14120f] px-4 py-2 text-sm font-medium text-[#f7f3ea] transition-colors hover:bg-[#2a251d]"
+              >
+                <Plus className="size-4" /> Add meal
+              </button>
+            }
+          />
+        </div>
       </motion.header>
 
       {/* Controls */}
@@ -154,15 +167,15 @@ export function LibraryHome() {
           </div>
         ) : loading ? (
           <LoadingGrid />
-        ) : totalCount === 0 ? (
+        ) : meals.length === 0 ? (
           <div className="flex flex-col items-center gap-3 rounded-xl border border-border bg-card px-6 py-14 text-center">
             <span className="grid size-11 place-items-center rounded-xl bg-[var(--accent-tint)] text-[var(--accent-ink)]">
               <Plus className="size-5" />
             </span>
             <div>
-              <div className="font-medium text-foreground">No meals yet</div>
+              <div className="font-medium text-foreground">No meals match.</div>
               <p className="mt-1 max-w-xs text-sm text-muted-foreground">
-                Add the first one to start building the shared catalog.
+                Try a different search or category — or add one to the catalog.
               </p>
             </div>
             <AddCatalogMealDialog
@@ -172,56 +185,44 @@ export function LibraryHome() {
                   type="button"
                   className="mt-1 inline-flex items-center gap-2 rounded-lg bg-[#14120f] px-4 py-2 text-sm font-medium text-[#f7f3ea] transition-colors hover:bg-[#2a251d]"
                 >
-                  <Plus className="size-4" /> Add the first meal
+                  <Plus className="size-4" /> Add a meal
                 </button>
               }
             />
           </div>
-        ) : filtering ? (
-          filteredMeals.length === 0 ? (
-            <div className="rounded-xl border border-border bg-card px-6 py-14 text-center text-sm text-muted-foreground">
-              No meals match your search.
+        ) : (
+          <>
+            <div className="flex items-baseline gap-2 border-b border-border pb-2">
+              <h2 className="font-mono text-[0.7rem] uppercase tracking-[0.16em] text-muted-foreground">
+                Meals
+              </h2>
+              <span className="font-mono text-xs text-muted-foreground">{count}</span>
             </div>
-          ) : (
+
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {filteredMeals.map((meal, i) => (
+              {meals.map((meal, i) => (
                 <MealCatalogCard
                   key={meal.id}
                   meal={meal}
-                  onAdd={addCatalogMealToLog}
-                  onChanged={refresh}
+                  onChanged={onChanged}
                   delay={Math.min(i, 6) * 0.03}
                 />
               ))}
             </div>
-          )
-        ) : (
-          grouped.map((group) => (
-            <div key={group.category.id} className="flex flex-col gap-3">
-              <div className="flex items-baseline gap-2 border-b border-border pb-2">
-                <h2 className="font-mono text-[0.7rem] uppercase tracking-[0.16em] text-muted-foreground">
-                  {group.category.name}
-                </h2>
-                <span className="font-mono text-xs text-muted-foreground">
-                  {group.meals.length}
-                </span>
+
+            {hasMore && (
+              <div className="flex justify-center">
+                <Button
+                  variant="outline"
+                  onClick={() => loadMore()}
+                  disabled={loadingMore}
+                >
+                  {loadingMore && <Loader2 className="size-4 animate-spin" />}
+                  Show more ({meals.length} of {count})
+                </Button>
               </div>
-              {group.meals.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No meals in this category yet.</p>
-              ) : (
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {group.meals.map((meal, i) => (
-                    <MealCatalogCard
-                      key={meal.id}
-                      meal={meal}
-                      onAdd={addCatalogMealToLog}
-                      delay={Math.min(i, 6) * 0.03}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-          ))
+            )}
+          </>
         )}
       </motion.section>
     </div>

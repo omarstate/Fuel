@@ -19,6 +19,10 @@ export const rowToCatalogMeal = (row) => {
       : null,
     createdBy: row.created_by,
     createdAt: row.created_at,
+    // AI provenance (columns may not exist until 0008 runs — `?? null` handles it).
+    aiSource: row.ai_source ?? null,
+    sourceUrl: row.source_url ?? null,
+    macroRanges: row.macro_ranges ?? null,
   }
 }
 

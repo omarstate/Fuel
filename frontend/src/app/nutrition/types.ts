@@ -18,3 +18,14 @@ export const mealTypeLabel: Record<MealType, string> = {
   dinner: "Dinner",
   snack: "Snack",
 }
+
+/** Smart default section by local time of day. */
+export function suggestedMealType(date = new Date()): MealType {
+  const h = date.getHours()
+  if (h >= 4 && h < 11) return "breakfast"
+  if (h >= 11 && h < 16) return "lunch"
+  if (h >= 16 && h < 22) return "dinner"
+  return "snack"
+}
+
+export const MEAL_TYPE_ORDER: MealType[] = ["breakfast", "lunch", "dinner", "snack"]

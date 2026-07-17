@@ -29,6 +29,14 @@ export type CatalogMeal = {
   category?: { id: string; name: string; slug: string } | null
   createdAt: string
   createdBy: string | null
+  aiSource?: "official" | "estimate" | null
+  sourceUrl?: string | null
+  macroRanges?: {
+    calories: [number, number]
+    protein: [number, number]
+    carbs: [number, number]
+    fat: [number, number]
+  } | null
 }
 
 export type GroupedCatalog = { category: Category; meals: CatalogMeal[] }[]
@@ -65,7 +73,10 @@ export type Workout = {
 
 export type GroupedWorkouts = { category: WorkoutCategory; workouts: Workout[] }[]
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+/** Runs the fetch/auth/error handling and returns the WHOLE parsed body, so
+ * callers that need sibling fields (like a paginated `count`) can read them.
+ * `request` wraps this and returns only `.data` for the common case. */
+async function requestBody<T = unknown>(path: string, init?: RequestInit): Promise<T> {
   let res: Response
   try {
     const { data: sessionData } = await supabase.auth.getSession()
@@ -98,7 +109,12 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     throw new Error(message)
   }
 
-  return (body as ApiEnvelope<T>).data
+  return body as T
+}
+
+async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const body = await requestBody<ApiEnvelope<T>>(path, init)
+  return body.data
 }
 
 export function getCategories(): Promise<Category[]> {
@@ -115,6 +131,28 @@ export function getMeals(params?: { category?: string; search?: string }): Promi
   if (params?.search) query.set("search", params.search)
   const qs = query.toString()
   return request<CatalogMeal[]>(`/meals${qs ? `?${qs}` : ""}`)
+}
+
+export type PagedMeals = { meals: CatalogMeal[]; count: number }
+
+/** Paginated catalog fetch — keeps the `count` (exact total) the backend sends
+ * alongside `data`, so the caller can drive "Show more" / total-count UI. */
+export async function getMealsPaged(params: {
+  category?: string
+  search?: string
+  limit?: number
+  offset?: number
+}): Promise<PagedMeals> {
+  const query = new URLSearchParams()
+  if (params.category) query.set("category", params.category)
+  if (params.search) query.set("search", params.search)
+  if (params.limit != null) query.set("limit", String(params.limit))
+  if (params.offset != null) query.set("offset", String(params.offset))
+  const qs = query.toString()
+  const body = await requestBody<{ data: CatalogMeal[]; count?: number }>(
+    `/meals${qs ? `?${qs}` : ""}`
+  )
+  return { meals: body.data, count: body.count ?? body.data.length }
 }
 
 export function getMealDetail(id: string): Promise<CatalogMealDetail> {
@@ -232,4 +270,30 @@ export function createWorkout(input: {
     method: "POST",
     body: JSON.stringify(input),
   })
+}
+
+// --- AI features (Gemini-backed, all via the backend) ---
+
+export type AiLookupItem = { meal: CatalogMeal; created: boolean }
+
+export function aiLookupMeals(
+  query: string
+): Promise<{ items: AiLookupItem[]; usedAi: boolean }> {
+  return request<{ items: AiLookupItem[]; usedAi: boolean }>("/ai/meals/lookup", {
+    method: "POST",
+    body: JSON.stringify({ query }),
+  })
+}
+
+export type AiInsights = {
+  day: string
+  headline: string
+  insights: { title: string; body: string }[]
+  tips: string[]
+  facts?: { streak?: { current: number; best: number } }
+  cached?: boolean
+}
+
+export function getAiInsights(refresh?: boolean): Promise<AiInsights> {
+  return request<AiInsights>(`/ai/insights${refresh ? "?refresh=1" : ""}`)
 }

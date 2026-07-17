@@ -1,13 +1,16 @@
 import * as React from "react"
+import { Link } from "react-router-dom"
 import { AnimatePresence, motion } from "framer-motion"
 import { toast } from "sonner"
-import { Plus, Camera, Barcode, RotateCcw, Flame, Drumstick } from "lucide-react"
+import { Plus, Camera, Barcode, RotateCcw, Flame, Drumstick, Sparkles } from "lucide-react"
 import { useMode } from "@/components/site/mode-context"
 import { editorialAccent } from "@/app-editorial/theme"
 import { AddMealDialog } from "@/app/nutrition/add-meal-dialog"
 import { TodayOverview } from "@/app-editorial/macro-summary"
 import { StatCard } from "@/app-editorial/stat-card"
 import { WeekChart } from "@/app-editorial/week-chart"
+import { AiCoachCard } from "@/app-editorial/ai/ai-coach-card"
+import { AiMealLookupDialog } from "@/app-editorial/ai/ai-meal-lookup-dialog"
 import { LogToolbar, LogAction } from "@/app-editorial/quick-actions"
 import { MealRow } from "@/app-editorial/meal-row"
 import { useMeals } from "@/app-editorial/use-meals"
@@ -100,19 +103,35 @@ export function NutritionHome() {
         <WeekChart accent={accent} calories={totals.calories} goal={targets.calories} />
       </motion.section>
 
+      {/* AI coach */}
+      <motion.section {...fade(0.12)}>
+        <AiCoachCard />
+      </motion.section>
+
       {/* Log + meals */}
       <motion.section {...fade(0.15)} className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="font-heading text-lg font-semibold tracking-tight text-foreground">
-            Today's meals
-            <span className="ml-2 font-mono text-sm font-normal text-muted-foreground">
-              {meals.length}
-            </span>
-          </h2>
+          <div className="flex items-baseline gap-3">
+            <h2 className="font-heading text-lg font-semibold tracking-tight text-foreground">
+              Today's meals
+              <span className="ml-2 font-mono text-sm font-normal text-muted-foreground">
+                {meals.length}
+              </span>
+            </h2>
+            <Link
+              to="/dashboard/nutrition/today"
+              className="text-sm text-[var(--accent-ink)] hover:underline underline-offset-4"
+            >
+              Open today's log →
+            </Link>
+          </div>
           <LogToolbar>
             <AddMealDialog
               onAdd={addMeal}
               trigger={<LogAction icon={Plus} label="Add meal" primary />}
+            />
+            <AiMealLookupDialog
+              trigger={<LogAction icon={Sparkles} label="AI lookup" />}
             />
             <LogAction
               icon={Camera}

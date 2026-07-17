@@ -56,44 +56,55 @@ export function useMeals() {
   const [meals, setMeals] = React.useState<Meal[]>([])
   const [loading, setLoading] = React.useState(true)
 
+  // Guards the query result against a user change / unmount landing after the
+  // request was fired. Bumped on every effect run and on unmount.
+  const loadTokenRef = React.useRef(0)
+
+  /** Stable reload of today's log. Safe to call after out-of-band inserts
+   * (e.g. the library picker's direct supabase write) to resync the list. */
+  const reload = React.useCallback(() => {
+    const userId = user?.id
+    if (!userId) return
+    const token = loadTokenRef.current
+    setLoading(true)
+    const dayStart = startOfDay(new Date())
+    const dayEnd = addDays(dayStart, 1)
+
+    supabase
+      .from("meals")
+      .select("*")
+      .eq("user_id", userId)
+      .gte("logged_at", dayStart.toISOString())
+      .lt("logged_at", dayEnd.toISOString())
+      .order("logged_at", { ascending: false })
+      .then(({ data, error }) => {
+        if (loadTokenRef.current !== token) return
+        if (error) {
+          toast.error("Couldn't load your meals.")
+        } else {
+          setMeals((data as MealRow[]).map(rowToMeal))
+        }
+        setLoading(false)
+      })
+  }, [user?.id])
+
   React.useEffect(() => {
     if (!user) return
-    let active = true
     let midnightTimer: ReturnType<typeof setTimeout>
 
-    const load = () => {
-      if (!active) return
-      setLoading(true)
-      const dayStart = startOfDay(new Date())
-      const dayEnd = addDays(dayStart, 1)
-
-      supabase
-        .from("meals")
-        .select("*")
-        .eq("user_id", user.id)
-        .gte("logged_at", dayStart.toISOString())
-        .lt("logged_at", dayEnd.toISOString())
-        .order("logged_at", { ascending: false })
-        .then(({ data, error }) => {
-          if (!active) return
-          if (error) {
-            toast.error("Couldn't load your meals.")
-          } else {
-            setMeals((data as MealRow[]).map(rowToMeal))
-          }
-          setLoading(false)
-        })
-
-      midnightTimer = setTimeout(load, msUntilNextMidnight())
+    const tick = () => {
+      reload()
+      midnightTimer = setTimeout(tick, msUntilNextMidnight())
     }
 
-    load()
+    tick()
 
     return () => {
-      active = false
+      // Invalidate any in-flight query and stop the midnight timer.
+      loadTokenRef.current += 1
       clearTimeout(midnightTimer)
     }
-  }, [user?.id])
+  }, [user?.id, reload])
 
   const addMeal = React.useCallback(
     async (meal: Meal): Promise<boolean> => {
@@ -123,5 +134,5 @@ export function useMeals() {
     setMeals((prev) => prev.filter((m) => m.id !== id))
   }, [])
 
-  return { meals, loading, addMeal, deleteMeal, dropMeal }
+  return { meals, loading, addMeal, deleteMeal, dropMeal, reload }
 }

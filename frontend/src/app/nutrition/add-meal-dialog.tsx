@@ -20,7 +20,12 @@ import {
 } from "@/components/ui/select"
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { MorphButton, type MorphStatus } from "@/components/ui/morph-button"
-import { mealTypeLabel, type Meal, type MealType } from "@/app/nutrition/types"
+import {
+  mealTypeLabel,
+  suggestedMealType,
+  type Meal,
+  type MealType,
+} from "@/app/nutrition/types"
 
 const emptyForm = {
   name: "",
@@ -35,17 +40,46 @@ const emptyForm = {
 export function AddMealDialog({
   onAdd,
   trigger,
+  defaultMealType,
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
 }: {
   onAdd: (meal: Meal) => Promise<boolean>
-  trigger: React.ReactNode
+  /** Optional when the dialog is driven via the controlled `open` API below. */
+  trigger?: React.ReactNode
+  defaultMealType?: MealType
+  /** Controlled open API — when provided, overrides the internal open state. */
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
 }) {
-  const [open, setOpen] = React.useState(false)
+  const [internalOpen, setInternalOpen] = React.useState(false)
+  const isControlled = controlledOpen !== undefined
+  const open = isControlled ? controlledOpen : internalOpen
+  const setOpen = React.useCallback(
+    (next: boolean) => {
+      if (isControlled) controlledOnOpenChange?.(next)
+      else setInternalOpen(next)
+    },
+    [isControlled, controlledOnOpenChange]
+  )
   const [form, setForm] = React.useState(emptyForm)
   const [status, setStatus] = React.useState<MorphStatus>("idle")
 
   function update<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
     setForm((f) => ({ ...f, [key]: value }))
   }
+
+  // Prefill the section on open / reset on close. Runs for both the controlled
+  // and uncontrolled paths (Radix only fires onOpenChange on its own
+  // interactions, not when `open` is flipped externally).
+  React.useEffect(() => {
+    if (open) {
+      setForm((f) => ({ ...f, mealType: defaultMealType ?? suggestedMealType() }))
+    } else {
+      setForm(emptyForm)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, defaultMealType])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -81,10 +115,9 @@ export function AddMealDialog({
       onOpenChange={(next) => {
         if (status !== "idle") return
         setOpen(next)
-        if (!next) setForm(emptyForm)
       }}
     >
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
       <DialogContent className="sm:max-w-md">
         <form onSubmit={handleSubmit}>
           <DialogHeader>

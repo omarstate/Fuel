@@ -14,6 +14,7 @@ import {
   ChefHat,
   ClipboardList,
   History,
+  CalendarCheck,
   ChevronsUpDown,
   UserRound,
 } from "lucide-react"
@@ -46,6 +47,7 @@ import { cn } from "@/lib/utils"
 
 const nutritionItems = [
   { href: "/dashboard/nutrition", label: "Overview", icon: Home, soon: false },
+  { href: "/dashboard/nutrition/today", label: "Today", icon: CalendarCheck, soon: false },
   { href: "/dashboard/library", label: "Library", icon: BookOpen, soon: false },
   { href: "/dashboard/my-meals", label: "My Meals", icon: ChefHat, soon: false },
   { href: "/dashboard/nutrition/history", label: "History", icon: History, soon: false },

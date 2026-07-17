@@ -2,22 +2,21 @@ import * as React from "react"
 import { motion } from "framer-motion"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
-import { Plus, Pencil, Trash2 } from "lucide-react"
+import { Pencil, Trash2 } from "lucide-react"
 import { deleteCatalogMeal, type CatalogMeal } from "@/lib/api"
 import { useMe, canEditMeal } from "@/app-editorial/use-me"
 import { AddCatalogMealDialog } from "@/app-editorial/library/add-catalog-meal-dialog"
 import { ConfirmDialog } from "@/app-editorial/library/confirm-dialog"
+import { AddToLogButton } from "@/app-editorial/add-to-log-button"
 import { MorphButton } from "@/components/ui/morph-button"
 import { cn } from "@/lib/utils"
 
 export function MealCatalogCard({
   meal,
-  onAdd,
   onChanged,
   delay = 0,
 }: {
   meal: CatalogMeal
-  onAdd: (meal: CatalogMeal) => Promise<boolean>
   /** Called after a successful edit or delete so the caller can refresh its list. */
   onChanged?: () => void
   delay?: number
@@ -26,10 +25,6 @@ export function MealCatalogCard({
   const navigate = useNavigate()
   const me = useMe()
   const canEdit = canEditMeal(meal, me)
-
-  async function handleAdd(): Promise<boolean> {
-    return onAdd(meal)
-  }
 
   async function handleDelete(): Promise<boolean> {
     try {
@@ -121,6 +116,15 @@ export function MealCatalogCard({
                     {meal.category.name}
                   </span>
                 )}
+                {meal.aiSource === "estimate" ? (
+                  <span className="rounded-md bg-amber-500/15 px-2 py-0.5 font-mono text-[0.6rem] uppercase tracking-wide text-amber-700 dark:text-amber-400">
+                    AI estimate
+                  </span>
+                ) : meal.aiSource === "official" ? (
+                  <span className="rounded-md bg-muted px-2 py-0.5 font-mono text-[0.6rem] uppercase tracking-wide text-muted-foreground">
+                    AI
+                  </span>
+                ) : null}
                 {meal.servingSize && (
                   <span className="font-mono text-[0.7rem] uppercase tracking-[0.12em] text-muted-foreground">
                     {meal.servingSize}
@@ -146,6 +150,7 @@ export function MealCatalogCard({
             )}
           >
             <div className="font-mono text-xl font-semibold leading-none text-foreground">
+              {meal.aiSource === "estimate" ? "~" : ""}
               {meal.calories}
             </div>
             <div className="mt-1 font-mono text-[0.6rem] uppercase tracking-widest text-muted-foreground">
@@ -173,14 +178,7 @@ export function MealCatalogCard({
           onClick={(e) => e.stopPropagation()}
           onKeyDown={(e) => e.stopPropagation()}
         >
-          <MorphButton
-            idleIcon={Plus}
-            idleLabel="Add to today"
-            loadingLabel="Adding…"
-            successLabel="Logged"
-            onAction={handleAdd}
-            className="sm:text-xs"
-          />
+          <AddToLogButton meal={meal} className="sm:text-xs" />
         </div>
       </div>
     </motion.div>

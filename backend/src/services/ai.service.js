@@ -1,0 +1,289 @@
+import { supabase } from "../config/supabase.js"
+import { rowToCatalogMeal } from "../models/catalog-meal.model.js"
+import { generateJson } from "./gemini.client.js"
+import { getProfile } from "./profile.service.js"
+import { computeStreak } from "../utils/compute-streak.js"
+import {
+  aiMealArraySchema,
+  normalizeAiMeal,
+  insightsSchema,
+} from "../validators/ai.validator.js"
+import { ApiError } from "../utils/api-error.js"
+
+const SELECT_WITH_CATEGORY = "*, meal_categories(id, name, slug)"
+
+// Frontend DEFAULT_TARGETS mirror — used when the user has no profile yet.
+const DEFAULT_TARGET_CALORIES = 2200
+const DEFAULT_TARGET_PROTEIN = 165
+
+const utcDayKey = (value = new Date()) => {
+  const d = new Date(value)
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(
+    d.getUTCDate()
+  ).padStart(2, "0")}`
+}
+
+// -------------------------------------------------------------------------
+// AI meal lookup
+// -------------------------------------------------------------------------
+
+const LOOKUP_PROMPT = (query) => `You are a nutrition data assistant. The user wants to log the following food (may contain MULTIPLE items):
+"${query}"
+Use Google Search to find nutrition facts for EACH distinct item. Prefer the brand's OFFICIAL website or official menu/nutrition PDF; use reputable databases only when no official source exists.
+Reply with ONLY a JSON array (no prose, no markdown), each element:
+{"name": string (canonical, include brand, e.g. "McDonald's Big Mac"),
+ "brand": string|null, "servingSize": string|null (e.g. "1 burger (219g)"),
+ "calories": number, "protein": number, "carbs": number, "fat": number,   // grams, best point estimate
+ "confidence": "official" | "estimate",   // "official" ONLY if values come from the brand's own site
+ "ranges": {"calories":[min,max],"protein":[min,max],"carbs":[min,max],"fat":[min,max]} | null,
+    // REQUIRED when confidence is "estimate", null when "official"
+ "sourceUrl": string|null, "sourceTitle": string|null}`
+
+// Look up the ai-discovered category once. Falls back to the first category if
+// the 0008 seed hasn't run yet; returns null only if there are no categories.
+const getAiCategoryId = async () => {
+  const { data: aiCat } = await supabase
+    .from("meal_categories")
+    .select("id")
+    .eq("slug", "ai-discovered")
+    .maybeSingle()
+
+  if (aiCat?.id) return aiCat.id
+
+  const { data: firstCat } = await supabase
+    .from("meal_categories")
+    .select("id")
+    .order("sort_order", { ascending: true })
+    .limit(1)
+    .maybeSingle()
+
+  return firstCat?.id ?? null
+}
+
+export const lookupMeals = async (userId, query) => {
+  // 1. Pre-check the catalog so we never duplicate an existing meal or spend a
+  //    Gemini call when we already have a match.
+  const { data: existing, error: existingError } = await supabase
+    .from("catalog_meals")
+    .select(SELECT_WITH_CATEGORY)
+    .ilike("name", `%${query}%`)
+    .limit(5)
+
+  if (existingError) throw ApiError.badRequest("Failed to search meals", existingError.message)
+
+  if (existing && existing.length > 0) {
+    return {
+      items: existing.map((row) => ({ meal: rowToCatalogMeal(row), created: false })),
+      usedAi: false,
+    }
+  }
+
+  // 2. Ask Gemini (grounded with Google Search).
+  const { data, sources } = await generateJson({
+    useSearch: true,
+    prompt: LOOKUP_PROMPT(query),
+  })
+
+  const parsed = aiMealArraySchema.parse(data)
+  const categoryId = await getAiCategoryId()
+  const fallbackSourceUri = sources[0]?.uri ?? null
+
+  const items = []
+  for (const raw of parsed) {
+    const item = normalizeAiMeal(raw)
+
+    // 3a. Per-item dedup by exact (case-insensitive) name. limit(1) rather than
+    // maybeSingle() — catalog names aren't unique, and maybeSingle throws on >1.
+    const { data: dups, error: dupError } = await supabase
+      .from("catalog_meals")
+      .select(SELECT_WITH_CATEGORY)
+      .ilike("name", item.name)
+      .limit(1)
+
+    if (dupError) throw ApiError.badRequest("Failed to check meal", dupError.message)
+
+    if (dups && dups.length > 0) {
+      items.push({ meal: rowToCatalogMeal(dups[0]), created: false })
+      continue
+    }
+
+    // 3b. Persist a new catalog meal.
+    const insertRow = {
+      name: item.name,
+      description: null,
+      category_id: categoryId,
+      serving_size: item.servingSize ?? null,
+      calories: item.calories,
+      protein: item.protein,
+      carbs: item.carbs,
+      fat: item.fat,
+      created_by: userId,
+      ai_source: item.confidence,
+      source_url: item.sourceUrl ?? fallbackSourceUri,
+      macro_ranges: item.confidence === "estimate" ? item.ranges : null,
+    }
+
+    const { data: inserted, error: insertError } = await supabase
+      .from("catalog_meals")
+      .insert(insertRow)
+      .select(SELECT_WITH_CATEGORY)
+      .single()
+
+    if (insertError) throw ApiError.badRequest("Failed to save meal", insertError.message)
+
+    items.push({ meal: rowToCatalogMeal(inserted), created: true })
+  }
+
+  return { items, usedAi: true }
+}
+
+// -------------------------------------------------------------------------
+// AI coach insights
+// -------------------------------------------------------------------------
+
+const daysAgoIso = (days) => new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString()
+
+const INSIGHTS_PROMPT = (factsJson) => `You are a friendly, concise fitness coach. Given the user's FACTS (JSON), write a short, encouraging daily summary. No medical claims, no shaming tone.
+FACTS:
+${factsJson}
+Reply with ONLY JSON (no prose, no markdown):
+{"headline": string (<= 90 chars, punchy, mention the streak if it's alive),
+ "insights": [{"title": string, "body": string (<= 220 chars)}]  (2-4 items covering: intake vs target, protein, workout consistency, recent trend),
+ "tips": [string]  (2-3 short actionable tips for today)}`
+
+const gatherFacts = async (userId) => {
+  const [mealsRes, workoutsRes, mealsWideRes, workoutsWideRes, profile] = await Promise.all([
+    supabase
+      .from("meals")
+      .select("logged_at, calories, protein")
+      .eq("user_id", userId)
+      .gte("logged_at", daysAgoIso(14)),
+    supabase
+      .from("workout_sessions")
+      .select("started_at, status, duration_seconds")
+      .eq("user_id", userId)
+      .gte("started_at", daysAgoIso(14)),
+    supabase
+      .from("meals")
+      .select("logged_at")
+      .eq("user_id", userId)
+      .gte("logged_at", daysAgoIso(90)),
+    supabase
+      .from("workout_sessions")
+      .select("started_at")
+      .eq("user_id", userId)
+      .gte("started_at", daysAgoIso(90)),
+    getProfile(userId).catch(() => null),
+  ])
+
+  if (mealsRes.error) throw ApiError.badRequest("Failed to load meals", mealsRes.error.message)
+  if (workoutsRes.error)
+    throw ApiError.badRequest("Failed to load workouts", workoutsRes.error.message)
+
+  const mealRows = mealsRes.data ?? []
+  const workoutRows = workoutsRes.data ?? []
+
+  // Aggregate meals per UTC day.
+  const perDayMeals = {}
+  for (const row of mealRows) {
+    const key = utcDayKey(row.logged_at)
+    if (!perDayMeals[key]) perDayMeals[key] = { kcal: 0, protein: 0, entries: 0 }
+    perDayMeals[key].kcal += row.calories ?? 0
+    perDayMeals[key].protein += row.protein ?? 0
+    perDayMeals[key].entries += 1
+  }
+
+  // Aggregate workouts per UTC day.
+  const perDayWorkouts = {}
+  for (const row of workoutRows) {
+    const key = utcDayKey(row.started_at)
+    if (!perDayWorkouts[key]) perDayWorkouts[key] = { count: 0, durationSeconds: 0 }
+    perDayWorkouts[key].count += 1
+    perDayWorkouts[key].durationSeconds += row.duration_seconds ?? 0
+  }
+
+  const targetCalories = profile?.targetCalories ?? DEFAULT_TARGET_CALORIES
+  const targetProtein = profile?.targetProtein ?? DEFAULT_TARGET_PROTEIN
+
+  // Streak over the union of meal + workout activity days (last 90d).
+  const activityDates = [
+    ...(mealsWideRes.data ?? []).map((r) => r.logged_at),
+    ...(workoutsWideRes.data ?? []).map((r) => r.started_at),
+  ]
+  const streak = computeStreak(activityDates)
+
+  const mealDayCount = Object.keys(perDayMeals).length
+  const avgCalories = mealDayCount
+    ? Math.round(
+        Object.values(perDayMeals).reduce((sum, d) => sum + d.kcal, 0) / mealDayCount
+      )
+    : 0
+  const avgProtein = mealDayCount
+    ? Math.round(
+        Object.values(perDayMeals).reduce((sum, d) => sum + d.protein, 0) / mealDayCount
+      )
+    : 0
+  const workoutDayCount = Object.keys(perDayWorkouts).length
+
+  return {
+    facts: {
+      hasProfile: Boolean(profile),
+      note: profile ? null : "no targets set — using default 2200 kcal / 165g protein",
+      streak,
+      targetCalories,
+      targetProtein,
+      last14Days: {
+        daysLogged: mealDayCount,
+        avgCaloriesPerLoggedDay: avgCalories,
+        avgProteinPerLoggedDay: avgProtein,
+        workoutDays: workoutDayCount,
+        totalWorkouts: workoutRows.length,
+      },
+    },
+    streak,
+    targetCalories,
+    targetProtein,
+  }
+}
+
+export const getInsights = async (userId, { refresh = false } = {}) => {
+  const todayKey = utcDayKey()
+
+  if (!refresh) {
+    const { data: cached } = await supabase
+      .from("ai_insights")
+      .select("content")
+      .eq("user_id", userId)
+      .eq("day", todayKey)
+      .maybeSingle()
+
+    if (cached?.content) {
+      return { ...cached.content, day: todayKey, cached: true }
+    }
+  }
+
+  const { facts, streak, targetCalories, targetProtein } = await gatherFacts(userId)
+
+  const { data, modelUsed } = await generateJson({
+    useSearch: false,
+    temperature: 0.4,
+    prompt: INSIGHTS_PROMPT(JSON.stringify(facts)),
+  })
+
+  const narrative = insightsSchema.parse(data)
+
+  // Upsert the cache (best-effort — a failed write shouldn't break the response).
+  await supabase
+    .from("ai_insights")
+    .upsert(
+      { user_id: userId, day: todayKey, content: narrative, model: modelUsed },
+      { onConflict: "user_id,day" }
+    )
+
+  return {
+    ...narrative,
+    day: todayKey,
+    facts: { streak, targetCalories, targetProtein },
+    cached: false,
+  }
+}

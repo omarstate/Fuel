@@ -2,23 +2,16 @@ import * as React from "react"
 import { toast } from "sonner"
 import { supabase } from "@/lib/supabase"
 import { useAuth } from "@/lib/auth"
-import {
-  getCategories,
-  getMealsGrouped,
-  createCatalogMeal,
-  type Category,
-  type CatalogMeal,
-  type CreateCatalogMealInput,
-  type GroupedCatalog,
-} from "@/lib/api"
+import { type CatalogMeal } from "@/lib/api"
+import { suggestedMealType, type MealType } from "@/app/nutrition/types"
 
 /** Personal-log row shape — mirrors app-editorial/use-meals.ts mealToRow. */
-function catalogMealToLogRow(meal: CatalogMeal, userId: string) {
+function catalogMealToLogRow(meal: CatalogMeal, userId: string, mealType: MealType) {
   return {
     id: crypto.randomUUID(),
     user_id: userId,
     name: meal.name,
-    meal_type: "lunch",
+    meal_type: mealType,
     serving_size: meal.servingSize ?? null,
     calories: meal.calories,
     protein: meal.protein,
@@ -33,14 +26,17 @@ function catalogMealToLogRow(meal: CatalogMeal, userId: string) {
 export function useAddCatalogMealToLog() {
   const { user } = useAuth()
   return React.useCallback(
-    async (meal: CatalogMeal): Promise<boolean> => {
+    async (
+      meal: CatalogMeal,
+      mealType: MealType = suggestedMealType()
+    ): Promise<boolean> => {
       if (!user) {
         toast.error("Sign in to log meals.")
         return false
       }
       const { error: insertError } = await supabase
         .from("meals")
-        .insert(catalogMealToLogRow(meal, user.id))
+        .insert(catalogMealToLogRow(meal, user.id, mealType))
       if (insertError) {
         toast.error(`Couldn't add ${meal.name} to today's log.`)
       }
@@ -48,42 +44,4 @@ export function useAddCatalogMealToLog() {
     },
     [user]
   )
-}
-
-export function useCatalog() {
-  const [grouped, setGrouped] = React.useState<GroupedCatalog>([])
-  const [categories, setCategories] = React.useState<Category[]>([])
-  const [loading, setLoading] = React.useState(true)
-  const [error, setError] = React.useState<string | null>(null)
-
-  const refresh = React.useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const [groupedCatalog, cats] = await Promise.all([getMealsGrouped(), getCategories()])
-      setGrouped(groupedCatalog)
-      setCategories(cats)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong.")
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  React.useEffect(() => {
-    refresh()
-  }, [refresh])
-
-  const createMeal = React.useCallback(
-    async (input: CreateCatalogMealInput) => {
-      const meal = await createCatalogMeal(input)
-      await refresh()
-      return meal
-    },
-    [refresh]
-  )
-
-  const addCatalogMealToLog = useAddCatalogMealToLog()
-
-  return { grouped, categories, loading, error, refresh, createMeal, addCatalogMealToLog }
 }

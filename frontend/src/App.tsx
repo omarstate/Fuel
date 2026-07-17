@@ -12,6 +12,7 @@ import { NutritionHome } from "@/app/nutrition/nutrition-home"
 import { WorkoutsHome } from "@/app/workouts/workouts-home"
 import { AppShellEditorial } from "@/app-editorial/app-shell"
 import { NutritionHome as NutritionHomeEditorial } from "@/app-editorial/nutrition-home"
+import Today from "@/app-editorial/today"
 import { WorkoutsHome as WorkoutsHomeEditorial } from "@/app-editorial/workouts-home"
 import LibraryHome from "@/app-editorial/library/library-home"
 import MealDetail from "@/app-editorial/library/meal-detail"
@@ -47,6 +48,7 @@ export function App() {
             >
               <Route index element={<Navigate to="/dashboard/nutrition" replace />} />
               <Route path="nutrition" element={<NutritionHomeEditorial />} />
+              <Route path="nutrition/today" element={<Today />} />
               <Route path="nutrition/history" element={<MealHistory />} />
               <Route path="workouts" element={<WorkoutsHomeEditorial />} />
               <Route path="workouts/library" element={<WorkoutLibrary />} />
