@@ -1,12 +1,17 @@
 import { assertSupabaseConfigured } from "../utils/assert-supabase-configured.js"
+import { assertGeminiConfigured } from "../utils/assert-gemini-configured.js"
 import {
   createMealSchema,
   updateMealSchema,
   estimateMealsSchema,
+  extractMealPhotoSchema,
+  barcodeParamSchema,
   aiCatalogMealsSchema,
 } from "../validators/meals.validator.js"
 import * as mealsService from "../services/meals.service.js"
 import { estimateMeals as estimateMealsAi } from "../services/ai-nutrition.service.js"
+import { extractLabel } from "../services/ai-label.service.js"
+import { lookupBarcode as lookupBarcodeOff } from "../services/barcode.service.js"
 
 const toPositiveInt = (value) => {
   const parsed = Number.parseInt(value, 10)
@@ -70,6 +75,27 @@ export const deleteMeal = async (req, res) => {
 export const estimateMeals = async (req, res) => {
   const { place, items } = estimateMealsSchema.parse(req.body)
   const data = await estimateMealsAi({ place, items })
+  res.json({ data })
+}
+
+// Read a photographed nutrition label into structured macros. No Supabase
+// dependency — just Gemini. Returns a single extraction (with basis/serving
+// info) so the client can scale by portion and show a review step before
+// logging. A bad photo comes back as a soft failure, not an error.
+export const extractMealPhoto = async (req, res) => {
+  assertGeminiConfigured()
+  const { image, mimeType } = extractMealPhotoSchema.parse(req.body)
+  const data = await extractLabel({ image, mimeType })
+  res.json({ data })
+}
+
+// Look up a product's nutrition by barcode via Open Food Facts. No Supabase or
+// Gemini dependency. Returns the same normalized shape as photo extraction so
+// the client shares the review/scale/log step; an unknown code comes back as
+// { found: false } rather than an error.
+export const lookupBarcode = async (req, res) => {
+  const code = barcodeParamSchema.parse(req.params.code)
+  const data = await lookupBarcodeOff(code)
   res.json({ data })
 }
 

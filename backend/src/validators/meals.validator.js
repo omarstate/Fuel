@@ -42,6 +42,35 @@ export const estimateMealsSchema = z
       ),
   })
 
+// Photo label-extraction input: a base64-encoded image plus its MIME type. The
+// client downscales/compresses before upload, but we cap the base64 length as a
+// hard ceiling (~12MB of base64 ≈ 9MB binary) so a giant paste can't exhaust
+// memory. A `data:image/...;base64,` prefix (from canvas.toDataURL) is stripped
+// so the service gets raw base64 to hand to Gemini.
+const MAX_IMAGE_BASE64_CHARS = 12_000_000
+
+export const extractMealPhotoSchema = z.object({
+  mimeType: z.enum(["image/jpeg", "image/png", "image/webp"], {
+    errorMap: () => ({ message: "Unsupported image type. Use JPEG, PNG, or WebP." }),
+  }),
+  image: z
+    .string()
+    .min(1, "image is required")
+    .transform((value) => value.replace(/^data:[^;,]+;base64,/, "").trim())
+    .pipe(
+      z
+        .string()
+        .min(1, "image is required")
+        .max(MAX_IMAGE_BASE64_CHARS, "That image is too large. Use a smaller photo.")
+    ),
+})
+
+// Barcode lookup path param — EAN-8/UPC-A/EAN-13/GTIN-14 are 8–14 digits.
+export const barcodeParamSchema = z
+  .string()
+  .trim()
+  .regex(/^\d{8,14}$/, "That doesn't look like a valid barcode.")
+
 // Reviewed AI meals being committed to the shared catalog. Same macro rules as
 // a manual catalog meal, but no categoryId (the server forces the "AI"
 // category) and the note is carried in `description`.

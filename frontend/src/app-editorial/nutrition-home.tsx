@@ -12,10 +12,16 @@ import { StatCard } from "@/app-editorial/stat-card"
 import { WeekChart } from "@/app-editorial/week-chart"
 import { AiCoachCard } from "@/app-editorial/ai/ai-coach-card"
 import { AiMealLookupDialog } from "@/app-editorial/ai/ai-meal-lookup-dialog"
+import { PhotoLogDialog } from "@/app-editorial/photo-log-dialog"
+import { BarcodeScanDialog } from "@/app-editorial/barcode-scan-dialog"
 import { LogToolbar, LogAction } from "@/app-editorial/quick-actions"
 import { MealRow } from "@/app-editorial/meal-row"
 import { useMeals } from "@/app-editorial/use-meals"
-import { useTargets } from "@/app-editorial/use-me"
+import { useWeekMeals } from "@/app-editorial/use-week-meals"
+import { useStreaks } from "@/app-editorial/use-streaks"
+import { useMe, useTargets } from "@/app-editorial/use-me"
+import { computeDirection } from "@/lib/nutrition"
+import { computePace } from "@/app-editorial/pace"
 
 function comingSoon(feature: string) {
   toast(`${feature} is coming soon.`)
@@ -31,7 +37,13 @@ export function NutritionHome() {
   const { mode } = useMode()
   const accent = editorialAccent[mode]
   const { meals, loading, addMeal, deleteMeal, dropMeal } = useMeals()
+  const { days: weekDays, loading: weekLoading } = useWeekMeals()
   const targets = useTargets()
+  const { profile } = useMe()
+  const { logging: loggingStreak, goal: goalStreak } = useStreaks(targets.calories)
+  const direction = profile
+    ? computeDirection({ weightKg: profile.weightKg, goalWeightKg: profile.goalWeightKg })
+    : "maintain"
 
   const totals = React.useMemo(
     () =>
@@ -47,6 +59,7 @@ export function NutritionHome() {
     [meals]
   )
 
+  const pace = computePace(totals.calories, targets.calories)
   const proteinLeft = Math.max(targets.protein - totals.protein, 0)
   const today = new Date().toLocaleDateString(undefined, {
     weekday: "long",
@@ -71,7 +84,7 @@ export function NutritionHome() {
         </div>
         <div className="flex items-center gap-2 rounded-full border border-border bg-card px-3.5 py-1.5">
           <Flame className="size-4 text-[var(--accent-ink)]" />
-          <span className="font-mono text-sm font-medium text-foreground">6</span>
+          <span className="font-mono text-sm font-medium text-foreground">{loggingStreak}</span>
           <span className="text-sm text-muted-foreground">day streak</span>
         </div>
       </motion.header>
@@ -79,15 +92,17 @@ export function NutritionHome() {
       {/* Overview + KPIs */}
       <motion.section {...fade(0.05)} className="grid gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <TodayOverview accent={accent} {...totals} goals={targets} />
+          <TodayOverview accent={accent} {...totals} goals={targets} pace={pace} />
         </div>
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-1">
           <StatCard
             icon={Flame}
-            label="Streak"
-            value={6}
-            unit="days"
-            hint="Log today to keep it"
+            label="On-target streak"
+            value={goalStreak}
+            unit={goalStreak === 1 ? "day" : "days"}
+            hint={
+              goalStreak > 0 ? "days within calorie goal" : "hit your goal to start one"
+            }
           />
           <StatCard
             icon={Drumstick}
@@ -101,7 +116,13 @@ export function NutritionHome() {
 
       {/* Weekly */}
       <motion.section {...fade(0.1)}>
-        <WeekChart accent={accent} calories={totals.calories} goal={targets.calories} />
+        <WeekChart
+          accent={accent}
+          days={weekDays}
+          goal={targets.calories}
+          direction={direction}
+          loading={weekLoading}
+        />
       </motion.section>
 
       {/* AI coach */}
@@ -138,15 +159,13 @@ export function NutritionHome() {
             <AiMealLookupDialog
               trigger={<LogAction icon={Sparkles} label="AI lookup" />}
             />
-            <LogAction
-              icon={Camera}
-              label="Photo"
-              onClick={() => comingSoon("Photo log")}
+            <PhotoLogDialog
+              onAdd={addMeal}
+              trigger={<LogAction icon={Camera} label="Photo" />}
             />
-            <LogAction
-              icon={Barcode}
-              label="Scan"
-              onClick={() => comingSoon("Barcode scan")}
+            <BarcodeScanDialog
+              onAdd={addMeal}
+              trigger={<LogAction icon={Barcode} label="Scan" />}
             />
             <LogAction
               icon={RotateCcw}

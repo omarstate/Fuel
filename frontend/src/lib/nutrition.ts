@@ -54,13 +54,20 @@ const computeBmr = ({ sex, age, heightCm, weightKg }: ProfileInput) => {
   return sex === "male" ? base + 5 : base - 161
 }
 
-type Direction = "cut" | "bulk" | "maintain"
+export type Direction = "cut" | "bulk" | "maintain"
 
-const computeDirection = ({ weightKg, goalWeightKg }: ProfileInput): Direction => {
+export const computeDirection = ({
+  weightKg,
+  goalWeightKg,
+}: Pick<ProfileInput, "weightKg" | "goalWeightKg">): Direction => {
   if (goalWeightKg <= weightKg - MAINTAIN_DEAD_BAND_KG) return "cut"
   if (goalWeightKg >= weightKg + MAINTAIN_DEAD_BAND_KG) return "bulk"
   return "maintain"
 }
+
+/** Approximate energy in one kg of body mass — used to translate a running
+ * calorie deficit/surplus into an expected weight change. */
+export const KCAL_PER_KG = 7700
 
 export function computeTargets(input: ProfileInput): Targets {
   const bmr = computeBmr(input)

@@ -275,6 +275,67 @@ export function estimateMeals(input: {
   })
 }
 
+export type ExtractedLabel = {
+  /** Whether a usable set of values was read (false → retake or fill by hand). */
+  ok: boolean
+  readable: boolean
+  /** Usually null — a facts-panel close-up rarely shows the product name. */
+  name: string | null
+  /** Which basis the macros are stated on. */
+  basis: "per_100g" | "per_serving"
+  servingSize: string
+  /** Grams (or ml) in one serving, when printed. */
+  servingGrams: number | null
+  calories: number
+  protein: number
+  carbs: number
+  fat: number
+  confidence: "high" | "medium" | "low" | null
+  note: string
+}
+
+/**
+ * Extract nutrition facts from a photo of a product label. `image` is raw
+ * base64 (no data-URL prefix); `mimeType` is the encoded type. Values come back
+ * on the label's own basis (per 100g or per serving) — the caller scales by
+ * portion in the review step before logging.
+ */
+export function extractMealPhoto(input: {
+  image: string
+  mimeType: string
+}): Promise<ExtractedLabel> {
+  return request<ExtractedLabel>("/meals/photo-extract", {
+    method: "POST",
+    body: JSON.stringify(input),
+  })
+}
+
+export type BarcodeProduct = {
+  /** Whether the barcode exists in the database at all. */
+  found: boolean
+  /** found AND has usable macros (a found product may lack nutrition data). */
+  ok: boolean
+  barcode: string
+  name: string | null
+  brand: string | null
+  /** Open Food Facts stores per-100g reliably, so that's the canonical basis. */
+  basis: "per_100g" | "per_serving"
+  servingSize: string
+  servingGrams: number | null
+  calories: number
+  protein: number
+  carbs: number
+  fat: number
+  confidence: "high" | "medium" | "low" | null
+  note: string
+}
+
+/** Look up a product by barcode via the backend's Open Food Facts proxy. Never
+ * throws for an unknown code — that comes back as `{ found: false }`. */
+export function lookupBarcode(code: string): Promise<BarcodeProduct> {
+  return request<BarcodeProduct>(`/meals/barcode/${encodeURIComponent(code)}`)
+}
+
 export type AiCatalogMealInput = {
   name: string
   description?: string

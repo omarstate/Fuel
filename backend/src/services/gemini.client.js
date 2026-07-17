@@ -97,12 +97,22 @@ const callModel = async (model, body) => {
 }
 
 /**
- * generateJson — send a prompt to Gemini and parse the JSON reply.
+ * generateJson — send a prompt (optionally with an inline image) to Gemini and
+ * parse the JSON reply.
+ * @param {{ prompt: string, image?: { mimeType: string, data: string } | null,
+ *   useSearch?: boolean, temperature?: number }} args
+ *   `image.data` is raw base64 (no data-URL prefix). When present it's sent as
+ *   an inline_data part before the text, so Gemini reads the photo alongside
+ *   the instructions — this is what powers label extraction.
  * @returns {Promise<{ data: unknown, sources: {uri:string,title:string|null}[], modelUsed: string }>}
  */
-export const generateJson = async ({ prompt, useSearch = false, temperature = 0.2 }) => {
+export const generateJson = async ({ prompt, image = null, useSearch = false, temperature = 0.2 }) => {
+  const parts = []
+  if (image) parts.push({ inline_data: { mime_type: image.mimeType, data: image.data } })
+  parts.push({ text: prompt })
+
   const body = {
-    contents: [{ parts: [{ text: prompt }] }],
+    contents: [{ parts }],
     generationConfig: { temperature },
   }
   if (useSearch) body.tools = [{ google_search: {} }]

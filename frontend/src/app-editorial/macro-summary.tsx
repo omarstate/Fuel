@@ -1,4 +1,5 @@
 import { DEFAULT_TARGETS, type Targets } from "@/lib/nutrition"
+import type { Pace } from "@/app-editorial/pace"
 
 // Kept for existing imports — now re-points to the shared default targets.
 export const GOALS = DEFAULT_TARGETS
@@ -16,6 +17,7 @@ export function TodayOverview({
   carbs,
   fat,
   goals = DEFAULT_TARGETS,
+  pace,
 }: {
   accent: string
   calories: number
@@ -23,10 +25,12 @@ export function TodayOverview({
   carbs: number
   fat: number
   goals?: Targets
+  pace?: Pace
 }) {
   const values = { protein, carbs, fat }
   const pct = Math.min((calories / goals.calories) * 100, 100)
   const remaining = Math.max(goals.calories - calories, 0)
+  const over = pace?.status === "over"
 
   return (
     <div className="grid gap-8 rounded-xl border border-border bg-card p-6 sm:grid-cols-[auto_1fr] sm:p-8">
@@ -54,8 +58,21 @@ export function TodayOverview({
           <div className="mt-1 text-sm text-foreground">
             of {goals.calories.toLocaleString()} kcal
           </div>
-          <div className="mt-2 inline-flex items-center rounded-md bg-[var(--accent-tint)] px-2 py-0.5 font-mono text-xs font-medium text-[var(--accent-ink)]">
-            {remaining.toLocaleString()} left
+          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+            <span
+              className={`inline-flex items-center rounded-md px-2 py-0.5 font-mono text-xs font-medium ${
+                over
+                  ? "bg-[color-mix(in_oklab,#c85a3c_16%,transparent)] text-[#c85a3c]"
+                  : "bg-[var(--accent-tint)] text-[var(--accent-ink)]"
+              }`}
+            >
+              {over
+                ? `${Math.abs(pace!.remaining).toLocaleString()} over`
+                : `${remaining.toLocaleString()} left`}
+            </span>
+            {pace && (
+              <span className="text-xs text-muted-foreground">{pace.label}</span>
+            )}
           </div>
         </div>
       </div>
