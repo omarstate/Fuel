@@ -25,10 +25,14 @@ export function AddToLogButton({
   meal,
   className,
   idleLabel = "Add to today",
+  onLogged,
 }: {
   meal: CatalogMeal
   className?: string
   idleLabel?: string
+  /** Fired once, right after a successful log lands (before the reset delay).
+   * Additive — callers that don't pass it keep the original behavior. */
+  onLogged?: () => void
 }) {
   const addToLog = useAddCatalogMealToLog()
   const [status, setStatus] = React.useState<Status>("idle")
@@ -56,6 +60,7 @@ export function AddToLogButton({
       ok = false
     }
     setStatus(ok ? "success" : "error")
+    if (ok) onLogged?.()
     resetTimer.current = setTimeout(() => {
       setStatus("idle")
     }, 1300)

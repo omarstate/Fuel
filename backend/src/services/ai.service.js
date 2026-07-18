@@ -3,11 +3,8 @@ import { rowToCatalogMeal } from "../models/catalog-meal.model.js"
 import { generateJson } from "./gemini.client.js"
 import { getProfile } from "./profile.service.js"
 import { computeStreak } from "../utils/compute-streak.js"
-import {
-  aiMealArraySchema,
-  normalizeAiMeal,
-  insightsSchema,
-} from "../validators/ai.validator.js"
+import { rankMealsForRemaining } from "../utils/score-meals.js"
+import { aiMealArraySchema, normalizeAiMeal, insightsSchema } from "../validators/ai.validator.js"
 import { ApiError } from "../utils/api-error.js"
 
 const SELECT_WITH_CATEGORY = "*, meal_categories(id, name, slug)"
@@ -285,5 +282,86 @@ export const getInsights = async (userId, { refresh = false } = {}) => {
     day: todayKey,
     facts: { streak, targetCalories, targetProtein },
     cached: false,
+  }
+}
+
+// -------------------------------------------------------------------------
+// AI meal suggestions ("what should I eat next?")
+// -------------------------------------------------------------------------
+
+// Below this many remaining calories we treat the day as filled — there's
+// nothing meaningful left to suggest against.
+const SUGGEST_MIN_CALORIES = 50
+
+// How many DB candidates and shortlist meals we work with.
+const CANDIDATE_LIMIT = 200
+const SHORTLIST_MAX = 12
+const SUGGEST_COUNT = 3
+
+// Reason text is generated from the actual numbers, not an LLM call — meal
+// suggestions run on every "remaining macros" bucket change (effectively every
+// time the user logs food), which made a live Gemini call per log impractical
+// on a free-tier quota. The ranking was already deterministic (score-meals.js);
+// this just describes that ranking in the same numeric style Gemini used.
+const describeFit = (meal, remaining) => {
+  const kcalLeft = Math.max(remaining.calories - meal.calories, 0)
+  const proteinLeft = Math.max(remaining.protein - meal.protein, 0)
+  const closeCalories = Math.abs(meal.calories - remaining.calories) <= Math.max(remaining.calories * 0.15, 50)
+  const closeProtein = Math.abs(meal.protein - remaining.protein) <= Math.max(remaining.protein * 0.25, 5)
+
+  if (closeCalories && closeProtein) {
+    return `Matches what's left almost exactly — ${meal.calories} kcal, ${meal.protein} g protein`
+  }
+  if (meal.calories <= remaining.calories && closeProtein) {
+    return `Covers ${meal.protein} g of your ${remaining.protein} g protein left, with ${kcalLeft} kcal to spare`
+  }
+  if (closeProtein) {
+    return `Hits your protein target with ${meal.protein} g, just over your remaining ${remaining.calories} kcal`
+  }
+  if (meal.calories <= remaining.calories) {
+    return `${meal.calories} kcal and ${meal.protein} g protein — comfortably under your ${remaining.calories} kcal left`
+  }
+  return `${meal.calories} kcal and ${meal.protein} g protein, close to your ${remaining.calories} kcal / ${remaining.protein} g protein left`
+}
+
+const buildSuggestions = (shortlist, remaining) =>
+  shortlist.slice(0, SUGGEST_COUNT).map((meal) => ({
+    meal,
+    reason: describeFit(meal, remaining),
+  }))
+
+export const suggestMeals = async (userId, remaining) => {
+  // 1. Nothing meaningful left to fill.
+  if (remaining.calories < SUGGEST_MIN_CALORIES) {
+    return { suggestions: [], targetReached: true, aiUsed: false }
+  }
+
+  // 2. Cheap DB-side pre-filter: never consider a meal well past the calories
+  //    left. Order calories desc, cap the pull. `calories` is an integer
+  //    column — round the filter value, since float arithmetic upstream
+  //    (target - consumed) * 1.3 can produce something like 1445.6000000001,
+  //    which Postgres rejects outright as an integer literal.
+  const { data: rows, error } = await supabase
+    .from("catalog_meals")
+    .select(SELECT_WITH_CATEGORY)
+    .lte("calories", Math.round(remaining.calories * 1.3))
+    .order("calories", { ascending: false })
+    .limit(CANDIDATE_LIMIT)
+
+  if (error) throw ApiError.badRequest("Failed to load meals", error.message)
+
+  if (!rows || rows.length === 0) {
+    return { suggestions: [], targetReached: false, aiUsed: false }
+  }
+
+  // 3. Deterministic shortlist via the pure scoring util, described with
+  //    numbers-driven reasons — no Gemini call on this path (see describeFit).
+  const candidates = rows.map(rowToCatalogMeal)
+  const shortlist = rankMealsForRemaining(candidates, remaining, { max: SHORTLIST_MAX })
+
+  return {
+    suggestions: buildSuggestions(shortlist, remaining),
+    targetReached: false,
+    aiUsed: false,
   }
 }

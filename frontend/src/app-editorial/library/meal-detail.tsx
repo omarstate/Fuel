@@ -32,7 +32,7 @@ const fade = (delay = 0) => ({
 const macroMeta = [
   { key: "protein", label: "Protein", color: "#ff6b35", kcalPerGram: 4 },
   { key: "carbs", label: "Carbs", color: "#d9a441", kcalPerGram: 4 },
-  { key: "fat", label: "Fat", color: "#6f9e4a", kcalPerGram: 9 },
+  { key: "fat", label: "Fat", color: "#8a9b3b", kcalPerGram: 9 },
 ] as const
 
 function formatDate(iso: string) {
@@ -386,7 +386,7 @@ export function MealDetail() {
             label="Fat"
             value={meal.fat}
             unit="g"
-            color="#6f9e4a"
+            color="#8a9b3b"
             pct={Math.round((meal.fat / targets.fat) * 100)}
           />
         </div>

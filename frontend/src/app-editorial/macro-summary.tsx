@@ -7,7 +7,7 @@ export const GOALS = DEFAULT_TARGETS
 const macroMeta = [
   { key: "protein", label: "Protein", color: "#ff6b35" },
   { key: "carbs", label: "Carbs", color: "#d9a441" },
-  { key: "fat", label: "Fat", color: "#6f9e4a" },
+  { key: "fat", label: "Fat", color: "#8a9b3b" },
 ] as const
 
 export function TodayOverview({

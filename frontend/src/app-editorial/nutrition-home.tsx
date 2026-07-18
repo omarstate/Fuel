@@ -11,6 +11,7 @@ import { TodayOverview } from "@/app-editorial/macro-summary"
 import { StatCard } from "@/app-editorial/stat-card"
 import { WeekChart } from "@/app-editorial/week-chart"
 import { AiCoachCard } from "@/app-editorial/ai/ai-coach-card"
+import { MealSuggestionsCard } from "@/app-editorial/ai/meal-suggestions-card"
 import { AiMealLookupDialog } from "@/app-editorial/ai/ai-meal-lookup-dialog"
 import { PhotoLogDialog } from "@/app-editorial/photo-log-dialog"
 import { BarcodeScanDialog } from "@/app-editorial/barcode-scan-dialog"
@@ -61,6 +62,12 @@ export function NutritionHome() {
 
   const pace = computePace(totals.calories, targets.calories)
   const proteinLeft = Math.max(targets.protein - totals.protein, 0)
+  const remaining = {
+    calories: Math.max(targets.calories - totals.calories, 0),
+    protein: Math.max(targets.protein - totals.protein, 0),
+    carbs: Math.max(targets.carbs - totals.carbs, 0),
+    fat: Math.max(targets.fat - totals.fat, 0),
+  }
   const today = new Date().toLocaleDateString(undefined, {
     weekday: "long",
     month: "short",
@@ -128,6 +135,11 @@ export function NutritionHome() {
       {/* AI coach */}
       <motion.section {...fade(0.12)}>
         <AiCoachCard />
+      </motion.section>
+
+      {/* Up next — meal suggestions from remaining macros */}
+      <motion.section {...fade(0.13)}>
+        <MealSuggestionsCard remaining={remaining} ready={!loading} onLogged={reload} />
       </motion.section>
 
       {/* Log + meals */}

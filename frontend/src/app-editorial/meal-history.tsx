@@ -61,7 +61,7 @@ function DayGroup({
             <span className="text-[#a9781f]">C</span> {day.totals.carbs}
           </span>
           <span>
-            <span className="text-[#57783a]">F</span> {day.totals.fat}
+            <span className="text-[#69762d]">F</span> {day.totals.fat}
           </span>
           <span className="text-sm font-semibold text-foreground">
             {day.totals.calories}

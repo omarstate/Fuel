@@ -85,7 +85,7 @@ function ResultCard({ item }: { item: AiLookupItem }) {
             <span className="text-[#a9781f]">C</span> {meal.carbs}
           </span>
           <span>
-            <span className="text-[#57783a]">F</span> {meal.fat}
+            <span className="text-[#69762d]">F</span> {meal.fat}
           </span>
         </div>
 

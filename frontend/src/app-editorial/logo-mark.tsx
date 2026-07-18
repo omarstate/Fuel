@@ -1,35 +1,18 @@
+import fuelMark from "@/assets/fuel-mark.png"
+
 /**
- * Mode-aware Fuel mark for the editorial app: the badge tracks the active
- * accent, with a contrasting spark. Colors transition smoothly on switch.
- * The shared `@/components/site/logo-mark` stays fixed for the landing/old app.
+ * Fuel mark for the editorial app. Renders the fixed brand image — it no
+ * longer recolors per mode since a raster asset can't be retinted, but the
+ * accent/spark props stay in the signature so call sites don't need to change.
  */
 export function LogoMark({
   className,
-  accent = "#FF6B35",
-  spark = "#D4FF3F",
+  accent: _accent,
+  spark: _spark,
 }: {
   className?: string
   accent?: string
   spark?: string
 }) {
-  return (
-    <svg viewBox="0 0 32 32" fill="none" className={className} aria-hidden="true">
-      <rect
-        width="32"
-        height="32"
-        rx="9"
-        style={{ fill: accent, transition: "fill 0.3s ease" }}
-      />
-      <path
-        d="M16.8 6.5c.3 3.1-1 5-2.9 6.9-2.2 2.2-3.4 4.2-3.1 7 .2 2 1.4 3.6 3.1 4.6-1-1.6-1-3 .1-4.6.4 1.4 1.1 2.2 2.3 2.9-.4-1.8.1-3 1.4-4.2 1.7-1.6 2.3-3.3 1.7-5.5 1.2.7 2 1.8 2.2 3.2.7-3.4-.5-7.4-4.8-10.3Z"
-        fill="#14120F"
-      />
-      <circle
-        cx="23.5"
-        cy="9"
-        r="2"
-        style={{ fill: spark, transition: "fill 0.3s ease" }}
-      />
-    </svg>
-  )
+  return <img src={fuelMark} alt="" className={className} aria-hidden="true" />
 }

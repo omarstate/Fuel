@@ -63,7 +63,7 @@
     --char-2: #1c1914;
     --bone: #f7f3ea;
     --citrus: #ff6b35;
-    --volt: #d4ff3f;
+    --volt: #d7fa34;
     --smoke: #8a8578;
 
     --background: var(--char);
@@ -88,7 +88,7 @@
     --chart-2: var(--volt);
     --chart-3: var(--smoke);
     --chart-4: #ff8f66;
-    --chart-5: #e3ff8a;
+    --chart-5: #eaff8a;
     --radius: 1.1rem;
     --sidebar: var(--char-2);
     --sidebar-foreground: var(--bone);
@@ -122,10 +122,10 @@
     --input: rgba(20, 18, 15, 0.14);
     --ring: var(--citrus);
     --chart-1: var(--citrus);
-    --chart-2: #8bbf3f;
+    --chart-2: #a9bf40;
     --chart-3: #6f6a5c;
     --chart-4: #ff8f66;
-    --chart-5: #a7c957;
+    --chart-5: #b5c958;
     --sidebar: #fffdf7;
     --sidebar-foreground: #14120f;
     --sidebar-primary: var(--citrus);

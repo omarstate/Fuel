@@ -413,3 +413,27 @@ export type AiInsights = {
 export function getAiInsights(refresh?: boolean): Promise<AiInsights> {
   return request<AiInsights>(`/ai/insights${refresh ? "?refresh=1" : ""}`)
 }
+
+export type MealSuggestion = { meal: CatalogMeal; reason: string }
+
+export type SuggestResponse = {
+  suggestions: MealSuggestion[]
+  targetReached: boolean
+  aiUsed: boolean
+}
+
+/** Ask the backend which library meals best fill what's LEFT of today's macros.
+ * The client sends `remaining` (target − consumed, floored at 0) so the app's
+ * local-time "today" isn't second-guessed server-side. Works even when Gemini
+ * is unconfigured — the backend falls back to a deterministic ranking. */
+export function suggestMeals(remaining: {
+  calories: number
+  protein: number
+  carbs: number
+  fat: number
+}): Promise<SuggestResponse> {
+  return request<SuggestResponse>("/ai/meals/suggest", {
+    method: "POST",
+    body: JSON.stringify({ remaining }),
+  })
+}

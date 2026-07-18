@@ -69,6 +69,18 @@ export const normalizeAiMeal = (item) => {
   return normalized
 }
 
+// POST /ai/meals/suggest body — the remaining calories + macros the client
+// computed for today (target − consumed, floored at 0). Loose bounds; the
+// service rounds to ints after parsing.
+export const suggestRequestSchema = z.object({
+  remaining: z.object({
+    calories: z.number().min(0).max(8000),
+    protein: z.number().min(0).max(600),
+    carbs: z.number().min(0).max(1000),
+    fat: z.number().min(0).max(400),
+  }),
+})
+
 // Coach-insights narrative returned by Gemini (before we attach server-computed
 // facts). Kept forgiving on length; the prompt asks for the shape.
 export const insightsSchema = z.object({

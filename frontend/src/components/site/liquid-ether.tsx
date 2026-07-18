@@ -1289,7 +1289,7 @@ export function FuelLiquidEther({
 
   return (
     <LiquidEther
-      colors={["#f6c453", "#ff6b35", "#6f9e4a"]}
+      colors={["#f6c453", "#ff6b35", "#8a9b3b"]}
       mouseForce={14}
       cursorSize={110}
       resolution={0.5}

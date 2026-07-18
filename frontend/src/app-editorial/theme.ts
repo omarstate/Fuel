@@ -10,16 +10,16 @@ import type { Mode } from "@/components/site/mode-context"
  * still drives the dark `/app`; this map only themes the editorial app.
  */
 export const editorialAccent: Record<Mode, string> = {
-  nutrition: "#6f9e4a",
+  nutrition: "#8a9b3b",
   workouts: "#ff6b35",
 }
 
 export const editorialAccentInk: Record<Mode, string> = {
-  nutrition: "#4f7320",
+  nutrition: "#627218",
   workouts: "#b5431c",
 }
 
 export const editorialSpark: Record<Mode, string> = {
   nutrition: "#ff6b35",
-  workouts: "#d4ff3f",
+  workouts: "#d7fa34",
 }

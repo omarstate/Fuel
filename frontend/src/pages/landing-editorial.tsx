@@ -13,6 +13,7 @@ import { FuelLiquidEther } from "@/components/site/liquid-ether"
 import { RotatingText } from "@/components/site/rotating-text"
 import { type Mode } from "@/components/site/mode-context"
 import { editorialAccent } from "@/app-editorial/theme"
+import fuelLogo from "@/assets/fuel.png"
 
 gsap.registerPlugin(ScrollTrigger, useGSAP)
 
@@ -119,7 +120,7 @@ function NutritionPanel({ showHeader = true }: { showHeader?: boolean }) {
       {showHeader && (
         <div className="flex items-center justify-between">
           <span className="font-mono text-xs text-[var(--muted)]">Monday · Today</span>
-          <Badge className="gap-1 border-0 bg-[color:rgba(111,158,74,0.16)] text-[#4f7320]">
+          <Badge className="gap-1 border-0 bg-[color:rgba(138,155,59,0.16)] text-[#627218]">
             <BoltIcon className="size-3" /> 6-day streak
           </Badge>
         </div>
@@ -129,7 +130,7 @@ function NutritionPanel({ showHeader = true }: { showHeader?: boolean }) {
           className="relative flex size-24 shrink-0 items-center justify-center rounded-full"
           style={{
             background:
-              "conic-gradient(#6f9e4a 72%, rgba(20,18,15,0.06) 0)",
+              "conic-gradient(#8a9b3b 72%, rgba(20,18,15,0.06) 0)",
           }}
         >
           <div className="absolute inset-[6px] rounded-full bg-[var(--surface)]" />
@@ -436,16 +437,14 @@ export function LandingEditorial() {
   return (
     <div
       ref={root}
-      className="min-h-screen font-sans antialiased [--citrus-ink:#b5431c] [--citrus-tint:rgba(255,107,53,0.12)] [--citrus:#ff6b35] [--ink-2:#1c1914] [--ink:#14120f] [--line:rgba(20,18,15,0.10)] [--muted:#6f6a5c] [--paper-2:#efe8d7] [--paper:#f7f3ea] [--surface:#fffdf7] [--volt:#d4ff3f]"
+      className="min-h-screen font-sans antialiased [--citrus-ink:#b5431c] [--citrus-tint:rgba(255,107,53,0.12)] [--citrus:#ff6b35] [--ink-2:#1c1914] [--ink:#14120f] [--line:rgba(20,18,15,0.10)] [--muted:#6f6a5c] [--paper-2:#efe8d7] [--paper:#f7f3ea] [--surface:#fffdf7] [--volt:#d7fa34]"
       style={{ backgroundColor: "var(--paper)", color: "var(--ink)" }}
     >
       {/* ---------------- Nav ---------------- */}
       <header className="site-nav sticky top-0 z-50 transition-[background-color,border-color,backdrop-filter] duration-300">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-2">
-            <span className="grid size-7 place-items-center rounded-md bg-[var(--ink)] text-[var(--paper)]">
-              <BoltIcon className="size-4" />
-            </span>
+            <img src={fuelLogo} alt="" className="size-10 rounded-lg" aria-hidden="true" />
             <span className="font-heading font-medium text-2xl leading-none tracking-tight">
               Fuel
             </span>
@@ -830,9 +829,7 @@ export function LandingEditorial() {
       <footer className="border-t border-[var(--line)]">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-6 px-6 py-10 sm:flex-row">
           <div className="flex items-center gap-2">
-            <span className="grid size-6 place-items-center rounded-md bg-[var(--ink)] text-[var(--paper)]">
-              <BoltIcon className="size-3.5" />
-            </span>
+            <img src={fuelLogo} alt="" className="size-9 rounded-lg" aria-hidden="true" />
             <span className="font-heading font-medium text-xl tracking-tight">Fuel</span>
           </div>
           <p className="font-mono text-xs text-[var(--muted)]">
