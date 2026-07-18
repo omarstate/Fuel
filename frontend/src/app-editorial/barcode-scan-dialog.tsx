@@ -1,6 +1,6 @@
 import * as React from "react"
 import { toast } from "sonner"
-import { Barcode, ArrowLeft, ScanLine, PackageX } from "lucide-react"
+import { Barcode, ArrowLeft, ScanLine, PackageX, Camera } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -70,7 +70,12 @@ export function BarcodeScanDialog({
     }
   }, [])
 
-  const { videoRef, error: cameraError } = useBarcodeScanner({
+  const {
+    videoRef,
+    error: cameraError,
+    needsTap,
+    startCamera,
+  } = useBarcodeScanner({
     active: scannerActive,
     onDetect: (code) => {
       if (!scannedCode && !looking) void handleLookup(code)
@@ -201,7 +206,6 @@ export function BarcodeScanDialog({
                   <video
                     ref={videoRef}
                     className="size-full object-cover"
-                    autoPlay
                     muted
                     playsInline
                   />
@@ -209,6 +213,18 @@ export function BarcodeScanDialog({
                   <div className="pointer-events-none absolute inset-0 grid place-items-center">
                     <div className="h-24 w-4/5 rounded-lg border-2 border-white/80 shadow-[0_0_0_100vmax_rgba(0,0,0,0.25)]" />
                   </div>
+                  {needsTap && (
+                    <button
+                      type="button"
+                      onClick={startCamera}
+                      className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/60 text-sm font-medium text-white"
+                    >
+                      <span className="grid size-12 place-items-center rounded-full bg-white/15">
+                        <Camera className="size-6" />
+                      </span>
+                      Tap to start camera
+                    </button>
+                  )}
                   {looking && (
                     <div className="absolute inset-0 grid place-items-center bg-black/50 text-sm font-medium text-white">
                       Looking up…
