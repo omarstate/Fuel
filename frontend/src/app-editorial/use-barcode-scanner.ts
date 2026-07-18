@@ -5,45 +5,62 @@ import { BrowserMultiFormatReader, type IScannerControls } from "@zxing/browser"
 function cameraErrorMessage(err: unknown): string {
   const name = (err as { name?: string })?.name
   if (name === "NotAllowedError" || name === "SecurityError") {
-    return "Camera access was blocked. Allow it in your browser settings, or type the barcode below."
+    return "Camera access was blocked. Allow it in Safari's settings, or type the barcode below."
   }
   if (name === "NotFoundError" || name === "OverconstrainedError") {
     return "No camera available. Type the barcode below instead."
   }
+  if (name === "TimeoutError") {
+    return "The camera didn't start. Close any other app or tab using it, then try again."
+  }
   return "Couldn't start the camera. Type the barcode below instead."
-}
-
-/**
- * iOS Safari blocks `video.play()` when it isn't tied to a user gesture — and
- * always in Low Power Mode — rejecting with NotAllowedError/AbortError on the
- * play() call itself (distinct from a getUserMedia permission denial). When
- * that happens we surface a tap-to-start button; the tap is a gesture, which
- * iOS accepts.
- */
-function isAutoplayBlock(err: unknown): boolean {
-  const name = (err as { name?: string })?.name
-  return name === "NotAllowedError" || name === "AbortError"
 }
 
 function stopStream(stream: MediaStream | null) {
   stream?.getTracks().forEach((track) => track.stop())
 }
 
+/** Reject if a promise hasn't settled in `ms` — iOS can leave getUserMedia or
+ * play() pending forever when the camera is held elsewhere, which otherwise
+ * shows as a permanent black box with no error. */
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const id = setTimeout(() => {
+      const err = new Error("Camera timed out")
+      err.name = "TimeoutError"
+      reject(err)
+    }, ms)
+    promise.then(
+      (v) => {
+        clearTimeout(id)
+        resolve(v)
+      },
+      (e) => {
+        clearTimeout(id)
+        reject(e)
+      }
+    )
+  })
+}
+
+export type ScannerPhase = "idle" | "starting" | "running" | "error"
+
 /**
  * Live barcode scanning via ZXing. Used instead of the native BarcodeDetector
  * API because that isn't implemented in Safari/iOS at all — ZXing decodes from
  * the camera stream in JS and works everywhere. Prefers the rear camera.
  *
- * We deliberately drive getUserMedia + playback ourselves rather than handing
- * constraints to ZXing's `decodeFromConstraints`. That path sets the video's
- * `muted` via setAttribute, which iOS Safari ignores, so autoplay is blocked,
- * play() rejects, and ZXing swallows the error — leaving a permanent black box
- * with no feedback. Here we set `muted` as a property (required for iOS
- * autoplay), await play() so failures are visible, and only then pass the
- * already-playing element to ZXing (which won't re-request the camera).
+ * The camera is **gesture-first**: nothing starts until `startCamera()` is
+ * called from a real tap. This is deliberate — iOS Safari blocks (and can hang
+ * indefinitely on) a `video.play()` that isn't inside a user gesture, which is
+ * exactly the silent black-screen failure this avoids. We also drive
+ * getUserMedia + playback ourselves rather than via ZXing's
+ * `decodeFromConstraints`, because that path sets `muted` with setAttribute,
+ * which iOS ignores; we set it as a property (required for iOS) and only hand
+ * the already-playing element to ZXing.
  *
- * `onDetect` fires with the decoded string; the caller is expected to flip
- * `active` to false (e.g. by advancing the step) to stop the camera.
+ * `onDetect` fires with the decoded string; the caller flips `active` to false
+ * (e.g. by advancing the step) to tear the camera down.
  */
 export function useBarcodeScanner({
   active,
@@ -53,9 +70,8 @@ export function useBarcodeScanner({
   onDetect: (code: string) => void
 }) {
   const videoRef = React.useRef<HTMLVideoElement>(null)
+  const [phase, setPhase] = React.useState<ScannerPhase>("idle")
   const [error, setError] = React.useState<string | null>(null)
-  // True when iOS blocked autoplay — the UI shows a "tap to start" button.
-  const [needsTap, setNeedsTap] = React.useState(false)
 
   // Keep the latest callback without restarting the camera each render.
   const onDetectRef = React.useRef(onDetect)
@@ -65,78 +81,91 @@ export function useBarcodeScanner({
   const readerRef = React.useRef<BrowserMultiFormatReader | null>(null)
   const controlsRef = React.useRef<IScannerControls | null>(null)
   const cancelledRef = React.useRef(false)
+  const busyRef = React.useRef(false)
 
-  // Play the (already-attached) video, then start decoding. Split out so the
-  // tap-to-start button can re-run it from inside a real user gesture.
-  const playAndDecode = React.useCallback(async () => {
+  const teardown = React.useCallback(() => {
+    controlsRef.current?.stop()
+    controlsRef.current = null
+    stopStream(streamRef.current)
+    streamRef.current = null
     const video = videoRef.current
-    const reader = readerRef.current
-    if (!video || !reader) return
+    if (video) video.srcObject = null
+    busyRef.current = false
+  }, [])
+
+  // Acquire + play + decode. MUST be called from a user gesture on iOS.
+  const startCamera = React.useCallback(async () => {
+    const video = videoRef.current
+    if (!video || busyRef.current) return
+    busyRef.current = true
+    cancelledRef.current = false
+    setError(null)
+    setPhase("starting")
+
+    if (!readerRef.current) readerRef.current = new BrowserMultiFormatReader()
+
     try {
-      await video.play()
+      const stream = await withTimeout(
+        navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: "environment" } },
+          audio: false,
+        }),
+        12000
+      )
+      if (cancelledRef.current) {
+        stopStream(stream)
+        return
+      }
+      streamRef.current = stream
+      // `muted` MUST be a property, not just an attribute, for iOS autoplay.
+      video.muted = true
+      video.setAttribute("playsinline", "true")
+      video.srcObject = stream
+
+      // Inside a gesture this resolves quickly; the watchdog catches the rare
+      // iOS case where it never settles.
+      await withTimeout(video.play(), 8000)
       if (cancelledRef.current) return
-      setNeedsTap(false)
-      // Video is playing now, so ZXing's internal play() returns immediately
+
+      const reader = readerRef.current
+      if (!reader) return
+      // Video is already playing, so ZXing's internal play() returns at once
       // instead of hanging; it just runs the decode loop on our element.
       const controls = await reader.decodeFromVideoElement(video, (result) => {
         if (result && !cancelledRef.current) onDetectRef.current(result.getText())
       })
-      if (cancelledRef.current) controls.stop()
-      else controlsRef.current = controls
+      if (cancelledRef.current) {
+        controls.stop()
+        return
+      }
+      controlsRef.current = controls
+      setPhase("running")
     } catch (err) {
       if (cancelledRef.current) return
-      if (isAutoplayBlock(err)) setNeedsTap(true)
-      else setError(cameraErrorMessage(err))
+      setError(cameraErrorMessage(err))
+      setPhase("error")
+      teardown()
     }
-  }, [])
+  }, [teardown])
 
-  // Handler for the tap-to-start button (runs inside a user gesture).
-  const startCamera = React.useCallback(() => {
-    void playAndDecode()
-  }, [playAndDecode])
-
+  // Tear the camera down whenever we go inactive (step change / dialog close).
   React.useEffect(() => {
-    if (!active) return
-    const video = videoRef.current
-    if (!video) return
-
-    cancelledRef.current = false
-    readerRef.current = new BrowserMultiFormatReader()
+    if (active) return
+    cancelledRef.current = true
+    teardown()
+    readerRef.current = null
+    setPhase("idle")
     setError(null)
-    setNeedsTap(false)
+  }, [active, teardown])
 
-    void (async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { ideal: "environment" } },
-          audio: false,
-        })
-        if (cancelledRef.current) {
-          stopStream(stream)
-          return
-        }
-        streamRef.current = stream
-        // `muted` MUST be a property, not just an attribute, for iOS autoplay.
-        video.muted = true
-        video.setAttribute("playsinline", "true")
-        video.srcObject = stream
-        await playAndDecode()
-      } catch (err) {
-        if (cancelledRef.current) return
-        setError(cameraErrorMessage(err))
-      }
-    })()
-
+  // Safety net: stop the stream if the component unmounts mid-scan.
+  React.useEffect(() => {
     return () => {
       cancelledRef.current = true
-      controlsRef.current?.stop()
-      controlsRef.current = null
-      stopStream(streamRef.current)
-      streamRef.current = null
-      if (video) video.srcObject = null
+      teardown()
       readerRef.current = null
     }
-  }, [active, playAndDecode])
+  }, [teardown])
 
-  return { videoRef, error, needsTap, startCamera }
+  return { videoRef, phase, error, startCamera }
 }

@@ -72,8 +72,8 @@ export function BarcodeScanDialog({
 
   const {
     videoRef,
+    phase: cameraPhase,
     error: cameraError,
-    needsTap,
     startCamera,
   } = useBarcodeScanner({
     active: scannerActive,
@@ -196,12 +196,10 @@ export function BarcodeScanDialog({
                     Scan again
                   </Button>
                 </div>
-              ) : cameraError ? (
-                <div className="flex aspect-[4/3] w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-muted/40 p-4 text-center text-sm text-muted-foreground">
-                  <ScanLine className="size-6" />
-                  {cameraError}
-                </div>
               ) : (
+                // The <video> stays mounted across every phase so `videoRef`
+                // is available for the tap-to-start handler; phases render as
+                // overlays on top of it.
                 <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl border border-border bg-black">
                   <video
                     ref={videoRef}
@@ -210,21 +208,41 @@ export function BarcodeScanDialog({
                     playsInline
                   />
                   {/* scan reticle */}
-                  <div className="pointer-events-none absolute inset-0 grid place-items-center">
-                    <div className="h-24 w-4/5 rounded-lg border-2 border-white/80 shadow-[0_0_0_100vmax_rgba(0,0,0,0.25)]" />
-                  </div>
-                  {needsTap && (
+                  {cameraPhase === "running" && (
+                    <div className="pointer-events-none absolute inset-0 grid place-items-center">
+                      <div className="h-24 w-4/5 rounded-lg border-2 border-white/80 shadow-[0_0_0_100vmax_rgba(0,0,0,0.25)]" />
+                    </div>
+                  )}
+
+                  {(cameraPhase === "idle" || cameraPhase === "error") && (
                     <button
                       type="button"
-                      onClick={startCamera}
-                      className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/60 text-sm font-medium text-white"
+                      onClick={() => void startCamera()}
+                      className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/70 p-4 text-center text-sm font-medium text-white"
                     >
                       <span className="grid size-12 place-items-center rounded-full bg-white/15">
                         <Camera className="size-6" />
                       </span>
-                      Tap to start camera
+                      {cameraPhase === "error" ? (
+                        <span className="max-w-[16rem] text-white/90">
+                          {cameraError}
+                          <span className="mt-1 block underline underline-offset-4">
+                            Tap to try again
+                          </span>
+                        </span>
+                      ) : (
+                        "Tap to start camera"
+                      )}
                     </button>
                   )}
+
+                  {cameraPhase === "starting" && (
+                    <div className="absolute inset-0 grid place-items-center gap-2 bg-black/60 text-sm font-medium text-white">
+                      <ScanLine className="size-6 animate-pulse" />
+                      Starting camera…
+                    </div>
+                  )}
+
                   {looking && (
                     <div className="absolute inset-0 grid place-items-center bg-black/50 text-sm font-medium text-white">
                       Looking up…
