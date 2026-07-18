@@ -37,7 +37,7 @@ const fade = (delay = 0) => ({
 export function NutritionHome() {
   const { mode } = useMode()
   const accent = editorialAccent[mode]
-  const { meals, loading, addMeal, deleteMeal, dropMeal } = useMeals()
+  const { meals, loading, addMeal, deleteMeal, dropMeal, reload } = useMeals()
   const { days: weekDays, loading: weekLoading } = useWeekMeals()
   const targets = useTargets()
   const { profile } = useMe()

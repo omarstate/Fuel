@@ -124,7 +124,7 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="gap-4 px-2 pt-2">
-        <Link to="/editorial" className="flex items-center gap-2.5 px-1">
+        <Link to="/" className="flex items-center gap-2.5 px-1">
           <LogoMark
             className="size-7 shrink-0"
             accent={editorialAccent[mode]}
