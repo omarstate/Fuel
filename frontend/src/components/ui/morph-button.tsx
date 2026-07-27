@@ -1,6 +1,7 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
 import { BadgeMorph, type Status as MorphStatus } from "@/components/ui/badge-morph"
+import { useI18n } from "@/lib/i18n"
 
 export type { MorphStatus }
 export type MorphIntent = "default" | "destructive"
@@ -32,16 +33,16 @@ export interface MorphButtonProps {
 
 /** Red accent/glow to reuse for destructive-intent success (deletion reads red, not green). */
 const DESTRUCTIVE_SUCCESS_OVERRIDE_CLASS =
-  "[&_.text-emerald-500]:text-red-500"
+  "[&_.morph-success]:text-red-500"
 
 export function MorphButton({
   onAction,
   status: controlledStatus,
   onClick,
   idleLabel,
-  loadingLabel = "Saving…",
+  loadingLabel,
   successLabel,
-  errorLabel = "Failed",
+  errorLabel,
   idleIcon: IdleIcon,
   intent = "default",
   variant = "pill",
@@ -53,11 +54,14 @@ export function MorphButton({
   className,
   "aria-label": ariaLabel,
 }: MorphButtonProps) {
+  const { t } = useI18n()
   const [internalStatus, setInternalStatus] = React.useState<MorphStatus>("idle")
   const isControlled = controlledStatus !== undefined
   const status = isControlled ? controlledStatus : internalStatus
+  const resolvedLoadingLabel = loadingLabel ?? t("common.saving")
+  const resolvedErrorLabel = errorLabel ?? t("common.error")
   const resolvedSuccessLabel =
-    successLabel ?? (intent === "destructive" ? "Deleted" : "Done")
+    successLabel ?? (intent === "destructive" ? t("common.deleted") : t("common.done"))
 
   const resetTimer = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   React.useEffect(() => {
@@ -98,10 +102,10 @@ export function MorphButton({
     status === "idle"
       ? idleLabel
       : status === "loading"
-        ? loadingLabel
+        ? resolvedLoadingLabel
         : status === "success"
           ? resolvedSuccessLabel
-          : errorLabel
+          : resolvedErrorLabel
 
   const isDestructiveSuccess = intent === "destructive" && status === "success"
   const isBusy = status !== "idle"

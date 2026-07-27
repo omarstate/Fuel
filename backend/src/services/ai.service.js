@@ -24,7 +24,7 @@ const utcDayKey = (value = new Date()) => {
 // AI meal lookup
 // -------------------------------------------------------------------------
 
-const LOOKUP_PROMPT = (query) => `You are a nutrition data assistant. The user wants to log the following food (may contain MULTIPLE items):
+const LOOKUP_PROMPT = (query, lang = "en") => `You are a nutrition data assistant. The user wants to log the following food (may contain MULTIPLE items):
 "${query}"
 Use Google Search to find nutrition facts for EACH distinct item. Prefer the brand's OFFICIAL website or official menu/nutrition PDF; use reputable databases only when no official source exists.
 Reply with ONLY a JSON array (no prose, no markdown), each element:
@@ -34,7 +34,12 @@ Reply with ONLY a JSON array (no prose, no markdown), each element:
  "confidence": "official" | "estimate",   // "official" ONLY if values come from the brand's own site
  "ranges": {"calories":[min,max],"protein":[min,max],"carbs":[min,max],"fat":[min,max]} | null,
     // REQUIRED when confidence is "estimate", null when "official"
- "sourceUrl": string|null, "sourceTitle": string|null}`
+ "sourceUrl": string|null, "sourceTitle": string|null}${
+   lang === "ar"
+     ? `
+Write "name" and "servingSize" in Arabic. If the user's query is already in Arabic, keep the meal name close to how they wrote it. Keep brand names in their original Latin script. JSON keys stay in English; numbers stay as digits.`
+     : ""
+ }`
 
 // Look up the ai-discovered category once. Falls back to the first category if
 // the 0008 seed hasn't run yet; returns null only if there are no categories.
@@ -57,7 +62,7 @@ const getAiCategoryId = async () => {
   return firstCat?.id ?? null
 }
 
-export const lookupMeals = async (userId, query) => {
+export const lookupMeals = async (userId, query, lang = "en") => {
   // 1. Pre-check the catalog so we never duplicate an existing meal or spend a
   //    Gemini call when we already have a match.
   const { data: existing, error: existingError } = await supabase
@@ -78,7 +83,7 @@ export const lookupMeals = async (userId, query) => {
   // 2. Ask Gemini (grounded with Google Search).
   const { data, sources } = await generateJson({
     useSearch: true,
-    prompt: LOOKUP_PROMPT(query),
+    prompt: LOOKUP_PROMPT(query, lang),
   })
 
   const parsed = aiMealArraySchema.parse(data)
@@ -140,13 +145,18 @@ export const lookupMeals = async (userId, query) => {
 
 const daysAgoIso = (days) => new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString()
 
-const INSIGHTS_PROMPT = (factsJson) => `You are a friendly, concise fitness coach. Given the user's FACTS (JSON), write a short, encouraging daily summary. No medical claims, no shaming tone.
+const INSIGHTS_PROMPT = (factsJson, lang = "en") => `You are a friendly, concise fitness coach. Given the user's FACTS (JSON), write a short, encouraging daily summary. No medical claims, no shaming tone.
 FACTS:
 ${factsJson}
 Reply with ONLY JSON (no prose, no markdown):
 {"headline": string (<= 90 chars, punchy, mention the streak if it's alive),
  "insights": [{"title": string, "body": string (<= 220 chars)}]  (2-4 items covering: intake vs target, protein, workout consistency, recent trend),
- "tips": [string]  (2-3 short actionable tips for today)}`
+ "tips": [string]  (2-3 short actionable tips for today)}${
+   lang === "ar"
+     ? `
+Write the "headline", every "title"/"body", and every "tips" string in Modern Standard Arabic with an encouraging, friendly Egyptian-appropriate tone. Keep the JSON keys in English. Numbers may stay as Western digits.`
+     : ""
+ }`
 
 const gatherFacts = async (userId) => {
   const [mealsRes, workoutsRes, mealsWideRes, workoutsWideRes, profile] = await Promise.all([
@@ -243,7 +253,7 @@ const gatherFacts = async (userId) => {
   }
 }
 
-export const getInsights = async (userId, { refresh = false } = {}) => {
+export const getInsights = async (userId, { refresh = false, lang = "en" } = {}) => {
   const todayKey = utcDayKey()
 
   if (!refresh) {
@@ -254,7 +264,9 @@ export const getInsights = async (userId, { refresh = false } = {}) => {
       .eq("day", todayKey)
       .maybeSingle()
 
-    if (cached?.content) {
+    // Only reuse the cached narrative when it matches the requested language.
+    // Rows written before this feature carry no `lang` — treat those as "en".
+    if (cached?.content && (cached.content.lang ?? "en") === lang) {
       return { ...cached.content, day: todayKey, cached: true }
     }
   }
@@ -264,16 +276,19 @@ export const getInsights = async (userId, { refresh = false } = {}) => {
   const { data, modelUsed } = await generateJson({
     useSearch: false,
     temperature: 0.4,
-    prompt: INSIGHTS_PROMPT(JSON.stringify(facts)),
+    prompt: INSIGHTS_PROMPT(JSON.stringify(facts), lang),
   })
 
   const narrative = insightsSchema.parse(data)
+  // Stamp the language into the cached content so a later request in the other
+  // language regenerates instead of serving mismatched prose.
+  const cachedContent = { ...narrative, lang }
 
   // Upsert the cache (best-effort — a failed write shouldn't break the response).
   await supabase
     .from("ai_insights")
     .upsert(
-      { user_id: userId, day: todayKey, content: narrative, model: modelUsed },
+      { user_id: userId, day: todayKey, content: cachedContent, model: modelUsed },
       { onConflict: "user_id,day" }
     )
 
@@ -303,11 +318,26 @@ const SUGGEST_COUNT = 3
 // time the user logs food), which made a live Gemini call per log impractical
 // on a free-tier quota. The ranking was already deterministic (score-meals.js);
 // this just describes that ranking in the same numeric style Gemini used.
-const describeFit = (meal, remaining) => {
+const describeFit = (meal, remaining, lang = "en") => {
   const kcalLeft = Math.max(remaining.calories - meal.calories, 0)
-  const proteinLeft = Math.max(remaining.protein - meal.protein, 0)
   const closeCalories = Math.abs(meal.calories - remaining.calories) <= Math.max(remaining.calories * 0.15, 50)
   const closeProtein = Math.abs(meal.protein - remaining.protein) <= Math.max(remaining.protein * 0.25, 5)
+
+  if (lang === "ar") {
+    if (closeCalories && closeProtein) {
+      return `يطابق المتبقّي تقريبًا — ${meal.calories} سعرة و${meal.protein} جم بروتين`
+    }
+    if (meal.calories <= remaining.calories && closeProtein) {
+      return `يغطّي ${meal.protein} جم من بروتينك المتبقّي (${remaining.protein} جم)، ويتبقّى ${kcalLeft} سعرة`
+    }
+    if (closeProtein) {
+      return `يحقّق هدف البروتين بـ ${meal.protein} جم، ويزيد قليلًا عن سعراتك المتبقّية (${remaining.calories} سعرة)`
+    }
+    if (meal.calories <= remaining.calories) {
+      return `${meal.calories} سعرة و${meal.protein} جم بروتين — أقل بمريح من سعراتك المتبقّية (${remaining.calories} سعرة)`
+    }
+    return `${meal.calories} سعرة و${meal.protein} جم بروتين، قريب من المتبقّي لديك (${remaining.calories} سعرة / ${remaining.protein} جم بروتين)`
+  }
 
   if (closeCalories && closeProtein) {
     return `Matches what's left almost exactly — ${meal.calories} kcal, ${meal.protein} g protein`
@@ -324,13 +354,13 @@ const describeFit = (meal, remaining) => {
   return `${meal.calories} kcal and ${meal.protein} g protein, close to your ${remaining.calories} kcal / ${remaining.protein} g protein left`
 }
 
-const buildSuggestions = (shortlist, remaining) =>
+const buildSuggestions = (shortlist, remaining, lang = "en") =>
   shortlist.slice(0, SUGGEST_COUNT).map((meal) => ({
     meal,
-    reason: describeFit(meal, remaining),
+    reason: describeFit(meal, remaining, lang),
   }))
 
-export const suggestMeals = async (userId, remaining) => {
+export const suggestMeals = async (userId, remaining, lang = "en") => {
   // 1. Nothing meaningful left to fill.
   if (remaining.calories < SUGGEST_MIN_CALORIES) {
     return { suggestions: [], targetReached: true, aiUsed: false }
@@ -360,7 +390,7 @@ export const suggestMeals = async (userId, remaining) => {
   const shortlist = rankMealsForRemaining(candidates, remaining, { max: SHORTLIST_MAX })
 
   return {
-    suggestions: buildSuggestions(shortlist, remaining),
+    suggestions: buildSuggestions(shortlist, remaining, lang),
     targetReached: false,
     aiUsed: false,
   }

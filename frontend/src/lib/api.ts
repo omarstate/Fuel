@@ -268,6 +268,7 @@ export type EstimatedMeal = {
 export function estimateMeals(input: {
   place?: string
   items: string[]
+  lang?: "en" | "ar"
 }): Promise<EstimatedMeal[]> {
   return request<EstimatedMeal[]>("/meals/estimate", {
     method: "POST",
@@ -390,14 +391,17 @@ export function createWorkout(input: {
 
 // --- AI features (Gemini-backed, all via the backend) ---
 
+export type Lang = "en" | "ar"
+
 export type AiLookupItem = { meal: CatalogMeal; created: boolean }
 
 export function aiLookupMeals(
-  query: string
+  query: string,
+  lang: Lang = "en"
 ): Promise<{ items: AiLookupItem[]; usedAi: boolean }> {
   return request<{ items: AiLookupItem[]; usedAi: boolean }>("/ai/meals/lookup", {
     method: "POST",
-    body: JSON.stringify({ query }),
+    body: JSON.stringify({ query, lang }),
   })
 }
 
@@ -410,8 +414,11 @@ export type AiInsights = {
   cached?: boolean
 }
 
-export function getAiInsights(refresh?: boolean): Promise<AiInsights> {
-  return request<AiInsights>(`/ai/insights${refresh ? "?refresh=1" : ""}`)
+export function getAiInsights(refresh?: boolean, lang: Lang = "en"): Promise<AiInsights> {
+  const query = new URLSearchParams()
+  if (refresh) query.set("refresh", "1")
+  query.set("lang", lang)
+  return request<AiInsights>(`/ai/insights?${query.toString()}`)
 }
 
 export type MealSuggestion = { meal: CatalogMeal; reason: string }
@@ -426,14 +433,17 @@ export type SuggestResponse = {
  * The client sends `remaining` (target − consumed, floored at 0) so the app's
  * local-time "today" isn't second-guessed server-side. Works even when Gemini
  * is unconfigured — the backend falls back to a deterministic ranking. */
-export function suggestMeals(remaining: {
-  calories: number
-  protein: number
-  carbs: number
-  fat: number
-}): Promise<SuggestResponse> {
+export function suggestMeals(
+  remaining: {
+    calories: number
+    protein: number
+    carbs: number
+    fat: number
+  },
+  lang: Lang = "en"
+): Promise<SuggestResponse> {
   return request<SuggestResponse>("/ai/meals/suggest", {
     method: "POST",
-    body: JSON.stringify({ remaining }),
+    body: JSON.stringify({ remaining, lang }),
   })
 }

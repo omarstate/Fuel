@@ -4,6 +4,7 @@ import { CalendarClock, RotateCcw, UtensilsCrossed } from "lucide-react"
 import { useMealHistory, type MealHistoryDay } from "@/app-editorial/use-meal-history"
 import { MealRow } from "@/app-editorial/meal-row"
 import { dayKey } from "@/app-editorial/day-bounds"
+import { useI18n, type I18nContextValue } from "@/lib/i18n"
 
 const fade = (delay = 0) => ({
   initial: { opacity: 0, y: 12 },
@@ -11,15 +12,15 @@ const fade = (delay = 0) => ({
   transition: { duration: 0.4, delay },
 })
 
-function formatDayLabel(date: Date) {
+function formatDayLabel(date: Date, i18n: I18nContextValue) {
   const today = new Date()
   const yesterday = new Date()
   yesterday.setDate(yesterday.getDate() - 1)
 
-  if (dayKey(date) === dayKey(today)) return "Today"
-  if (dayKey(date) === dayKey(yesterday)) return "Yesterday"
+  if (dayKey(date) === dayKey(today)) return i18n.t("history.today")
+  if (dayKey(date) === dayKey(yesterday)) return i18n.t("history.yesterday")
 
-  return date.toLocaleDateString(undefined, {
+  return i18n.formatDate(date, {
     weekday: "short",
     month: "short",
     day: "numeric",
@@ -37,6 +38,8 @@ function DayGroup({
   onDelete: (id: string) => Promise<boolean>
   onRemoved: (id: string) => void
 }) {
+  const i18n = useI18n()
+  const { t, tp, formatNumber } = i18n
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -47,25 +50,25 @@ function DayGroup({
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border py-4">
         <div>
           <div className="font-heading text-base font-semibold tracking-tight text-foreground">
-            {formatDayLabel(day.date)}
+            {formatDayLabel(day.date, i18n)}
           </div>
           <div className="font-mono text-[0.7rem] uppercase tracking-[0.12em] text-muted-foreground">
-            {day.meals.length} {day.meals.length === 1 ? "meal" : "meals"}
+            {tp("plural.meals", day.meals.length)}
           </div>
         </div>
         <div className="flex items-center gap-4 font-mono text-xs text-muted-foreground">
           <span>
-            <span className="text-[#b5431c]">P</span> {day.totals.protein}
+            <span className="text-[#b5431c]">P</span> {formatNumber(day.totals.protein)}
           </span>
           <span>
-            <span className="text-[#a9781f]">C</span> {day.totals.carbs}
+            <span className="text-[#a9781f]">C</span> {formatNumber(day.totals.carbs)}
           </span>
           <span>
-            <span className="text-[#69762d]">F</span> {day.totals.fat}
+            <span className="text-[#5c6d0a]">F</span> {formatNumber(day.totals.fat)}
           </span>
           <span className="text-sm font-semibold text-foreground">
-            {day.totals.calories}
-            <span className="ml-1 text-[0.65rem] font-normal text-muted-foreground">kcal</span>
+            {formatNumber(day.totals.calories)}
+            <span className="ms-1 text-[0.65rem] font-normal text-muted-foreground">{t("common.kcal")}</span>
           </span>
         </div>
       </div>
@@ -87,6 +90,7 @@ function DayGroup({
 /** Last 30 days of logged meals, grouped by day, most recent first. Lives
  * inside the editorial shell at /dashboard/nutrition/history. */
 export function MealHistory() {
+  const { t } = useI18n()
   const { days, loading, error, reload, deleteMeal, dropMeal } = useMealHistory()
 
   return (
@@ -97,13 +101,13 @@ export function MealHistory() {
       >
         <div>
           <div className="font-mono text-[0.7rem] uppercase tracking-[0.18em] text-[var(--accent-ink)]">
-            Nutrition · History
+            {t("history.eyebrow")}
           </div>
           <h1 className="mt-2 font-heading text-4xl font-semibold tracking-tight text-foreground">
-            Meal history
+            {t("history.title")}
           </h1>
           <p className="mt-1.5 max-w-md text-sm text-muted-foreground">
-            Everything you've logged in the last 30 days, grouped by day.
+            {t("history.subtitle")}
           </p>
         </div>
       </motion.header>
@@ -114,13 +118,13 @@ export function MealHistory() {
             <span className="grid size-11 place-items-center rounded-xl bg-[var(--accent-tint)] text-[var(--accent-ink)]">
               <CalendarClock className="size-5" />
             </span>
-            <div className="font-medium text-foreground">Couldn't load your history</div>
+            <div className="font-medium text-foreground">{t("history.loadError")}</div>
             <button
               type="button"
               onClick={() => reload()}
               className="mt-1 inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted"
             >
-              <RotateCcw className="size-4" /> Retry
+              <RotateCcw className="size-4" /> {t("common.retry")}
             </button>
           </div>
         ) : loading ? (
@@ -139,16 +143,16 @@ export function MealHistory() {
               <UtensilsCrossed className="size-5" />
             </span>
             <div>
-              <div className="font-medium text-foreground">No meals in the last 30 days</div>
+              <div className="font-medium text-foreground">{t("history.emptyTitle")}</div>
               <p className="mt-1 max-w-xs text-sm text-muted-foreground">
-                Log a meal from the Nutrition overview and it'll show up here.
+                {t("history.emptyHint")}
               </p>
             </div>
             <Link
               to="/dashboard/nutrition"
               className="mt-1 inline-flex items-center gap-2 rounded-lg bg-[#14120f] px-4 py-2 text-sm font-medium text-[#f7f3ea] transition-colors hover:bg-[#2a251d]"
             >
-              Go to Nutrition
+              {t("history.goToNutrition")}
             </Link>
           </div>
         ) : (

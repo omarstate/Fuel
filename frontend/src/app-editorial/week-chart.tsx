@@ -1,7 +1,17 @@
 import { KCAL_PER_KG, type Direction } from "@/lib/nutrition"
 import type { WeekDay } from "@/app-editorial/use-week-meals"
+import { useI18n, type I18nContextValue } from "@/lib/i18n"
+import type { MessageKey } from "@/lib/i18n/en"
 
-const DAY_LABELS = ["M", "T", "W", "T", "F", "S", "S"]
+const DAY_LABEL_KEYS: MessageKey[] = [
+  "week.mon",
+  "week.tue",
+  "week.wed",
+  "week.thu",
+  "week.fri",
+  "week.sat",
+  "week.sun",
+]
 
 /** A day counts as "on target" if it lands within this fraction of the goal. */
 const TARGET_BAND = 0.1
@@ -25,34 +35,38 @@ function barColor(outcome: Outcome, accent: string): string {
   return "color-mix(in oklab, var(--foreground) 20%, transparent)"
 }
 
-function formatSigned(n: number): string {
+function formatSigned(n: number, formatNumber: I18nContextValue["formatNumber"]): string {
   const rounded = Math.round(n)
-  return `${rounded > 0 ? "+" : rounded < 0 ? "−" : ""}${Math.abs(rounded).toLocaleString()}`
+  const sign = rounded > 0 ? "+" : rounded < 0 ? "−" : ""
+  return `${sign}${formatNumber(Math.abs(rounded))}`
 }
 
 /** Turns the week's net calorie delta into a one-line read that respects the
  * user's goal direction — a deficit is progress when cutting, a shortfall when
  * bulking, and drift either way when maintaining. */
-function netSummary(net: number, direction: Direction) {
+function netSummary(net: number, direction: Direction, i18n: I18nContextValue) {
+  const { t, formatNumber } = i18n
   const kg = Math.abs(net) / KCAL_PER_KG
-  const kgLabel = kg < 0.1 ? "under 0.1 kg" : `≈${kg.toFixed(1)} kg`
+  const kgLabel =
+    kg < 0.1 ? t("week.underTenthKg") : t("week.approxKg", { value: formatNumber(kg, { maximumFractionDigits: 1, minimumFractionDigits: 1 }) })
 
   if (direction === "maintain") {
     const onTrack = Math.abs(net) < KCAL_PER_KG * 0.15
+    if (onTrack) return { onTrack, text: t("week.holdingSteady") }
     return {
       onTrack,
-      text: onTrack ? "Holding steady" : `${net < 0 ? "Under" : "Over"} maintenance · ${kgLabel}`,
+      text: `${net < 0 ? t("week.underMaintenance") : t("week.overMaintenance")} · ${kgLabel}`,
     }
   }
 
   if (direction === "cut") {
-    if (net < 0) return { onTrack: true, text: `On track to lose ${kgLabel}` }
-    return { onTrack: false, text: `Surplus this week · ${kgLabel} against your cut` }
+    if (net < 0) return { onTrack: true, text: t("week.onTrackLose", { value: kgLabel }) }
+    return { onTrack: false, text: t("week.surplusVsCut", { value: kgLabel }) }
   }
 
   // bulk
-  if (net > 0) return { onTrack: true, text: `On track to gain ${kgLabel}` }
-  return { onTrack: false, text: `Deficit this week · ${kgLabel} against your bulk` }
+  if (net > 0) return { onTrack: true, text: t("week.onTrackGain", { value: kgLabel }) }
+  return { onTrack: false, text: t("week.deficitVsBulk", { value: kgLabel }) }
 }
 
 export function WeekChart({
@@ -80,7 +94,9 @@ export function WeekChart({
     ? Math.round(tracked.reduce((s, d) => s + d.calories, 0) / tracked.length)
     : 0
   const net = tracked.reduce((s, d) => s + (d.calories - goal), 0)
-  const summary = netSummary(net, direction)
+  const i18n = useI18n()
+  const { t, formatNumber } = i18n
+  const summary = netSummary(net, direction, i18n)
   const hasData = tracked.length > 0
 
   return (
@@ -88,22 +104,22 @@ export function WeekChart({
       <div className="flex items-center justify-between">
         <div>
           <div className="font-mono text-[0.65rem] uppercase tracking-[0.16em] text-muted-foreground">
-            This week
+            {t("week.thisWeek")}
           </div>
-          <div className="mt-1 text-sm text-foreground">Calories vs goal</div>
+          <div className="mt-1 text-sm text-foreground">{t("week.caloriesVsGoal")}</div>
         </div>
         <div className="flex items-center gap-3 font-mono text-[0.65rem] text-muted-foreground">
           <span className="flex items-center gap-1.5">
             <span className="size-2 rounded-full" style={{ backgroundColor: accent }} />
-            On target
+            {t("week.onTarget")}
           </span>
           <span className="flex items-center gap-1.5">
             <span className="size-2 rounded-full" style={{ backgroundColor: OVER_COLOR }} />
-            Over
+            {t("week.over")}
           </span>
           <span className="flex items-center gap-1.5">
             <span className="h-px w-3 border-t border-dashed border-muted-foreground" />
-            Goal
+            {t("week.goal")}
           </span>
         </div>
       </div>
@@ -152,7 +168,7 @@ export function WeekChart({
                       : "text-muted-foreground"
                 }`}
               >
-                {DAY_LABELS[d.index]}
+                {t(DAY_LABEL_KEYS[d.index])}
               </span>
             </div>
           )
@@ -161,16 +177,20 @@ export function WeekChart({
 
       {/* Weekly scoreboard */}
       <div className="mt-6 grid grid-cols-3 gap-4 border-t border-border pt-4">
-        <Stat label="On target" value={hasData ? `${daysOnTarget}/${tracked.length}` : "—"} hint="days" />
         <Stat
-          label="Daily avg"
-          value={hasData ? avg.toLocaleString() : "—"}
-          hint={`of ${goal.toLocaleString()} kcal`}
+          label={t("week.onTarget")}
+          value={hasData ? `${formatNumber(daysOnTarget)}/${formatNumber(tracked.length)}` : "—"}
+          hint={t("week.days")}
         />
         <Stat
-          label="Net vs goal"
-          value={hasData ? formatSigned(net) : "—"}
-          hint="kcal this week"
+          label={t("week.dailyAvg")}
+          value={hasData ? formatNumber(avg) : "—"}
+          hint={t("week.ofKcal", { value: formatNumber(goal) })}
+        />
+        <Stat
+          label={t("week.netVsGoal")}
+          value={hasData ? formatSigned(net, formatNumber) : "—"}
+          hint={t("week.kcalThisWeek")}
         />
       </div>
 

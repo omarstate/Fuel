@@ -12,6 +12,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@fontsource-variable/cairo": "^5.2.7",
     "@fontsource-variable/google-sans-flex": "^5.2.3",
     "@fontsource/jetbrains-mono": "^5.2.8",
     "@gsap/react": "^2.1.2",

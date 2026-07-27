@@ -4,7 +4,7 @@ export type Mode = "nutrition" | "workouts"
 
 export const modeColors: Record<Mode, string> = {
   nutrition: "#ff6b35",
-  workouts: "#d7fa34",
+  workouts: "#d9fa36",
 }
 
 const ModeContext = React.createContext<{

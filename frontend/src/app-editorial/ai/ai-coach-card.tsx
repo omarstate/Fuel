@@ -2,6 +2,7 @@ import * as React from "react"
 import { motion } from "framer-motion"
 import { RotateCcw, Check, Flame } from "lucide-react"
 import { getAiInsights, type AiInsights } from "@/lib/api"
+import { useI18n } from "@/lib/i18n"
 import { cn } from "@/lib/utils"
 
 type State =
@@ -17,23 +18,28 @@ function isConfigError(message: string): boolean {
 }
 
 export function AiCoachCard() {
+  const { t, lang, localizeDigits, formatNumber } = useI18n()
   const [state, setState] = React.useState<State>({ kind: "loading" })
   const [refreshing, setRefreshing] = React.useState(false)
 
-  const load = React.useCallback(async (refresh: boolean, active: () => boolean) => {
-    try {
-      const data = await getAiInsights(refresh)
-      if (!active()) return
-      setState({ kind: "ready", data })
-    } catch (err) {
-      if (!active()) return
-      const message = err instanceof Error ? err.message : ""
-      setState({ kind: isConfigError(message) ? "hidden" : "error" })
-    }
-  }, [])
+  const load = React.useCallback(
+    async (refresh: boolean, active: () => boolean) => {
+      try {
+        const data = await getAiInsights(refresh, lang)
+        if (!active()) return
+        setState({ kind: "ready", data })
+      } catch (err) {
+        if (!active()) return
+        const message = err instanceof Error ? err.message : ""
+        setState({ kind: isConfigError(message) ? "hidden" : "error" })
+      }
+    },
+    [lang]
+  )
 
   React.useEffect(() => {
     let alive = true
+    setState({ kind: "loading" })
     void load(false, () => alive)
     return () => {
       alive = false
@@ -67,19 +73,19 @@ export function AiCoachCard() {
       <div className="rounded-xl border border-border bg-card p-6">
         <div className="flex items-center justify-between gap-3">
           <div className="font-mono text-[0.7rem] uppercase tracking-[0.18em] text-[var(--accent-ink)]">
-            Coach
+            {t("coach.title")}
           </div>
           <button
             type="button"
             onClick={handleRefresh}
             disabled={refreshing}
-            aria-label="Retry coach insights"
+            aria-label={t("coach.retry")}
             className="grid size-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
           >
             <RotateCcw className={cn("size-3.5", refreshing && "animate-spin")} />
           </button>
         </div>
-        <p className="mt-3 text-sm text-muted-foreground">Coach is unavailable right now.</p>
+        <p className="mt-3 text-sm text-muted-foreground">{t("coach.unavailable")}</p>
       </div>
     )
   }
@@ -98,24 +104,24 @@ export function AiCoachCard() {
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <div className="font-mono text-[0.7rem] uppercase tracking-[0.18em] text-[var(--accent-ink)]">
-              Coach
+              {t("coach.title")}
             </div>
             {streak > 0 && (
               <span className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-2 py-0.5 font-mono text-[0.65rem] text-foreground">
                 <Flame className="size-3 text-[var(--accent-ink)]" />
-                {streak}-day streak
+                {t("coach.dayStreak", { count: formatNumber(streak) })}
               </span>
             )}
           </div>
           <h3 className="mt-2 font-heading text-lg font-semibold tracking-tight text-foreground">
-            {data.headline}
+            {localizeDigits(data.headline)}
           </h3>
         </div>
         <button
           type="button"
           onClick={handleRefresh}
           disabled={refreshing}
-          aria-label="Refresh coach insights"
+          aria-label={t("coach.refresh")}
           className="grid size-7 shrink-0 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
         >
           <RotateCcw className={cn("size-3.5", refreshing && "animate-spin")} />
@@ -126,8 +132,8 @@ export function AiCoachCard() {
         <div className="mt-4 flex flex-col gap-3">
           {data.insights.map((insight, i) => (
             <div key={i}>
-              <div className="text-sm font-semibold text-foreground">{insight.title}</div>
-              <p className="mt-0.5 text-sm text-muted-foreground">{insight.body}</p>
+              <div className="text-sm font-semibold text-foreground">{localizeDigits(insight.title)}</div>
+              <p className="mt-0.5 text-sm text-muted-foreground">{localizeDigits(insight.body)}</p>
             </div>
           ))}
         </div>
@@ -138,7 +144,7 @@ export function AiCoachCard() {
           {data.tips.map((tip, i) => (
             <li key={i} className="flex items-start gap-2 text-sm text-foreground">
               <Check className="mt-0.5 size-4 shrink-0 text-[var(--accent-ink)]" />
-              <span>{tip}</span>
+              <span>{localizeDigits(tip)}</span>
             </li>
           ))}
         </ul>

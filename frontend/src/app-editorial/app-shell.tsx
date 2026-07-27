@@ -3,6 +3,7 @@ import { Link, Outlet, useLocation } from "react-router-dom"
 import { Menu } from "lucide-react"
 import { ModeProvider, useMode } from "@/components/site/mode-context"
 import { SidebarInset, SidebarProvider, useSidebar } from "@/components/ui/sidebar"
+import { useI18n } from "@/lib/i18n"
 import { AppSidebar } from "@/app-editorial/app-sidebar"
 import { LogoMark } from "@/app-editorial/logo-mark"
 import { editorialAccent, editorialAccentInk, editorialSpark } from "@/app-editorial/theme"
@@ -13,12 +14,13 @@ import { OnboardingDialog } from "@/app-editorial/onboarding-dialog"
 function MobileTopBar() {
   const { toggleSidebar } = useSidebar()
   const { mode } = useMode()
+  const { t } = useI18n()
   return (
     <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-border bg-background/90 px-4 py-2.5 backdrop-blur-md md:hidden">
       <button
         type="button"
         onClick={toggleSidebar}
-        aria-label="Open navigation"
+        aria-label={t("nav.openNavigation")}
         className="grid size-10 shrink-0 place-items-center rounded-lg border border-border bg-card text-foreground transition-transform active:scale-95"
       >
         <Menu className="size-5" />

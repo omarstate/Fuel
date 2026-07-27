@@ -25,6 +25,8 @@ export const createMealSchema = z.object({
 export const estimateMealsSchema = z
   .object({
     place: z.string().trim().max(120).optional(),
+    // Optional UI language — names/notes come back in this language. Default en.
+    lang: z.enum(["en", "ar"]).optional().default("en"),
     items: z
       .array(z.string())
       .or(z.string())

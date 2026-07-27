@@ -1,7 +1,8 @@
 import { motion } from "framer-motion"
 import { Trash2 } from "lucide-react"
-import { mealTypeLabel, type Meal } from "@/app/nutrition/types"
+import { type Meal } from "@/app/nutrition/types"
 import { MorphButton } from "@/components/ui/morph-button"
+import { useI18n } from "@/lib/i18n"
 
 export function MealRow({
   meal,
@@ -14,6 +15,7 @@ export function MealRow({
   /** Drops the meal from local state, called after the success beat. */
   onRemoved: () => void
 }) {
+  const { t, formatNumber } = useI18n()
   return (
     <motion.div
       layout
@@ -29,7 +31,7 @@ export function MealRow({
           {meal.name}
         </div>
         <div className="mt-0.5 font-mono text-[0.7rem] uppercase tracking-[0.12em] text-muted-foreground">
-          {mealTypeLabel[meal.mealType]}
+          {t(`mealType.${meal.mealType}`)}
           {meal.servingSize ? ` · ${meal.servingSize}` : ""}
         </div>
       </div>
@@ -37,21 +39,21 @@ export function MealRow({
       {/* macros */}
       <div className="hidden items-center gap-4 font-mono text-xs text-muted-foreground sm:flex">
         <span>
-          <span className="text-[#b5431c]">P</span> {meal.protein}
+          <span className="text-[#b5431c]">P</span> {formatNumber(meal.protein)}
         </span>
         <span>
-          <span className="text-[#a9781f]">C</span> {meal.carbs}
+          <span className="text-[#a9781f]">C</span> {formatNumber(meal.carbs)}
         </span>
         <span>
-          <span className="text-[#69762d]">F</span> {meal.fat}
+          <span className="text-[#5c6d0a]">F</span> {formatNumber(meal.fat)}
         </span>
       </div>
 
       {/* kcal */}
-      <div className="text-right font-mono text-sm font-semibold text-foreground">
-        {meal.calories}
-        <span className="ml-1 text-[0.65rem] font-normal text-muted-foreground">
-          kcal
+      <div className="text-end font-mono text-sm font-semibold text-foreground">
+        {formatNumber(meal.calories)}
+        <span className="ms-1 text-[0.65rem] font-normal text-muted-foreground">
+          {t("common.kcal")}
         </span>
       </div>
 
@@ -60,11 +62,11 @@ export function MealRow({
         variant="inline"
         intent="destructive"
         idleIcon={Trash2}
-        idleLabel={`Remove ${meal.name}`}
-        successLabel="Deleted"
+        idleLabel={t("common.remove") + " " + meal.name}
+        successLabel={t("common.deleted")}
         onAction={onDelete}
         onSuccess={onRemoved}
-        className="opacity-100 sm:ml-2 sm:opacity-0 sm:group-hover:opacity-100"
+        className="opacity-100 sm:ms-2 sm:opacity-0 sm:group-hover:opacity-100"
       />
     </motion.div>
   )

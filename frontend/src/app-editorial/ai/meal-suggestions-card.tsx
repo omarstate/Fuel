@@ -3,6 +3,7 @@ import { motion } from "framer-motion"
 import { RotateCcw, Check } from "lucide-react"
 import { AddToLogButton } from "@/app-editorial/add-to-log-button"
 import { suggestMeals, type SuggestResponse } from "@/lib/api"
+import { useI18n } from "@/lib/i18n"
 import { cn } from "@/lib/utils"
 
 type Remaining = { calories: number; protein: number; carbs: number; fat: number }
@@ -37,16 +38,17 @@ function bucketKey(r: Remaining): string {
 }
 
 function MacroTrio({ protein, carbs, fat }: { protein: number; carbs: number; fat: number }) {
+  const { formatNumber } = useI18n()
   return (
     <div className="flex items-center gap-x-2.5 font-mono text-xs whitespace-nowrap text-muted-foreground">
       <span>
-        <span className="text-[#b5431c]">P</span> {protein}
+        <span className="text-[#b5431c]">P</span> {formatNumber(protein)}
       </span>
       <span>
-        <span className="text-[#a9781f]">C</span> {carbs}
+        <span className="text-[#a9781f]">C</span> {formatNumber(carbs)}
       </span>
       <span>
-        <span className="text-[#69762d]">F</span> {fat}
+        <span className="text-[#5c6d0a]">F</span> {formatNumber(fat)}
       </span>
     </div>
   )
@@ -61,6 +63,7 @@ export function MealSuggestionsCard({
   ready: boolean
   onLogged: () => void
 }) {
+  const { t, lang, localizeDigits, formatNumber } = useI18n()
   const [state, setState] = React.useState<State>({ kind: "loading" })
   const [refreshing, setRefreshing] = React.useState(false)
   // Stale-response guard: only the latest request may write state.
@@ -70,7 +73,8 @@ export function MealSuggestionsCard({
 
   const load = React.useCallback(
     async (r: Remaining, force: boolean, active: () => boolean) => {
-      const cacheK = bucketKey(r)
+      // Cache per language too — the reason strings come back localized.
+      const cacheK = `${lang}:${bucketKey(r)}`
 
       if (!force) {
         const cached = suggestCache.get(cacheK)
@@ -84,7 +88,7 @@ export function MealSuggestionsCard({
       requestIdRef.current = requestId
       setState({ kind: "loading" })
       try {
-        const data = await suggestMeals(r)
+        const data = await suggestMeals(r, lang)
         if (!active() || requestIdRef.current !== requestId) return
         suggestCache.set(cacheK, { at: Date.now(), data })
         setState({ kind: "ready", data })
@@ -94,11 +98,12 @@ export function MealSuggestionsCard({
         setState({ kind: isConfigError(message) ? "hidden" : "error" })
       }
     },
-    []
+    [lang]
   )
 
   // Fetch on mount and whenever the remaining bucket changes — but not until the
-  // meals have finished loading, so `remaining` reflects the real day.
+  // meals have finished loading, so `remaining` reflects the real day. Also
+  // refetch when the language changes so reasons match the active locale.
   React.useEffect(() => {
     if (!ready) return
     let alive = true
@@ -140,20 +145,20 @@ export function MealSuggestionsCard({
       <div className="rounded-xl border border-border bg-card p-6">
         <div className="flex items-center justify-between gap-3">
           <div className="font-mono text-[0.7rem] uppercase tracking-[0.18em] text-[var(--accent-ink)]">
-            Up next
+            {t("suggest.upNext")}
           </div>
           <button
             type="button"
             onClick={handleRefresh}
             disabled={refreshing}
-            aria-label="Retry meal suggestions"
+            aria-label={t("suggest.retry")}
             className="grid size-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
           >
             <RotateCcw className={cn("size-3.5", refreshing && "animate-spin")} />
           </button>
         </div>
         <p className="mt-3 text-sm text-muted-foreground">
-          Couldn't load suggestions right now.
+          {t("suggest.loadError")}
         </p>
       </div>
     )
@@ -170,19 +175,24 @@ export function MealSuggestionsCard({
         className="rounded-xl border border-border bg-card p-6"
       >
         <div className="font-mono text-[0.7rem] uppercase tracking-[0.18em] text-[var(--accent-ink)]">
-          Up next
+          {t("suggest.upNext")}
         </div>
         <div className="mt-3 flex items-center gap-2">
           <span className="grid size-6 place-items-center rounded-full bg-[var(--accent-tint)] text-[var(--accent-ink)]">
             <Check className="size-3.5" />
           </span>
-          <p className="text-sm text-foreground">Target hit — nothing left to fill today.</p>
+          <p className="text-sm text-foreground">{t("suggest.targetHit")}</p>
         </div>
       </motion.div>
     )
   }
 
-  const basis = `Left today: ${remaining.calories} kcal · ${remaining.protein} g P · ${remaining.carbs} g C · ${remaining.fat} g F`
+  const basis = t("suggest.leftToday", {
+    calories: formatNumber(remaining.calories),
+    protein: formatNumber(remaining.protein),
+    carbs: formatNumber(remaining.carbs),
+    fat: formatNumber(remaining.fat),
+  })
 
   return (
     <motion.div
@@ -194,10 +204,10 @@ export function MealSuggestionsCard({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="font-mono text-[0.7rem] uppercase tracking-[0.18em] text-[var(--accent-ink)]">
-            Up next
+            {t("suggest.upNext")}
           </div>
           <h3 className="mt-2 font-heading text-lg font-semibold tracking-tight text-foreground">
-            What fits your day
+            {t("suggest.whatFits")}
           </h3>
           <p className="mt-1 font-mono text-xs text-muted-foreground">{basis}</p>
         </div>
@@ -205,7 +215,7 @@ export function MealSuggestionsCard({
           type="button"
           onClick={handleRefresh}
           disabled={refreshing}
-          aria-label="Refresh meal suggestions"
+          aria-label={t("suggest.refresh")}
           className="grid size-7 shrink-0 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
         >
           <RotateCcw className={cn("size-3.5", refreshing && "animate-spin")} />
@@ -214,7 +224,7 @@ export function MealSuggestionsCard({
 
       {data.suggestions.length === 0 ? (
         <p className="mt-4 text-sm text-muted-foreground">
-          Nothing in your library fits what's left. Try the AI lookup.
+          {t("suggest.emptyLibrary")}
         </p>
       ) : (
         <div className="mt-4 flex flex-col divide-y divide-border">
@@ -233,11 +243,11 @@ export function MealSuggestionsCard({
                 </div>
                 <div className="mt-1 flex items-center gap-3">
                   <span className="font-mono text-xs text-muted-foreground">
-                    {meal.calories} kcal
+                    {formatNumber(meal.calories)} {t("common.kcal")}
                   </span>
                   <MacroTrio protein={meal.protein} carbs={meal.carbs} fat={meal.fat} />
                 </div>
-                <p className="mt-1 text-xs italic text-muted-foreground">{reason}</p>
+                <p className="mt-1 text-xs italic text-muted-foreground">{localizeDigits(reason)}</p>
               </div>
               <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
                 <AddToLogButton meal={meal} className="sm:text-xs" onLogged={onLogged} />

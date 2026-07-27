@@ -1,0 +1,350 @@
+// Arabic dictionary. Typed as Record<MessageKey, string> so TypeScript flags any
+// missing/extra key against en.ts. Modern Standard Arabic, friendly Egyptian
+// tone. Brand "Fuel" stays Latin. Plural keys cover Arabic's six categories.
+
+import type { MessageKey } from "./en"
+
+export const ar: Record<MessageKey, string> = {
+  // --- common ---
+  "common.cancel": "إلغاء",
+  "common.save": "حفظ",
+  "common.saving": "جارٍ الحفظ…",
+  "common.saved": "تم الحفظ",
+  "common.delete": "حذف",
+  "common.deleting": "جارٍ الحذف…",
+  "common.deleted": "تم الحذف",
+  "common.remove": "إزالة",
+  "common.removed": "تمت الإزالة",
+  "common.edit": "تعديل",
+  "common.done": "تم",
+  "common.close": "إغلاق",
+  "common.back": "رجوع",
+  "common.next": "التالي",
+  "common.retry": "إعادة المحاولة",
+  "common.error": "خطأ",
+  "common.loading": "جارٍ التحميل…",
+  "common.oneSec": "لحظة…",
+  "common.search": "بحث",
+  "common.add": "إضافة",
+  "common.added": "تمت الإضافة",
+  "common.adding": "جارٍ الإضافة…",
+  "common.comingSoon": "{feature} قريبًا.",
+  "common.kcal": "سعرة",
+  "common.g": "جم",
+  "common.gProtein": "جم بروتين",
+  "common.dayStreak": "يوم متتالٍ",
+  "common.showMore": "عرض المزيد",
+  "common.showLess": "عرض أقل",
+  "common.tryAgain": "حاول مرة أخرى",
+  "common.optional": "اختياري",
+
+  // --- macros ---
+  "macro.calories": "سعرات",
+  "macro.protein": "بروتين",
+  "macro.carbs": "كربوهيدرات",
+  "macro.fat": "دهون",
+
+  // --- meal types ---
+  "mealType.breakfast": "فطور",
+  "mealType.lunch": "غداء",
+  "mealType.dinner": "عشاء",
+  "mealType.snack": "سناك",
+
+  // --- plurals ---
+  "plural.items.one": "عنصر واحد",
+  "plural.items.other": "{count} عناصر",
+  "plural.meals.one": "وجبة واحدة",
+  "plural.meals.other": "{count} وجبات",
+  "plural.days.one": "يوم واحد",
+  "plural.days.other": "{count} أيام",
+  "plural.sessions.one": "جلسة واحدة",
+  "plural.sessions.other": "{count} جلسات",
+  "plural.sets.one": "مجموعة واحدة",
+  "plural.sets.other": "{count} مجموعات",
+  "plural.exercises.one": "تمرين واحد",
+  "plural.exercises.other": "{count} تمارين",
+  "plural.results.one": "نتيجة واحدة",
+  "plural.results.other": "{count} نتائج",
+  "plural.workouts.one": "تمرين واحد",
+  "plural.workouts.other": "{count} تمارين",
+
+  // --- nav / sidebar ---
+  "nav.nutrition": "التغذية",
+  "nav.workouts": "التمارين",
+  "nav.overview": "نظرة عامة",
+  "nav.today": "اليوم",
+  "nav.library": "المكتبة",
+  "nav.myMeals": "وجباتي",
+  "nav.history": "السجل",
+  "nav.recipes": "الوصفات",
+  "nav.water": "الماء",
+  "nav.workoutsLibrary": "المكتبة",
+  "nav.myWorkouts": "تماريني",
+  "nav.progress": "التقدّم",
+  "nav.profile": "الملف الشخصي",
+  "nav.signOut": "تسجيل الخروج",
+  "nav.account": "الحساب",
+  "nav.openNavigation": "فتح القائمة",
+
+  // --- language toggle ---
+  "lang.english": "EN",
+  "lang.arabic": "عربي",
+  "lang.label": "اللغة",
+
+  // --- login ---
+  "login.welcomeBack": "أهلًا بعودتك",
+  "login.getStarted": "لنبدأ",
+  "login.signInTitle": "تسجيل الدخول إلى Fuel",
+  "login.signUpTitle": "أنشئ سجلّك",
+  "login.signInSubtitle": "سجلّ واحد لما تأكله وما ترفعه.",
+  "login.signUpSubtitle": "ابدأ بتتبّع وجباتك وتمارينك على مسار واحد.",
+  "login.email": "البريد الإلكتروني",
+  "login.password": "كلمة المرور",
+  "login.signIn": "تسجيل الدخول",
+  "login.createAccount": "إنشاء حساب",
+  "login.newToFuel": "جديد على Fuel؟ ",
+  "login.haveAccount": "لديك حساب بالفعل؟ ",
+  "login.createOne": "أنشئ حسابًا",
+  "login.supabaseMissingInline":
+    "لم يتم إعداد Supabase بعد. أضِف مفاتيحك إلى frontend/.env.local ثم أعد التشغيل.",
+  "login.accountCreated": "تم إنشاء الحساب — تحقّق من بريدك للتأكيد ثم سجّل الدخول.",
+
+  // --- today / nutrition home ---
+  "today.title": "سجل اليوم",
+  "today.subtitle": "كل ما تناولته اليوم، مقسّمًا حسب الوجبة.",
+  "today.addMeal": "أضف وجبة",
+  "today.aiLookup": "بحث بالذكاء الاصطناعي",
+  "today.photo": "صورة",
+  "today.scan": "مسح",
+  "today.repeat": "تكرار",
+  "today.aiEstimate": "تقدير بالذكاء الاصطناعي",
+  "today.newCustomMeal": "وجبة مخصّصة جديدة",
+  "today.fromLibrary": "من المكتبة",
+  "today.addSection": "أضف {section}",
+  "today.nothingLogged": "لم تُسجّل {section} بعد.",
+  "today.remaining": "المتبقّي",
+  "today.overBy": "زيادة",
+  "today.eaten": "المُستهلَك",
+  "today.goal": "الهدف",
+  "feature.photoLog": "تسجيل بالصورة",
+  "feature.barcodeScan": "مسح الباركود",
+  "feature.repeatYesterday": "تكرار الأمس",
+
+  "nutrition.title": "التغذية",
+  "nutrition.onTargetStreak": "سلسلة الالتزام بالهدف",
+  "nutrition.day": "يوم",
+  "nutrition.days": "أيام",
+  "nutrition.daysWithinGoal": "أيام ضمن هدف السعرات",
+  "nutrition.hitGoalToStart": "حقّق هدفك لتبدأ سلسلة",
+  "nutrition.proteinLeft": "المتبقّي من البروتين",
+  "nutrition.ofTarget": "من هدف {value} جم",
+  "nutrition.todaysMeals": "وجبات اليوم",
+  "nutrition.openTodaysLog": "افتح سجل اليوم ←",
+  "nutrition.addMealManually": "أضف يدويًا",
+  "nutrition.estimateWithAi": "قدّر بالذكاء الاصطناعي",
+  "nutrition.noMealsYet": "لم تُسجّل أي وجبات بعد",
+  "nutrition.noMealsHint": "أضف وجبتك الأولى لملء حلقة اليوم وأهداف الماكرو.",
+  "nutrition.colMeal": "الوجبة",
+  "nutrition.colMacros": "الماكرو",
+  "nutrition.colKcal": "سعرة",
+
+  // --- macro summary ---
+  "macroSummary.consumed": "المُستهلَك",
+  "macroSummary.ofKcal": "من {value} سعرة",
+  "macroSummary.over": "زيادة {value}",
+  "macroSummary.left": "متبقّي {value}",
+
+  // --- pace ---
+  "pace.overGoal": "تجاوزت الهدف",
+  "pace.aheadOfPace": "متقدّم على الوتيرة",
+  "pace.roomToSpare": "لديك متّسع",
+  "pace.onPace": "على الوتيرة",
+
+  // --- week chart ---
+  "week.mon": "ن",
+  "week.tue": "ث",
+  "week.wed": "ر",
+  "week.thu": "خ",
+  "week.fri": "ج",
+  "week.sat": "س",
+  "week.sun": "ح",
+  "week.thisWeek": "هذا الأسبوع",
+  "week.caloriesVsGoal": "السعرات مقابل الهدف",
+  "week.onTarget": "ضمن الهدف",
+  "week.over": "تجاوز",
+  "week.goal": "الهدف",
+  "week.days": "أيام",
+  "week.dailyAvg": "المتوسط اليومي",
+  "week.netVsGoal": "الصافي مقابل الهدف",
+  "week.ofKcal": "من {value} سعرة",
+  "week.kcalThisWeek": "سعرة هذا الأسبوع",
+  "week.underTenthKg": "أقل من ٠٫١ كجم",
+  "week.approxKg": "≈{value} كجم",
+  "week.holdingSteady": "ثابت على المسار",
+  "week.underMaintenance": "أقل من الحفاظ",
+  "week.overMaintenance": "أعلى من الحفاظ",
+  "week.onTrackLose": "على المسار لخسارة {value}",
+  "week.surplusVsCut": "فائض هذا الأسبوع · {value} مقابل هدف التنشيف",
+  "week.onTrackGain": "على المسار لاكتساب {value}",
+  "week.deficitVsBulk": "عجز هذا الأسبوع · {value} مقابل هدف التضخيم",
+
+  // --- onboarding ---
+  "onboarding.welcome": "أهلًا بك في Fuel",
+  "onboarding.title": "لنحدّد هدفك اليومي",
+  "onboarding.description":
+    "بعض التفاصيل لنحسب لك هدفًا مناسبًا للسعرات والماكرو. يمكنك تغييرها في أي وقت من ملفك الشخصي.",
+  "onboarding.saveContinue": "احفظ وتابع",
+  "onboarding.targetsSet": "تم ضبط أهدافك.",
+  "onboarding.saveFailed": "تعذّر حفظ ملفك الشخصي.",
+
+  // --- profile fields ---
+  "profile.yourDailyTarget": "هدفك اليومي",
+  "profile.gProtein": "جم بروتين",
+  "profile.gCarbs": "جم كربوهيدرات",
+  "profile.gFat": "جم دهون",
+  "profile.fillToSeeTarget": "املأ الحقول أدناه لعرض هدفك المخصّص.",
+  "profile.sex": "النوع",
+  "profile.male": "ذكر",
+  "profile.female": "أنثى",
+  "profile.age": "العمر",
+  "profile.heightCm": "الطول (سم)",
+  "profile.weightKg": "الوزن (كجم)",
+  "profile.goalWeightKg": "الوزن المستهدف (كجم)",
+  "profile.activityLevel": "مستوى النشاط",
+  "profile.chooseActivity": "اختر مستوى نشاطك",
+  "profile.pace": "الوتيرة",
+
+  // --- activity levels ---
+  "activity.sedentary": "خامل",
+  "activity.sedentary.hint": "تمارين قليلة أو معدومة",
+  "activity.light": "نشاط خفيف",
+  "activity.light.hint": "تمارين خفيفة ١–٣ أيام أسبوعيًا",
+  "activity.moderate": "نشاط متوسط",
+  "activity.moderate.hint": "تمارين متوسطة ٣–٥ أيام أسبوعيًا",
+  "activity.very": "نشاط عالٍ",
+  "activity.very.hint": "تمارين شاقّة ٦–٧ أيام أسبوعيًا",
+  "activity.extra": "نشاط مكثّف",
+  "activity.extra.hint": "عمل بدني أو تدريب مرتين يوميًا",
+
+  // --- pace options ---
+  "pace.mild": "خفيفة",
+  "pace.mild.hint": "≈٠٫٢٥ كجم/أسبوع",
+  "pace.standard": "قياسية",
+  "pace.standard.hint": "≈٠٫٥ كجم/أسبوع",
+  "pace.aggressive": "سريعة",
+  "pace.aggressive.hint": "≈٠٫٧٥ كجم/أسبوع",
+
+  // --- profile page ---
+  "profile.currentTarget": "الهدف الحالي",
+  "profile.yrs": "{value} سنة",
+  "profile.cm": "{value} سم",
+  "profile.kgGoal": "{value} كجم (الهدف {goal} كجم)",
+  "profile.pacePace": "وتيرة {value}",
+  "profile.editDetails": "عدّل بياناتك",
+  "profile.name": "الاسم",
+  "profile.namePlaceholder": "بماذا نناديك؟",
+  "profile.reset": "إعادة تعيين",
+  "profile.saveChanges": "حفظ التغييرات",
+  "profile.dangerZone": "منطقة الخطر",
+  "profile.deleteAccount": "حذف الحساب",
+  "profile.deleteBlurb":
+    "احذف حسابك وكل بياناتك نهائيًا — الوجبات والتمارين والأهداف والسجل. لا يمكن التراجع عن هذا.",
+  "profile.deleteConfirmTitle": "حذف حسابك؟",
+  "profile.deleteConfirmBody":
+    "سيؤدي هذا إلى إزالة حسابك وكل ما فيه نهائيًا — الوجبات والتمارين والأهداف والسجل. لا يمكن التراجع عن هذا الإجراء.",
+  "profile.updated": "تم تحديث الملف الشخصي.",
+  "profile.accountDeleted": "تم حذف حسابك.",
+  "profile.deleteFailed": "تعذّر حذف حسابك.",
+  "profile.there": "صديقي",
+
+  // --- AI coach card ---
+  "coach.title": "المدرّب",
+  "coach.retry": "إعادة محاولة رؤى المدرّب",
+  "coach.refresh": "تحديث رؤى المدرّب",
+  "coach.unavailable": "المدرّب غير متاح الآن.",
+  "coach.dayStreak": "سلسلة {count} أيام",
+
+  // --- meal suggestions card ---
+  "suggest.upNext": "التالي",
+  "suggest.whatFits": "ما يناسب يومك",
+  "suggest.retry": "إعادة محاولة اقتراحات الوجبات",
+  "suggest.refresh": "تحديث اقتراحات الوجبات",
+  "suggest.loadError": "تعذّر تحميل الاقتراحات الآن.",
+  "suggest.targetHit": "تحقّق الهدف — لم يتبقَّ ما تملؤه اليوم.",
+  "suggest.leftToday": "المتبقّي اليوم: {calories} سعرة · {protein} جم ب · {carbs} جم ك · {fat} جم د",
+  "suggest.emptyLibrary": "لا شيء في مكتبتك يناسب المتبقّي. جرّب البحث بالذكاء الاصطناعي.",
+
+  // --- add-to-log button ---
+  "addToLog.addToToday": "أضِف لليوم",
+  "addToLog.logged": "تم التسجيل",
+  "addToLog.suggested": "مقترح",
+  "addToLog.servings": "الحصص",
+  "addToLog.grams": "جرامات",
+  "addToLog.log": "سجّل",
+  "addToLog.servingsUnit.one": "حصة واحدة",
+  "addToLog.servingsUnit.other": "{count} حصص",
+
+  // --- AI meal lookup dialog ---
+  "lookup.title": "ابحث عن أي وجبة",
+  "lookup.description":
+    "اكتب ما تناولته — يبحث Fuel في الويب عن الماكرو ويحفظه في المكتبة.",
+  "lookup.placeholder": "بيج ماك، بطاطس وسط، وبيبسي",
+  "lookup.aiEstimate": "تقدير ذكي",
+  "lookup.official": "رسمي",
+  "lookup.alreadyInLibrary": "موجود في المكتبة",
+  "lookup.noResults": "لا نتائج لهذا. جرّب وصف الوجبة بطريقة مختلفة قليلًا.",
+  "lookup.lookupFailed": "تعذّر البحث عن ذلك. حاول مجددًا.",
+  "lookup.hint.searching": "جارٍ البحث في الويب…",
+  "lookup.hint.reading": "قراءة البيانات الغذائية…",
+  "lookup.hint.checking": "التحقّق من المصادر الرسمية…",
+  "lookup.hint.crunching": "حساب الماكرو…",
+
+  // --- library picker dialog ---
+  "picker.fromLibrary": "من المكتبة",
+  "picker.addTo": "أضِف إلى {section}",
+  "picker.description": "ابحث في الكتالوج وأضِف وجبة مباشرة إلى هذا القسم.",
+  "picker.searchMeals": "ابحث عن وجبات…",
+  "picker.noMatch": "لا توجد وجبات مطابقة. جرّب البحث بالذكاء الاصطناعي من صفحة المكتبة.",
+
+  // --- meal history ---
+  "history.today": "اليوم",
+  "history.yesterday": "أمس",
+  "history.eyebrow": "التغذية · السجل",
+  "history.title": "سجل الوجبات",
+  "history.subtitle": "كل ما سجّلته خلال آخر ٣٠ يومًا، مقسّمًا حسب اليوم.",
+  "history.loadError": "تعذّر تحميل سجلّك",
+  "history.emptyTitle": "لا وجبات خلال آخر ٣٠ يومًا",
+  "history.emptyHint": "سجّل وجبة من نظرة التغذية العامة وستظهر هنا.",
+  "history.goToNutrition": "اذهب إلى التغذية",
+
+  // --- workouts home ---
+  "workouts.title": "التمارين",
+  "workouts.myWorkouts": "تماريني",
+  "workouts.workout": "تمرين",
+  "workouts.daysAgo": "قبل {count} يوم",
+  "workouts.weeksAgo": "قبل {count} أسبوع",
+  "workouts.sessionInProgress": "جلسة قيد التنفيذ",
+  "workouts.resumeLabel": "{name} · استئناف",
+  "workouts.startNew": "ابدأ جلسة جديدة",
+  "workouts.startNewBlurb":
+    "اختر ما تتمرّن عليه اليوم — دفع أو سحب أو أرجل أو أي شيء من مكتبتك — وسنبدأ العدّاد ونسجّل كل مجموعة.",
+  "workouts.startSession": "ابدأ الجلسة",
+  "workouts.sessions": "الجلسات",
+  "workouts.thisWeek": "هذا الأسبوع",
+  "workouts.last30Days": "آخر ٣٠ يومًا",
+  "workouts.lastSession": "آخر جلسة",
+  "workouts.noSessionsYet": "لا جلسات بعد",
+  "workouts.lastType": "آخر نوع",
+  "workouts.myWorkoutsBlurb": "جلساتك خلال آخر ٣٠ يومًا",
+  "workouts.libraryTitle": "مكتبة التمارين",
+  "workouts.libraryBlurb": "تصفّح وابنِ تمارينك",
+}
+
+
+
+
+
+
+
+
+

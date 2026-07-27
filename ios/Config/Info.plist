@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>API_BASE_URL</key>
+	<string>$(API_BASE_URL)</string>
+	<key>SUPABASE_URL</key>
+	<string>$(SUPABASE_URL)</string>
+	<key>SUPABASE_KEY</key>
+	<string>$(SUPABASE_KEY)</string>
+	<key>UIAppFonts</key>
+	<array>
+		<string>GoogleSansFlex.ttf</string>
+		<string>JetBrainsMono.ttf</string>
+		<string>Cairo.ttf</string>
+	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>Fuel uses the camera to scan food barcodes and photograph nutrition labels so meals can be logged instantly.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Fuel uses the microphone so you can log a meal by saying what you ate, in Egyptian Arabic or English.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Fuel turns what you say into text so your spoken meal can be matched to foods and logged.</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
+</dict>
+</plist>

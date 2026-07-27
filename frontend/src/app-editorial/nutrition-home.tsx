@@ -23,10 +23,7 @@ import { useStreaks } from "@/app-editorial/use-streaks"
 import { useMe, useTargets } from "@/app-editorial/use-me"
 import { computeDirection } from "@/lib/nutrition"
 import { computePace } from "@/app-editorial/pace"
-
-function comingSoon(feature: string) {
-  toast(`${feature} is coming soon.`)
-}
+import { useI18n } from "@/lib/i18n"
 
 const fade = (delay = 0) => ({
   initial: { opacity: 0, y: 12 },
@@ -37,6 +34,8 @@ const fade = (delay = 0) => ({
 export function NutritionHome() {
   const { mode } = useMode()
   const accent = editorialAccent[mode]
+  const { t, formatNumber, formatDate } = useI18n()
+  const comingSoon = (feature: string) => toast(t("common.comingSoon", { feature }))
   const { meals, loading, addMeal, deleteMeal, dropMeal, reload } = useMeals()
   const { days: weekDays, loading: weekLoading } = useWeekMeals()
   const targets = useTargets()
@@ -68,7 +67,7 @@ export function NutritionHome() {
     carbs: Math.max(targets.carbs - totals.carbs, 0),
     fat: Math.max(targets.fat - totals.fat, 0),
   }
-  const today = new Date().toLocaleDateString(undefined, {
+  const today = formatDate(new Date(), {
     weekday: "long",
     month: "short",
     day: "numeric",
@@ -86,13 +85,13 @@ export function NutritionHome() {
             {today}
           </div>
           <h1 className="mt-2 font-heading text-4xl font-semibold tracking-tight text-foreground">
-            Nutrition
+            {t("nutrition.title")}
           </h1>
         </div>
         <div className="flex items-center gap-2 rounded-full border border-border bg-card px-3.5 py-1.5">
           <Flame className="size-4 text-[var(--accent-ink)]" />
-          <span className="font-mono text-sm font-medium text-foreground">{loggingStreak}</span>
-          <span className="text-sm text-muted-foreground">day streak</span>
+          <span className="font-mono text-sm font-medium text-foreground">{formatNumber(loggingStreak)}</span>
+          <span className="text-sm text-muted-foreground">{t("common.dayStreak")}</span>
         </div>
       </motion.header>
 
@@ -104,19 +103,21 @@ export function NutritionHome() {
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-1">
           <StatCard
             icon={Flame}
-            label="On-target streak"
-            value={goalStreak}
-            unit={goalStreak === 1 ? "day" : "days"}
+            label={t("nutrition.onTargetStreak")}
+            value={formatNumber(goalStreak)}
+            unit={goalStreak === 1 ? t("nutrition.day") : t("nutrition.days")}
             hint={
-              goalStreak > 0 ? "days within calorie goal" : "hit your goal to start one"
+              goalStreak > 0
+                ? t("nutrition.daysWithinGoal")
+                : t("nutrition.hitGoalToStart")
             }
           />
           <StatCard
             icon={Drumstick}
-            label="Protein left"
-            value={proteinLeft}
-            unit="g"
-            hint={`of ${targets.protein}g target`}
+            label={t("nutrition.proteinLeft")}
+            value={formatNumber(proteinLeft)}
+            unit={t("common.g")}
+            hint={t("nutrition.ofTarget", { value: formatNumber(targets.protein) })}
           />
         </div>
       </motion.section>
@@ -147,42 +148,42 @@ export function NutritionHome() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-baseline gap-3">
             <h2 className="font-heading text-lg font-semibold tracking-tight text-foreground">
-              Today's meals
-              <span className="ml-2 font-mono text-sm font-normal text-muted-foreground">
-                {meals.length}
+              {t("nutrition.todaysMeals")}
+              <span className="ms-2 font-mono text-sm font-normal text-muted-foreground">
+                {formatNumber(meals.length)}
               </span>
             </h2>
             <Link
               to="/dashboard/nutrition/today"
               className="text-sm text-[var(--accent-ink)] hover:underline underline-offset-4"
             >
-              Open today's log →
+              {t("nutrition.openTodaysLog")}
             </Link>
           </div>
           <LogToolbar>
             <AiEstimateDialog
               onAdd={addMeal}
-              trigger={<LogAction icon={Sparkles} label="AI estimate" primary />}
+              trigger={<LogAction icon={Sparkles} label={t("today.aiEstimate")} primary />}
             />
             <AddMealDialog
               onAdd={addMeal}
-              trigger={<LogAction icon={Plus} label="Add meal" />}
+              trigger={<LogAction icon={Plus} label={t("today.addMeal")} />}
             />
             <AiMealLookupDialog
-              trigger={<LogAction icon={Sparkles} label="AI lookup" />}
+              trigger={<LogAction icon={Sparkles} label={t("today.aiLookup")} />}
             />
             <PhotoLogDialog
               onAdd={addMeal}
-              trigger={<LogAction icon={Camera} label="Photo" />}
+              trigger={<LogAction icon={Camera} label={t("today.photo")} />}
             />
             <BarcodeScanDialog
               onAdd={addMeal}
-              trigger={<LogAction icon={Barcode} label="Scan" />}
+              trigger={<LogAction icon={Barcode} label={t("today.scan")} />}
             />
             <LogAction
               icon={RotateCcw}
-              label="Repeat"
-              onClick={() => comingSoon("Repeat yesterday")}
+              label={t("today.repeat")}
+              onClick={() => comingSoon(t("feature.repeatYesterday"))}
             />
           </LogToolbar>
         </div>
@@ -204,9 +205,9 @@ export function NutritionHome() {
                 <Plus className="size-5" />
               </span>
               <div>
-                <div className="font-medium text-foreground">No meals logged yet</div>
+                <div className="font-medium text-foreground">{t("nutrition.noMealsYet")}</div>
                 <p className="mt-1 max-w-xs text-sm text-muted-foreground">
-                  Add your first meal to fill in today's ring and macro targets.
+                  {t("nutrition.noMealsHint")}
                 </p>
               </div>
               <div className="mt-1 flex flex-wrap items-center justify-center gap-2">
@@ -217,7 +218,7 @@ export function NutritionHome() {
                       type="button"
                       className="inline-flex items-center gap-2 rounded-lg bg-[#14120f] px-4 py-2 text-sm font-medium text-[#f7f3ea] transition-colors hover:bg-[#2a251d]"
                     >
-                      <Sparkles className="size-4" /> Estimate with AI
+                      <Sparkles className="size-4" /> {t("nutrition.estimateWithAi")}
                     </button>
                   }
                 />
@@ -228,7 +229,7 @@ export function NutritionHome() {
                       type="button"
                       className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted"
                     >
-                      <Plus className="size-4" /> Add manually
+                      <Plus className="size-4" /> {t("nutrition.addMealManually")}
                     </button>
                   }
                 />
@@ -237,9 +238,9 @@ export function NutritionHome() {
           ) : (
             <>
               <div className="grid grid-cols-[1.4fr_1fr_auto_auto] gap-4 border-b border-border py-2.5 font-mono text-[0.6rem] uppercase tracking-[0.14em] text-muted-foreground max-sm:grid-cols-[1fr_auto]">
-                <span>Meal</span>
-                <span className="hidden sm:block">Macros</span>
-                <span className="text-right">kcal</span>
+                <span>{t("nutrition.colMeal")}</span>
+                <span className="hidden sm:block">{t("nutrition.colMacros")}</span>
+                <span className="text-end">{t("nutrition.colKcal")}</span>
                 <span className="w-7" />
               </div>
               <AnimatePresence initial={false}>

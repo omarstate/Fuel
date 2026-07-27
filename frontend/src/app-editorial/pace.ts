@@ -12,18 +12,27 @@ const TOLERANCE = 0.08
 
 export type PaceStatus = "over" | "ahead" | "on" | "behind"
 
+// i18n key for the human label; translated at the render site (see
+// macro-summary.tsx). Keeping the key here (not the string) so the util stays
+// pure and the copy lives in the dictionaries.
+export type PaceLabelKey =
+  | "pace.overGoal"
+  | "pace.aheadOfPace"
+  | "pace.roomToSpare"
+  | "pace.onPace"
+
 export type Pace = {
   /** Goal minus consumed. Negative once over goal. */
   remaining: number
   status: PaceStatus
-  label: string
+  labelKey: PaceLabelKey
 }
 
 export function computePace(consumed: number, goal: number, now: Date = new Date()): Pace {
   const remaining = goal - consumed
 
   if (consumed > goal) {
-    return { remaining, status: "over", label: "over goal" }
+    return { remaining, status: "over", labelKey: "pace.overGoal" }
   }
 
   const hour = now.getHours() + now.getMinutes() / 60
@@ -31,7 +40,7 @@ export function computePace(consumed: number, goal: number, now: Date = new Date
   const expected = goal * frac
   const tol = goal * TOLERANCE
 
-  if (consumed > expected + tol) return { remaining, status: "ahead", label: "ahead of pace" }
-  if (consumed < expected - tol) return { remaining, status: "behind", label: "room to spare" }
-  return { remaining, status: "on", label: "on pace" }
+  if (consumed > expected + tol) return { remaining, status: "ahead", labelKey: "pace.aheadOfPace" }
+  if (consumed < expected - tol) return { remaining, status: "behind", labelKey: "pace.roomToSpare" }
+  return { remaining, status: "on", labelKey: "pace.onPace" }
 }

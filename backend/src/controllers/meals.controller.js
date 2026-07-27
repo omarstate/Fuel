@@ -73,8 +73,8 @@ export const deleteMeal = async (req, res) => {
 // AI nutrition estimation — no Supabase dependency, just Gemini. Returns one
 // estimate per item so the client can show a review step before logging.
 export const estimateMeals = async (req, res) => {
-  const { place, items } = estimateMealsSchema.parse(req.body)
-  const data = await estimateMealsAi({ place, items })
+  const { place, items, lang } = estimateMealsSchema.parse(req.body)
+  const data = await estimateMealsAi({ place, items, lang })
   res.json({ data })
 }
 

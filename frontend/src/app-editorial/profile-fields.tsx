@@ -20,6 +20,8 @@ import {
   type Sex,
   type Targets,
 } from "@/lib/nutrition"
+import { useI18n } from "@/lib/i18n"
+import type { MessageKey } from "@/lib/i18n/en"
 
 // Draft form state — string inputs so fields can be empty while the user is
 // mid-edit, without coercing to 0/NaN.
@@ -76,22 +78,23 @@ export function usePreviewTargets(form: ProfileFormState): Targets | null {
 }
 
 export function TargetPreview({ targets }: { targets: Targets | null }) {
+  const { t, formatNumber } = useI18n()
   return (
     <div className="rounded-xl border border-border bg-[var(--accent-tint)] p-4">
       <div className="font-mono text-[0.65rem] uppercase tracking-[0.16em] text-[var(--accent-ink)]">
-        Your daily target
+        {t("profile.yourDailyTarget")}
       </div>
       {targets ? (
         <p className="mt-1.5 text-sm text-foreground">
-          <span className="font-mono font-semibold">{targets.calories.toLocaleString()}</span>{" "}
-          kcal ·{" "}
-          <span className="font-mono font-semibold">{targets.protein}</span> g protein ·{" "}
-          <span className="font-mono font-semibold">{targets.carbs}</span> g carbs ·{" "}
-          <span className="font-mono font-semibold">{targets.fat}</span> g fat
+          <span className="font-mono font-semibold">{formatNumber(targets.calories)}</span>{" "}
+          {t("common.kcal")} ·{" "}
+          <span className="font-mono font-semibold">{formatNumber(targets.protein)}</span> {t("profile.gProtein")} ·{" "}
+          <span className="font-mono font-semibold">{formatNumber(targets.carbs)}</span> {t("profile.gCarbs")} ·{" "}
+          <span className="font-mono font-semibold">{formatNumber(targets.fat)}</span> {t("profile.gFat")}
         </p>
       ) : (
         <p className="mt-1.5 text-sm text-muted-foreground">
-          Fill in the fields below to see your personalized target.
+          {t("profile.fillToSeeTarget")}
         </p>
       )}
     </div>
@@ -105,6 +108,8 @@ export function ProfileFields({
   form: ProfileFormState
   onChange: (next: ProfileFormState) => void
 }) {
+  const { t } = useI18n()
+
   function update<K extends keyof ProfileFormState>(key: K, value: ProfileFormState[K]) {
     onChange({ ...form, [key]: value })
   }
@@ -112,7 +117,7 @@ export function ProfileFields({
   return (
     <FieldGroup>
       <Field>
-        <FieldLabel>Sex</FieldLabel>
+        <FieldLabel>{t("profile.sex")}</FieldLabel>
         <ToggleGroup
           type="single"
           variant="outline"
@@ -121,17 +126,17 @@ export function ProfileFields({
           className="w-full"
         >
           <ToggleGroupItem value="male" className="h-11 flex-1 text-sm">
-            Male
+            {t("profile.male")}
           </ToggleGroupItem>
           <ToggleGroupItem value="female" className="h-11 flex-1 text-sm">
-            Female
+            {t("profile.female")}
           </ToggleGroupItem>
         </ToggleGroup>
       </Field>
 
       <div className="grid grid-cols-2 gap-4">
         <Field>
-          <FieldLabel htmlFor="profile-age">Age</FieldLabel>
+          <FieldLabel htmlFor="profile-age">{t("profile.age")}</FieldLabel>
           <Input
             id="profile-age"
             type="number"
@@ -145,7 +150,7 @@ export function ProfileFields({
           />
         </Field>
         <Field>
-          <FieldLabel htmlFor="profile-height">Height (cm)</FieldLabel>
+          <FieldLabel htmlFor="profile-height">{t("profile.heightCm")}</FieldLabel>
           <Input
             id="profile-height"
             type="number"
@@ -162,7 +167,7 @@ export function ProfileFields({
 
       <div className="grid grid-cols-2 gap-4">
         <Field>
-          <FieldLabel htmlFor="profile-weight">Weight (kg)</FieldLabel>
+          <FieldLabel htmlFor="profile-weight">{t("profile.weightKg")}</FieldLabel>
           <Input
             id="profile-weight"
             type="number"
@@ -176,7 +181,7 @@ export function ProfileFields({
           />
         </Field>
         <Field>
-          <FieldLabel htmlFor="profile-goal-weight">Goal weight (kg)</FieldLabel>
+          <FieldLabel htmlFor="profile-goal-weight">{t("profile.goalWeightKg")}</FieldLabel>
           <Input
             id="profile-goal-weight"
             type="number"
@@ -192,20 +197,22 @@ export function ProfileFields({
       </div>
 
       <Field>
-        <FieldLabel htmlFor="profile-activity">Activity level</FieldLabel>
+        <FieldLabel htmlFor="profile-activity">{t("profile.activityLevel")}</FieldLabel>
         <Select
           value={form.activityLevel}
           onValueChange={(v) => update("activityLevel", v as ActivityLevel)}
         >
           <SelectTrigger id="profile-activity" className="h-11 w-full">
-            <SelectValue placeholder="Choose your activity level" />
+            <SelectValue placeholder={t("profile.chooseActivity")} />
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
               {ACTIVITY_OPTIONS.map((opt) => (
                 <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                  <span className="ml-1.5 text-muted-foreground">— {opt.hint}</span>
+                  {t(`activity.${opt.value}` as MessageKey)}
+                  <span className="ms-1.5 text-muted-foreground">
+                    — {t(`activity.${opt.value}.hint` as MessageKey)}
+                  </span>
                 </SelectItem>
               ))}
             </SelectGroup>
@@ -214,7 +221,7 @@ export function ProfileFields({
       </Field>
 
       <Field>
-        <FieldLabel>Pace</FieldLabel>
+        <FieldLabel>{t("profile.pace")}</FieldLabel>
         <ToggleGroup
           type="single"
           variant="outline"
@@ -228,8 +235,10 @@ export function ProfileFields({
               value={opt.value}
               className="h-auto flex-1 flex-col gap-0.5 py-3"
             >
-              <span className="text-sm font-medium">{opt.label}</span>
-              <span className="text-[0.7rem] text-muted-foreground">{opt.hint}</span>
+              <span className="text-sm font-medium">{t(`pace.${opt.value}` as MessageKey)}</span>
+              <span className="text-[0.7rem] text-muted-foreground">
+                {t(`pace.${opt.value}.hint` as MessageKey)}
+              </span>
             </ToggleGroupItem>
           ))}
         </ToggleGroup>

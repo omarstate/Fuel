@@ -1,14 +1,16 @@
 import { DEFAULT_TARGETS, type Targets } from "@/lib/nutrition"
 import type { Pace } from "@/app-editorial/pace"
+import { useI18n } from "@/lib/i18n"
+import type { MessageKey } from "@/lib/i18n/en"
 
 // Kept for existing imports — now re-points to the shared default targets.
 export const GOALS = DEFAULT_TARGETS
 
 const macroMeta = [
-  { key: "protein", label: "Protein", color: "#ff6b35" },
-  { key: "carbs", label: "Carbs", color: "#d9a441" },
-  { key: "fat", label: "Fat", color: "#8a9b3b" },
-] as const
+  { key: "protein", labelKey: "macro.protein", color: "#ff6b35" },
+  { key: "carbs", labelKey: "macro.carbs", color: "#d9a441" },
+  { key: "fat", labelKey: "macro.fat", color: "#d9fa36" },
+] satisfies { key: "protein" | "carbs" | "fat"; labelKey: MessageKey; color: string }[]
 
 export function TodayOverview({
   accent,
@@ -27,6 +29,7 @@ export function TodayOverview({
   goals?: Targets
   pace?: Pace
 }) {
+  const { t, formatNumber } = useI18n()
   const values = { protein, carbs, fat }
   const pct = Math.min((calories / goals.calories) * 100, 100)
   const remaining = Math.max(goals.calories - calories, 0)
@@ -44,19 +47,19 @@ export function TodayOverview({
           <div className="absolute inset-[7px] rounded-full bg-card" />
           <div className="relative text-center">
             <div className="font-mono text-2xl font-semibold leading-none text-foreground">
-              {calories}
+              {formatNumber(calories)}
             </div>
             <div className="mt-1 font-mono text-[0.6rem] uppercase tracking-widest text-muted-foreground">
-              kcal
+              {t("common.kcal")}
             </div>
           </div>
         </div>
         <div>
           <div className="font-mono text-[0.65rem] uppercase tracking-[0.16em] text-muted-foreground">
-            Consumed
+            {t("macroSummary.consumed")}
           </div>
           <div className="mt-1 text-sm text-foreground">
-            of {goals.calories.toLocaleString()} kcal
+            {t("macroSummary.ofKcal", { value: formatNumber(goals.calories) })}
           </div>
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
             <span
@@ -67,17 +70,17 @@ export function TodayOverview({
               }`}
             >
               {over
-                ? `${Math.abs(pace!.remaining).toLocaleString()} over`
-                : `${remaining.toLocaleString()} left`}
+                ? t("macroSummary.over", { value: formatNumber(Math.abs(pace!.remaining)) })
+                : t("macroSummary.left", { value: formatNumber(remaining) })}
             </span>
             {pace && (
-              <span className="text-xs text-muted-foreground">{pace.label}</span>
+              <span className="text-xs text-muted-foreground">{t(pace.labelKey)}</span>
             )}
           </div>
         </div>
       </div>
 
-      <div className="flex flex-col justify-center gap-4 sm:border-l sm:border-border sm:pl-8">
+      <div className="flex flex-col justify-center gap-4 sm:border-s sm:border-border sm:ps-8">
         {macroMeta.map((m) => {
           const val = values[m.key]
           const goal = goals[m.key]
@@ -86,11 +89,11 @@ export function TodayOverview({
             <div key={m.key}>
               <div className="flex items-baseline justify-between">
                 <span className="font-mono text-[0.65rem] uppercase tracking-[0.14em] text-muted-foreground">
-                  {m.label}
+                  {t(m.labelKey)}
                 </span>
                 <span className="font-mono text-xs text-foreground">
-                  {val}
-                  <span className="text-muted-foreground">/{goal}g</span>
+                  {formatNumber(val)}
+                  <span className="text-muted-foreground">/{formatNumber(goal)}{t("common.g")}</span>
                 </span>
               </div>
               <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted">

@@ -6,8 +6,8 @@ import * as aiService from "../services/ai.service.js"
 export const lookupMeals = async (req, res) => {
   assertSupabaseConfigured()
   assertGeminiConfigured()
-  const { query } = lookupRequestSchema.parse(req.body)
-  const data = await aiService.lookupMeals(req.user.id, query)
+  const { query, lang } = lookupRequestSchema.parse(req.body)
+  const data = await aiService.lookupMeals(req.user.id, query, lang)
   res.json({ data })
 }
 
@@ -15,7 +15,8 @@ export const getInsights = async (req, res) => {
   assertSupabaseConfigured()
   assertGeminiConfigured()
   const refresh = req.query.refresh === "1"
-  const data = await aiService.getInsights(req.user.id, { refresh })
+  const lang = req.query.lang === "ar" ? "ar" : "en"
+  const data = await aiService.getInsights(req.user.id, { refresh, lang })
   res.json({ data })
 }
 
@@ -24,7 +25,7 @@ export const getInsights = async (req, res) => {
 // falls back), so the feature works without AI.
 export const suggestMeals = async (req, res) => {
   assertSupabaseConfigured()
-  const { remaining } = suggestRequestSchema.parse(req.body)
-  const data = await aiService.suggestMeals(req.user.id, remaining)
+  const { remaining, lang } = suggestRequestSchema.parse(req.body)
+  const data = await aiService.suggestMeals(req.user.id, remaining, lang)
   res.json({ data })
 }

@@ -13,13 +13,15 @@ import { Input } from "@/components/ui/input"
 import { AddToLogButton } from "@/app-editorial/add-to-log-button"
 import { invalidateMealsCache } from "@/app-editorial/library/use-paged-meals"
 import { aiLookupMeals, type AiLookupItem, type CatalogMeal } from "@/lib/api"
+import { useI18n } from "@/lib/i18n"
+import type { MessageKey } from "@/lib/i18n/en"
 import { cn } from "@/lib/utils"
 
-const SEARCHING_HINTS = [
-  "Searching the web…",
-  "Reading nutrition labels…",
-  "Checking official sources…",
-  "Crunching the macros…",
+const SEARCHING_HINT_KEYS: MessageKey[] = [
+  "lookup.hint.searching",
+  "lookup.hint.reading",
+  "lookup.hint.checking",
+  "lookup.hint.crunching",
 ]
 
 function hostOf(url: string): string {
@@ -30,48 +32,49 @@ function hostOf(url: string): string {
   }
 }
 
-function kcalLabel(meal: CatalogMeal): string {
+function kcalLabel(meal: CatalogMeal, formatNumber: (n: number) => string): string {
   const range = meal.macroRanges?.calories
-  if (meal.aiSource === "estimate" && range) return `${range[0]}–${range[1]}`
-  return String(meal.calories)
+  if (meal.aiSource === "estimate" && range) return `${formatNumber(range[0])}–${formatNumber(range[1])}`
+  return formatNumber(meal.calories)
 }
 
 function ResultCard({ item }: { item: AiLookupItem }) {
   const { meal, created } = item
+  const { t, formatNumber, localizeDigits } = useI18n()
 
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="truncate text-[0.95rem] font-medium text-foreground">{meal.name}</div>
+          <div className="truncate text-[0.95rem] font-medium text-foreground">{localizeDigits(meal.name)}</div>
           <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
             {meal.aiSource === "estimate" ? (
               <span className="rounded-md bg-amber-500/15 px-2 py-0.5 font-mono text-[0.6rem] uppercase tracking-wide text-amber-700 dark:text-amber-400">
-                AI estimate
+                {t("lookup.aiEstimate")}
               </span>
             ) : meal.aiSource === "official" ? (
-              <span className="rounded-md bg-emerald-500/15 px-2 py-0.5 font-mono text-[0.6rem] uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
-                Official
+              <span className="rounded-md bg-[#d9fa36]/15 px-2 py-0.5 font-mono text-[0.6rem] uppercase tracking-wide text-[#5c6d0a]">
+                {t("lookup.official")}
               </span>
             ) : null}
             {meal.servingSize && (
               <span className="font-mono text-[0.7rem] uppercase tracking-[0.12em] text-muted-foreground">
-                {meal.servingSize}
+                {localizeDigits(meal.servingSize)}
               </span>
             )}
             {!created && (
               <span className="font-mono text-[0.6rem] uppercase tracking-wide text-muted-foreground">
-                already in library
+                {t("lookup.alreadyInLibrary")}
               </span>
             )}
           </div>
         </div>
-        <div className="shrink-0 text-right">
+        <div className="shrink-0 text-end">
           <div className="font-mono text-lg font-semibold leading-none text-foreground">
-            {kcalLabel(meal)}
+            {kcalLabel(meal, formatNumber)}
           </div>
           <div className="mt-1 font-mono text-[0.6rem] uppercase tracking-widest text-muted-foreground">
-            kcal
+            {t("common.kcal")}
           </div>
         </div>
       </div>
@@ -79,13 +82,13 @@ function ResultCard({ item }: { item: AiLookupItem }) {
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-x-3 overflow-hidden font-mono text-xs whitespace-nowrap text-muted-foreground">
           <span>
-            <span className="text-[#b5431c]">P</span> {meal.protein}
+            <span className="text-[#b5431c]">P</span> {formatNumber(meal.protein)}
           </span>
           <span>
-            <span className="text-[#a9781f]">C</span> {meal.carbs}
+            <span className="text-[#a9781f]">C</span> {formatNumber(meal.carbs)}
           </span>
           <span>
-            <span className="text-[#69762d]">F</span> {meal.fat}
+            <span className="text-[#5c6d0a]">F</span> {formatNumber(meal.fat)}
           </span>
         </div>
 
@@ -111,6 +114,7 @@ function ResultCard({ item }: { item: AiLookupItem }) {
 }
 
 export function AiMealLookupDialog({ trigger }: { trigger: React.ReactNode }) {
+  const { t, lang } = useI18n()
   const [open, setOpen] = React.useState(false)
   const [query, setQuery] = React.useState("")
   const [status, setStatus] = React.useState<"idle" | "searching" | "done" | "error">("idle")
@@ -123,7 +127,7 @@ export function AiMealLookupDialog({ trigger }: { trigger: React.ReactNode }) {
   React.useEffect(() => {
     if (status !== "searching") return
     const timer = setInterval(() => {
-      setHintIndex((i) => (i + 1) % SEARCHING_HINTS.length)
+      setHintIndex((i) => (i + 1) % SEARCHING_HINT_KEYS.length)
     }, 2200)
     return () => clearInterval(timer)
   }, [status])
@@ -147,7 +151,7 @@ export function AiMealLookupDialog({ trigger }: { trigger: React.ReactNode }) {
     setItems([])
 
     try {
-      const res = await aiLookupMeals(q)
+      const res = await aiLookupMeals(q, lang)
       if (activeRef.current !== requestId) return
       // A lookup can create brand-new catalog meals — bust the library cache
       // so they show up next time the paged library is read.
@@ -156,7 +160,7 @@ export function AiMealLookupDialog({ trigger }: { trigger: React.ReactNode }) {
       setStatus("done")
     } catch (err) {
       if (activeRef.current !== requestId) return
-      setErrorMsg(err instanceof Error ? err.message : "Couldn't look that up. Try again.")
+      setErrorMsg(err instanceof Error ? err.message : t("lookup.lookupFailed"))
       setStatus("error")
     }
   }
@@ -177,11 +181,11 @@ export function AiMealLookupDialog({ trigger }: { trigger: React.ReactNode }) {
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <div className="font-mono text-[0.7rem] uppercase tracking-[0.18em] text-[var(--accent-ink)]">
-            AI lookup
+            {t("today.aiLookup")}
           </div>
-          <DialogTitle className="font-heading text-lg">Find any meal</DialogTitle>
+          <DialogTitle className="font-heading text-lg">{t("lookup.title")}</DialogTitle>
           <DialogDescription>
-            Type what you ate — Fuel searches the web for the macros and saves it to the library.
+            {t("lookup.description")}
           </DialogDescription>
         </DialogHeader>
 
@@ -195,7 +199,7 @@ export function AiMealLookupDialog({ trigger }: { trigger: React.ReactNode }) {
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Big Mac, medium fries and a Pepsi"
+            placeholder={t("lookup.placeholder")}
             className="h-9"
             autoFocus
           />
@@ -208,7 +212,7 @@ export function AiMealLookupDialog({ trigger }: { trigger: React.ReactNode }) {
             ) : (
               <Sparkles className="size-4" />
             )}
-            Search
+            {t("common.search")}
           </Button>
         </form>
 
@@ -216,7 +220,7 @@ export function AiMealLookupDialog({ trigger }: { trigger: React.ReactNode }) {
           <div className="flex flex-col gap-3 py-1">
             <div className="flex items-center gap-2 font-mono text-xs text-muted-foreground">
               <Loader2 className="size-3.5 animate-spin" />
-              {SEARCHING_HINTS[hintIndex]}
+              {t(SEARCHING_HINT_KEYS[hintIndex])}
             </div>
             {[0, 1].map((i) => (
               <div
@@ -232,14 +236,14 @@ export function AiMealLookupDialog({ trigger }: { trigger: React.ReactNode }) {
           <div className="flex flex-col items-start gap-3 rounded-lg border border-border bg-card p-4">
             <p className="text-sm text-muted-foreground">{errorMsg}</p>
             <Button variant="outline" size="sm" onClick={() => void runSearch()}>
-              Retry
+              {t("common.retry")}
             </Button>
           </div>
         )}
 
         {status === "done" && items.length === 0 && (
           <div className="rounded-lg border border-border bg-card px-4 py-8 text-center text-sm text-muted-foreground">
-            No results for that. Try describing the meal a little differently.
+            {t("lookup.noResults")}
           </div>
         )}
 

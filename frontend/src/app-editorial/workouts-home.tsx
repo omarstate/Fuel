@@ -15,6 +15,7 @@ import { StartSessionDialog } from "@/app-editorial/workouts/session/start-sessi
 import { SessionTimer } from "@/app-editorial/workouts/session/session-timer"
 import { useInProgressSession } from "@/app-editorial/workouts/session/use-in-progress-session"
 import { useSessionHistory } from "@/app-editorial/workouts/session/use-session-history"
+import { useI18n, type I18nContextValue } from "@/lib/i18n"
 
 const fade = (delay = 0) => ({
   initial: { opacity: 0, y: 12 },
@@ -29,17 +30,20 @@ function countThisWeek(sessions: { startedAt: Date }[]) {
   return sessions.filter((s) => s.startedAt.getTime() >= cutoff).length
 }
 
-function relativeDay(date: Date) {
+function relativeDay(date: Date, i18n: I18nContextValue) {
+  const { t, formatNumber } = i18n
   const diffDays = Math.floor((Date.now() - date.getTime()) / (24 * 60 * 60 * 1000))
-  if (diffDays <= 0) return "Today"
-  if (diffDays === 1) return "Yesterday"
-  if (diffDays < 7) return `${diffDays}d ago`
+  if (diffDays <= 0) return t("history.today")
+  if (diffDays === 1) return t("history.yesterday")
+  if (diffDays < 7) return t("workouts.daysAgo", { count: formatNumber(diffDays) })
   const weeks = Math.floor(diffDays / 7)
-  return `${weeks}w ago`
+  return t("workouts.weeksAgo", { count: formatNumber(weeks) })
 }
 
 export function WorkoutsHome() {
-  const today = new Date().toLocaleDateString(undefined, {
+  const i18n = useI18n()
+  const { t, formatNumber } = i18n
+  const today = i18n.formatDate(new Date(), {
     weekday: "long",
     month: "short",
     day: "numeric",
@@ -61,14 +65,14 @@ export function WorkoutsHome() {
             {today}
           </div>
           <h1 className="mt-2 font-heading text-4xl font-semibold tracking-tight text-foreground">
-            Workouts
+            {t("workouts.title")}
           </h1>
         </div>
         <Link
           to="/dashboard/workouts/history"
           className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3.5 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted"
         >
-          <ClipboardList className="size-4" /> My workouts
+          <ClipboardList className="size-4" /> {t("workouts.myWorkouts")}
         </Link>
       </motion.header>
 
@@ -85,10 +89,12 @@ export function WorkoutsHome() {
               </span>
               <div>
                 <div className="font-mono text-[0.65rem] uppercase tracking-[0.16em] text-[var(--accent-ink)]">
-                  Session in progress
+                  {t("workouts.sessionInProgress")}
                 </div>
                 <div className="font-heading text-lg font-semibold tracking-tight text-foreground">
-                  {inProgress.categoryName ?? "Workout"} · resume
+                  {t("workouts.resumeLabel", {
+                    name: inProgress.categoryName ?? t("workouts.workout"),
+                  })}
                 </div>
               </div>
             </div>
@@ -113,11 +119,10 @@ export function WorkoutsHome() {
                 <Dumbbell className="size-6" />
               </span>
               <h2 className="mt-5 font-heading text-3xl font-semibold tracking-tight text-foreground">
-                Start a new session
+                {t("workouts.startNew")}
               </h2>
               <p className="mt-2 text-muted-foreground">
-                Pick what you're training today — push, pull, legs, or anything from
-                your library — and we'll start the clock and log every set.
+                {t("workouts.startNewBlurb")}
               </p>
             </div>
             <StartSessionDialog
@@ -127,7 +132,7 @@ export function WorkoutsHome() {
                   className="group inline-flex shrink-0 items-center gap-2.5 rounded-xl bg-[#14120f] px-6 py-4 text-base font-semibold text-[#f7f3ea] shadow-sm transition-all hover:bg-[#2a251d] hover:shadow-md"
                 >
                   <Play className="size-5 transition-transform group-hover:scale-110" />
-                  Start session
+                  {t("workouts.startSession")}
                 </button>
               }
             />
@@ -137,17 +142,17 @@ export function WorkoutsHome() {
 
       {/* Stats */}
       <motion.section {...fade(0.1)} className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard icon={CalendarDays} label="Sessions" value={thisWeek} hint="This week" />
-        <StatCard icon={Layers} label="Sessions" value={sessions.length} hint="Last 30 days" />
+        <StatCard icon={CalendarDays} label={t("workouts.sessions")} value={formatNumber(thisWeek)} hint={t("workouts.thisWeek")} />
+        <StatCard icon={Layers} label={t("workouts.sessions")} value={formatNumber(sessions.length)} hint={t("workouts.last30Days")} />
         <StatCard
           icon={Clock}
-          label="Last session"
-          value={lastSession ? relativeDay(lastSession.startedAt) : "—"}
-          hint={lastSession?.categoryName ?? "No sessions yet"}
+          label={t("workouts.lastSession")}
+          value={lastSession ? relativeDay(lastSession.startedAt, i18n) : "—"}
+          hint={lastSession?.categoryName ?? t("workouts.noSessionsYet")}
         />
         <StatCard
           icon={Dumbbell}
-          label="Last type"
+          label={t("workouts.lastType")}
           value={lastSession?.categoryName ?? "—"}
         />
       </motion.section>
@@ -163,11 +168,11 @@ export function WorkoutsHome() {
               <ClipboardList className="size-5" />
             </span>
             <div>
-              <div className="font-medium text-foreground">My workouts</div>
-              <p className="text-sm text-muted-foreground">Your last 30 days of sessions</p>
+              <div className="font-medium text-foreground">{t("workouts.myWorkouts")}</div>
+              <p className="text-sm text-muted-foreground">{t("workouts.myWorkoutsBlurb")}</p>
             </div>
           </div>
-          <ArrowRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+          <ArrowRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 rtl:-scale-x-100 rtl:group-hover:-translate-x-0.5" />
         </Link>
 
         <Link
@@ -179,11 +184,11 @@ export function WorkoutsHome() {
               <BookOpen className="size-5" />
             </span>
             <div>
-              <div className="font-medium text-foreground">Workout library</div>
-              <p className="text-sm text-muted-foreground">Browse & build your exercises</p>
+              <div className="font-medium text-foreground">{t("workouts.libraryTitle")}</div>
+              <p className="text-sm text-muted-foreground">{t("workouts.libraryBlurb")}</p>
             </div>
           </div>
-          <ArrowRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+          <ArrowRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 rtl:-scale-x-100 rtl:group-hover:-translate-x-0.5" />
         </Link>
       </motion.section>
     </div>

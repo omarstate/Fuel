@@ -20,8 +20,14 @@ const assertGeminiConfigured = () => {
   }
 }
 
-function buildPrompt({ place, item }) {
+function buildPrompt({ place, item, lang = "en" }) {
   const from = place ? ` from "${place}"` : ""
+  const arabicInstruction =
+    lang === "ar"
+      ? `
+
+Write "name" and "note" in Arabic. Keep brand names in their original Latin script. The JSON keys stay in English, and numeric values stay as digits.`
+      : ""
   return `You are a nutrition estimator for a fitness app whose users are primarily in Egypt.
 
 The user ate this single item${from}: "${item}".
@@ -46,7 +52,7 @@ Respond with ONLY a raw JSON object — no markdown, no code fences, no commenta
   "note": "one short sentence on the source or any assumption"
 }
 
-All macro values must be non-negative integers. If a value is genuinely unknown, give your best reasonable estimate rather than 0.`
+All macro values must be non-negative integers. If a value is genuinely unknown, give your best reasonable estimate rather than 0.${arabicInstruction}`
 }
 
 function extractText(payload) {
@@ -83,14 +89,14 @@ const clampInt = (value) => {
 const SOURCES = new Set(["egypt", "regional", "global"])
 const CONFIDENCE = new Set(["high", "medium", "low"])
 
-async function estimateOne({ place, item }) {
+async function estimateOne({ place, item, lang = "en" }) {
   let res
   try {
     res = await fetch(`${GEMINI_ENDPOINT(env.GEMINI_MODEL)}?key=${env.GEMINI_API_KEY}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        contents: [{ role: "user", parts: [{ text: buildPrompt({ place, item }) }] }],
+        contents: [{ role: "user", parts: [{ text: buildPrompt({ place, item, lang }) }] }],
         tools: [{ google_search: {} }],
         generationConfig: { temperature: 0.2 },
       }),
@@ -150,10 +156,10 @@ async function estimateOne({ place, item }) {
 
 /**
  * Estimate nutrition for a batch of meal items.
- * @param {{ place?: string, items: string[] }} input
+ * @param {{ place?: string, items: string[], lang?: "en" | "ar" }} input
  * @returns {Promise<Array>} one result per item, in input order
  */
-export const estimateMeals = async ({ place, items }) => {
+export const estimateMeals = async ({ place, items, lang = "en" }) => {
   assertGeminiConfigured()
-  return Promise.all(items.map((item) => estimateOne({ place, item })))
+  return Promise.all(items.map((item) => estimateOne({ place, item, lang })))
 }

@@ -5,18 +5,28 @@ import { useAuth } from "@/lib/auth"
 import { type CatalogMeal } from "@/lib/api"
 import { suggestedMealType, type MealType } from "@/app/nutrition/types"
 
+/** How much of a catalog meal to log. `factor` scales the macros; `servingSize`
+ * overrides the stored serving text. Omitted = one whole serving, as stored. */
+type Portion = { factor: number; servingSize: string | null }
+
 /** Personal-log row shape — mirrors app-editorial/use-meals.ts mealToRow. */
-function catalogMealToLogRow(meal: CatalogMeal, userId: string, mealType: MealType) {
+function catalogMealToLogRow(
+  meal: CatalogMeal,
+  userId: string,
+  mealType: MealType,
+  portion?: Portion
+) {
+  const factor = portion?.factor ?? 1
   return {
     id: crypto.randomUUID(),
     user_id: userId,
     name: meal.name,
     meal_type: mealType,
-    serving_size: meal.servingSize ?? null,
-    calories: meal.calories,
-    protein: meal.protein,
-    carbs: meal.carbs,
-    fat: meal.fat,
+    serving_size: portion ? portion.servingSize : meal.servingSize ?? null,
+    calories: Math.round(meal.calories * factor),
+    protein: Math.round(meal.protein * factor),
+    carbs: Math.round(meal.carbs * factor),
+    fat: Math.round(meal.fat * factor),
     logged_at: new Date().toISOString(),
     catalog_meal_id: meal.id,
   }
@@ -28,7 +38,8 @@ export function useAddCatalogMealToLog() {
   return React.useCallback(
     async (
       meal: CatalogMeal,
-      mealType: MealType = suggestedMealType()
+      mealType: MealType = suggestedMealType(),
+      portion?: Portion
     ): Promise<boolean> => {
       if (!user) {
         toast.error("Sign in to log meals.")
@@ -36,7 +47,7 @@ export function useAddCatalogMealToLog() {
       }
       const { error: insertError } = await supabase
         .from("meals")
-        .insert(catalogMealToLogRow(meal, user.id, mealType))
+        .insert(catalogMealToLogRow(meal, user.id, mealType, portion))
       if (insertError) {
         toast.error(`Couldn't add ${meal.name} to today's log.`)
       }

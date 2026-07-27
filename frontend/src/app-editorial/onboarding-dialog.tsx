@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button"
 import { saveProfile } from "@/lib/api"
 import { useMe } from "@/app-editorial/use-me"
+import { useI18n } from "@/lib/i18n"
 import {
   ProfileFields,
   TargetPreview,
@@ -15,6 +16,7 @@ import {
 
 export function OnboardingDialog() {
   const { needsOnboarding, refreshProfile } = useMe()
+  const { t } = useI18n()
   const [form, setForm] = React.useState<ProfileFormState>(emptyProfileForm)
   const [submitting, setSubmitting] = React.useState(false)
   const preview = usePreviewTargets(form)
@@ -28,9 +30,9 @@ export function OnboardingDialog() {
     try {
       await saveProfile(input)
       await refreshProfile()
-      toast.success("Your targets are set.")
+      toast.success(t("onboarding.targetsSet"))
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't save your profile.")
+      toast.error(err instanceof Error ? err.message : t("onboarding.saveFailed"))
     } finally {
       setSubmitting(false)
     }
@@ -47,12 +49,11 @@ export function OnboardingDialog() {
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <DialogHeader>
             <div className="font-mono text-[0.65rem] uppercase tracking-[0.18em] text-[var(--accent-ink)]">
-              Welcome to Fuel
+              {t("onboarding.welcome")}
             </div>
-            <DialogTitle>Let's set your daily target</DialogTitle>
+            <DialogTitle>{t("onboarding.title")}</DialogTitle>
             <DialogDescription>
-              A few details so we can calculate a calorie and macro target that fits you.
-              You can change these anytime from your profile.
+              {t("onboarding.description")}
             </DialogDescription>
           </DialogHeader>
 
@@ -61,7 +62,7 @@ export function OnboardingDialog() {
           <ProfileFields form={form} onChange={setForm} />
 
           <Button type="submit" disabled={!preview || submitting} className="mt-1 h-10">
-            {submitting ? "Saving…" : "Save and continue"}
+            {submitting ? t("common.saving") : t("onboarding.saveContinue")}
           </Button>
         </form>
       </DialogContent>

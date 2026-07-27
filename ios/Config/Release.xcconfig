@@ -1,0 +1,6 @@
+#include "Shared.xcconfig"
+
+// Deployed Express backend on Render (same one the deployed web app at
+// fuel-frontend-lf1q.onrender.com uses). Free tier: first request after idle
+// can take ~30-60s — the app shows its cold-start state and pings /health at launch.
+API_BASE_URL = https:/$()/fuel-backend-ov21.onrender.com/api

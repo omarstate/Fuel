@@ -24,6 +24,7 @@ import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { MorphButton, type MorphStatus } from "@/components/ui/morph-button"
 import { cn } from "@/lib/utils"
 import { estimateMeals, saveAiMealsToCatalog, type EstimatedMeal } from "@/lib/api"
+import { invalidateMealsCache } from "@/app-editorial/library/use-paged-meals"
 import { mealTypeLabel, type Meal, type MealType } from "@/app/nutrition/types"
 
 /** Pick a sensible default meal type from the current local time. */
@@ -185,10 +186,11 @@ export function AiEstimateDialog({
 
     const [logResults] = await Promise.all([
       Promise.all(meals.map((m) => onAdd(m))),
-      saveAiMealsToCatalog(catalogInputs).catch(() => {
-        toast.error("Logged your meal, but couldn't add it to the AI library.")
-        return null
-      }),
+      saveAiMealsToCatalog(catalogInputs)
+        .then(() => invalidateMealsCache())
+        .catch(() => {
+          toast.error("Logged your meal, but couldn't add it to the AI library.")
+        }),
     ])
 
     const saved = logResults.filter(Boolean).length

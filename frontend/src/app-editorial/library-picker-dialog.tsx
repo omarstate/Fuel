@@ -14,7 +14,8 @@ import { MorphButton } from "@/components/ui/morph-button"
 import { usePagedMeals } from "@/app-editorial/library/use-paged-meals"
 import { useAddCatalogMealToLog } from "@/app-editorial/library/use-catalog"
 import { Plus } from "lucide-react"
-import { mealTypeLabel, type MealType } from "@/app/nutrition/types"
+import { type MealType } from "@/app/nutrition/types"
+import { useI18n } from "@/lib/i18n"
 import type { CatalogMeal } from "@/lib/api"
 
 function PickerRow({
@@ -26,6 +27,7 @@ function PickerRow({
   mealType: MealType
   onLogged?: () => void
 }) {
+  const { t, formatNumber } = useI18n()
   const addToLog = useAddCatalogMealToLog()
   const meta = [meal.servingSize, meal.category?.name].filter(Boolean).join(" · ")
 
@@ -40,21 +42,21 @@ function PickerRow({
         )}
       </div>
       <div className="flex shrink-0 items-center gap-3">
-        <div className="text-right">
+        <div className="text-end">
           <span className="font-mono text-sm font-semibold text-foreground">
             {meal.aiSource === "estimate" ? "~" : ""}
-            {meal.calories}
+            {formatNumber(meal.calories)}
           </span>{" "}
           <span className="font-mono text-[0.6rem] uppercase tracking-widest text-muted-foreground">
-            kcal
+            {t("common.kcal")}
           </span>
         </div>
         <MorphButton
           variant="pill"
           idleIcon={Plus}
-          idleLabel="Add"
-          loadingLabel="Adding…"
-          successLabel="Logged"
+          idleLabel={t("common.add")}
+          loadingLabel={t("common.adding")}
+          successLabel={t("addToLog.logged")}
           resetDelay={900}
           onAction={() => addToLog(meal, mealType)}
           onSuccess={onLogged}
@@ -94,12 +96,13 @@ export function LibraryPickerDialog({
     [isControlled, controlledOnOpenChange]
   )
 
+  const { t } = useI18n()
   const { meals, loading, loadingMore, hasMore, loadMore } = usePagedMeals({
     search,
     pageSize: 8,
   })
 
-  const label = mealTypeLabel[mealType].toLowerCase()
+  const label = t(`mealType.${mealType}`)
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -107,21 +110,21 @@ export function LibraryPickerDialog({
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <div className="font-mono text-[0.7rem] uppercase tracking-[0.18em] text-[var(--accent-ink)]">
-            From the library
+            {t("picker.fromLibrary")}
           </div>
-          <DialogTitle className="font-heading text-lg">Add to {label}</DialogTitle>
+          <DialogTitle className="font-heading text-lg">{t("picker.addTo", { section: label })}</DialogTitle>
           <DialogDescription>
-            Search the catalog and add a meal straight to this section.
+            {t("picker.description")}
           </DialogDescription>
         </DialogHeader>
 
         <div className="relative">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="pointer-events-none absolute start-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search meals…"
-            className="h-9 pl-8"
+            placeholder={t("picker.searchMeals")}
+            className="h-9 ps-8"
             autoFocus
           />
         </div>
@@ -139,7 +142,7 @@ export function LibraryPickerDialog({
             </div>
           ) : meals.length === 0 ? (
             <div className="rounded-lg border border-border bg-card px-4 py-8 text-center text-sm text-muted-foreground">
-              No meals match. Try the AI lookup from the library page.
+              {t("picker.noMatch")}
             </div>
           ) : (
             <>
@@ -159,7 +162,7 @@ export function LibraryPickerDialog({
                     onClick={() => loadMore()}
                     disabled={loadingMore}
                   >
-                    Show more
+                    {t("common.showMore")}
                   </Button>
                 </div>
               )}

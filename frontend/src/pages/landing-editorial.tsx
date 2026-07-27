@@ -1,4 +1,4 @@
-import { useRef, useState } from "react"
+import { useRef, useState, type ReactElement } from "react"
 import { Link } from "react-router-dom"
 import { motion } from "framer-motion"
 import gsap from "gsap"
@@ -9,13 +9,25 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { FuelLiquidEther } from "@/components/site/liquid-ether"
 import { RotatingText } from "@/components/site/rotating-text"
 import { type Mode } from "@/components/site/mode-context"
-import { editorialAccent } from "@/app-editorial/theme"
+import {
+  ScreenFrame,
+  NutritionPreview,
+  WorkoutPreview,
+  CoachPreview,
+} from "@/app-editorial/previews/screen-previews"
 import fuelLogo from "@/assets/fuel.png"
 
 gsap.registerPlugin(ScrollTrigger, useGSAP)
+
+/* Text-safe hero accents: the volt fill (#d9fa36) is too light to read as
+   display text on the paper background, so the rotating word uses a darker
+   ink of the same hue instead. */
+const heroTextAccent: Record<Mode, string> = {
+  nutrition: "#5c6d0a",
+  workouts: "#ff6b35",
+}
 
 /* ------------------------------------------------------------------ */
 /*  Inline icon primitives (consistent 1.6 stroke — no icon library)  */
@@ -120,7 +132,7 @@ function NutritionPanel({ showHeader = true }: { showHeader?: boolean }) {
       {showHeader && (
         <div className="flex items-center justify-between">
           <span className="font-mono text-xs text-[var(--muted)]">Monday · Today</span>
-          <Badge className="gap-1 border-0 bg-[color:rgba(138,155,59,0.16)] text-[#627218]">
+          <Badge className="gap-1 border-0 bg-[color:rgba(217,250,54,0.16)] text-[#5c6d0a]">
             <BoltIcon className="size-3" /> 6-day streak
           </Badge>
         </div>
@@ -130,7 +142,7 @@ function NutritionPanel({ showHeader = true }: { showHeader?: boolean }) {
           className="relative flex size-24 shrink-0 items-center justify-center rounded-full"
           style={{
             background:
-              "conic-gradient(#8a9b3b 72%, rgba(20,18,15,0.06) 0)",
+              "conic-gradient(#d9fa36 72%, rgba(20,18,15,0.06) 0)",
           }}
         >
           <div className="absolute inset-[6px] rounded-full bg-[var(--surface)]" />
@@ -296,6 +308,48 @@ const stats = [
   { value: 100, suffix: "%", label: "Of your history, on one timeline" },
 ]
 
+/* Scroll-driven showcase — the real app screens, swapped as you scroll. */
+const showcase: {
+  n: string
+  mode: Mode
+  url: string
+  kicker: string
+  title: string
+  blurb: string
+  Preview: () => ReactElement
+}[] = [
+  {
+    n: "01",
+    mode: "nutrition",
+    url: "fuel.app / today",
+    kicker: "Nutrition",
+    title: "Every meal, one honest total.",
+    blurb:
+      "Log food in seconds and watch calories and macros roll into a single live daily total — with the week behind it for context.",
+    Preview: NutritionPreview,
+  },
+  {
+    n: "02",
+    mode: "workouts",
+    url: "fuel.app / bench press",
+    kicker: "Training",
+    title: "Beat a number, it's a PR.",
+    blurb:
+      "One-tap set logging, prefilled from last time. The moment you top a previous weight or rep, Fuel flags the PR and keeps it in your history.",
+    Preview: WorkoutPreview,
+  },
+  {
+    n: "03",
+    mode: "nutrition",
+    url: "fuel.app / coach",
+    kicker: "AI Coach",
+    title: "A coach that reads your logs.",
+    blurb:
+      "Fuel reads your real data and hands back a short, specific read on the week — what's working, what's drifting, and one thing to try next.",
+    Preview: CoachPreview,
+  },
+]
+
 const faqs = [
   {
     q: "Is Fuel a food tracker or a workout tracker?",
@@ -321,9 +375,20 @@ const faqs = [
 
 export function LandingEditorial() {
   const root = useRef<HTMLDivElement>(null)
+  const insideRef = useRef<HTMLElement>(null)
   /* heroMode only tracks which word is showing, to drive the accent color —
      RotatingText below owns the actual rotation timing/animation. */
   const [heroMode, setHeroMode] = useState<Mode>("nutrition")
+  /* Which showcase screen is on stage; driven by scroll on desktop, click-to-jump. */
+  const [activeFeature, setActiveFeature] = useState(0)
+
+  const scrollToFeature = (i: number) => {
+    const el = insideRef.current
+    if (!el) return
+    const travel = el.offsetHeight - window.innerHeight
+    const top = el.offsetTop + (travel * (i + 0.5)) / showcase.length
+    window.scrollTo({ top, behavior: "smooth" })
+  }
 
   useGSAP(
     () => {
@@ -338,6 +403,25 @@ export function LandingEditorial() {
             { yPercent: 115, duration: 0.9, ease: "expo.out", stagger: 0.1 },
             "-=0.3"
           )
+          .from(
+            ".hero-headline",
+            { filter: "blur(16px)", duration: 1, ease: "power2.out" },
+            "<"
+          )
+          .fromTo(
+            ".hero-frame",
+            { autoAlpha: 0, scale: 0.95 },
+            {
+              autoAlpha: 1,
+              scale: 1,
+              duration: 0.6,
+              ease: "power2.out",
+              transformOrigin: "50% 50%",
+              clearProps: "transform",
+            },
+            "-=0.45"
+          )
+          .from(".hero-prop", { autoAlpha: 0, duration: 0.6, stagger: 0.12 }, "-=0.4")
           .from(".hero-sub", { autoAlpha: 0, y: 16, duration: 0.7 }, "-=0.5")
           .fromTo(
             ".hero-cta",
@@ -430,6 +514,24 @@ export function LandingEditorial() {
         onToggle: (self) =>
           document.querySelector(".site-nav")?.classList.toggle("is-scrolled", self.isActive),
       })
+
+      /* --- Inside Fuel: pin the stage, swap the on-screen app as you scroll.
+         Desktop only — mobile renders the three screens stacked. --- */
+      const inside = insideRef.current
+      if (inside && window.matchMedia("(min-width: 768px)").matches) {
+        ScrollTrigger.create({
+          trigger: inside,
+          start: "top top",
+          end: "bottom bottom",
+          onUpdate: (self) => {
+            const idx = Math.min(
+              showcase.length - 1,
+              Math.floor(self.progress * showcase.length)
+            )
+            setActiveFeature(idx)
+          },
+        })
+      }
     },
     { scope: root }
   )
@@ -437,58 +539,88 @@ export function LandingEditorial() {
   return (
     <div
       ref={root}
-      className="min-h-screen font-sans antialiased [--citrus-ink:#b5431c] [--citrus-tint:rgba(255,107,53,0.12)] [--citrus:#ff6b35] [--ink-2:#1c1914] [--ink:#14120f] [--line:rgba(20,18,15,0.10)] [--muted:#6f6a5c] [--paper-2:#efe8d7] [--paper:#f7f3ea] [--surface:#fffdf7] [--volt:#d7fa34]"
+      className="min-h-screen font-sans antialiased [--citrus-ink:#b5431c] [--citrus-tint:rgba(255,107,53,0.12)] [--citrus:#ff6b35] [--ink-2:#1c1914] [--ink:#14120f] [--line:rgba(20,18,15,0.10)] [--muted:#6f6a5c] [--paper-2:#efe8d7] [--paper:#f7f3ea] [--surface:#fffdf7] [--volt:#d9fa36]"
       style={{ backgroundColor: "var(--paper)", color: "var(--ink)" }}
     >
       {/* ---------------- Nav ---------------- */}
-      <header className="site-nav sticky top-0 z-50 transition-[background-color,border-color,backdrop-filter] duration-300">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-2">
-            <img src={fuelLogo} alt="" className="size-10 rounded-lg" aria-hidden="true" />
-            <span className="font-heading font-medium text-2xl leading-none tracking-tight">
-              Fuel
-            </span>
+      <header className="site-nav sticky top-0 z-50">
+        <div className="mx-auto max-w-6xl px-4 pt-4 sm:px-6">
+          <div className="nav-pill flex items-center justify-between gap-6 rounded-full py-2.5 pl-3 pr-3">
+            <div className="flex items-center gap-2.5 pl-1">
+              <img src={fuelLogo} alt="" className="size-9 rounded-xl" aria-hidden="true" />
+              <span className="font-heading font-semibold text-xl leading-none tracking-tight text-[var(--ink)]">
+                Fuel
+              </span>
+            </div>
+            <nav className="hidden items-center gap-7 md:flex">
+              {["Features", "Two sides", "Process", "FAQ"].map((l) => (
+                <a
+                  key={l}
+                  href={`#${l.toLowerCase().replace(" ", "-")}`}
+                  className="nav-link text-sm font-medium text-[var(--muted)] transition-colors hover:text-[var(--ink)]"
+                >
+                  {l}
+                </a>
+              ))}
+            </nav>
+            <Button
+              asChild
+              size="lg"
+              className="h-10 rounded-full bg-[var(--ink)] px-5 text-sm font-medium text-[var(--paper)] shadow-sm hover:bg-[var(--ink-2)]"
+            >
+              <Link to="/dashboard">Open the app</Link>
+            </Button>
           </div>
-          <nav className="hidden items-center gap-8 md:flex">
-            {["Features", "Two sides", "Process", "FAQ"].map((l) => (
-              <a
-                key={l}
-                href={`#${l.toLowerCase().replace(" ", "-")}`}
-                className="text-sm text-[var(--muted)] transition-colors hover:text-[var(--ink)]"
-              >
-                {l}
-              </a>
-            ))}
-          </nav>
-          <Button
-            asChild
-            size="lg"
-            className="h-9 bg-[var(--ink)] px-4 text-[var(--paper)] hover:bg-[var(--ink-2)]"
-          >
-            <Link to="/dashboard">Open the app</Link>
-          </Button>
         </div>
       </header>
 
       {/* ---------------- Hero ---------------- */}
       <section className="hero-section relative overflow-hidden">
-        <div className="pointer-events-none absolute inset-0">
-          <FuelLiquidEther />
+        {/* design canvas: a faint measured grid, dashed guides, and floating
+            tool chips — the workspace behind the "selected" headline. */}
+        <div className="pointer-events-none absolute inset-0" aria-hidden>
+          <div className="hero-grid absolute inset-0" />
+          {/* dashed guides crossing near the headline */}
+          <div
+            className="absolute inset-y-0 left-[38%] w-px"
+            style={{
+              backgroundImage:
+                "repeating-linear-gradient(to bottom, rgba(255,107,53,0.26) 0 6px, transparent 6px 13px)",
+            }}
+          />
+          <div
+            className="absolute inset-x-0 top-[45%] h-px"
+            style={{
+              backgroundImage:
+                "repeating-linear-gradient(to right, rgba(255,107,53,0.2) 0 6px, transparent 6px 13px)",
+            }}
+          />
+          {/* floating tool chips — hidden on small screens so they never crowd
+              the copy */}
+          <div className="absolute inset-0 hidden md:block">
+            <div className="hero-prop absolute right-[15%] top-[22%] [--rot:-8deg]">
+              <span className="grid size-12 place-items-center rounded-2xl border border-[var(--line)] bg-[var(--surface)] text-[var(--citrus-ink)] shadow-[0_12px_34px_-14px_rgba(20,18,15,0.32)]">
+                <BarbellIcon className="size-6" />
+              </span>
+            </div>
+            <div className="hero-prop absolute right-[29%] top-[57%] [--rot:6deg]">
+              <span className="grid size-10 place-items-center rounded-xl border border-[var(--line)] bg-[var(--surface)] text-[var(--citrus)] shadow-[0_12px_34px_-14px_rgba(20,18,15,0.32)]">
+                <BoltIcon className="size-5" />
+              </span>
+            </div>
+            <div className="hero-prop absolute right-[8%] top-[63%] [--rot:12deg]">
+              <span className="grid size-9 place-items-center rounded-xl border border-[var(--line)] bg-[var(--surface)] text-[var(--muted)] shadow-[0_12px_34px_-14px_rgba(20,18,15,0.32)]">
+                <PulseIcon className="size-4" />
+              </span>
+            </div>
+          </div>
         </div>
-        {/* legibility scrim — clean reading base on the left, fades before the figure */}
-        <div
-          className="pointer-events-none absolute inset-0"
-          style={{
-            background:
-              "linear-gradient(100deg, var(--paper) 0%, rgba(247,243,234,0.92) 26%, rgba(247,243,234,0.55) 46%, rgba(247,243,234,0) 66%)",
-          }}
-        />
         {/* ambient warm light */}
         <div
           className="pointer-events-none absolute -top-40 left-1/2 h-[520px] w-[820px] -translate-x-1/2 rounded-full"
           style={{
             background:
-              "radial-gradient(closest-side, rgba(255,107,53,0.10), transparent 70%)",
+              "radial-gradient(closest-side, rgba(255,107,53,0.12), transparent 70%)",
           }}
         />
         <div className="relative mx-auto max-w-6xl px-6 py-20 md:py-28">
@@ -500,14 +632,15 @@ export function LandingEditorial() {
               </span>
             </div>
 
-            <h1 className="font-heading text-[clamp(2.9rem,7vw,5.2rem)] font-semibold leading-[0.98] tracking-[-0.035em]">
+            <div className="hero-select relative inline-block">
+            <h1 className="hero-headline font-heading text-[clamp(2.9rem,7vw,5.2rem)] font-semibold leading-[0.98] tracking-[-0.035em]">
               <span className="hero-line -my-[0.12em] block overflow-hidden py-[0.12em]">
                 <span className="block">Log every</span>
               </span>
               <span className="hero-line -my-[0.12em] block overflow-hidden py-[0.12em]">
                 <span className="relative block">
                   <motion.span
-                    animate={{ color: editorialAccent[heroMode] }}
+                    animate={{ color: heroTextAccent[heroMode] }}
                     transition={{ duration: 0.4, ease: "easeOut" }}
                     className="inline-block"
                   >
@@ -532,6 +665,29 @@ export function LandingEditorial() {
                 <span className="block text-[color:rgba(20,18,15,0.6)]">Build the streak.</span>
               </span>
             </h1>
+              {/* selection frame — the headline shown "selected", design-tool style */}
+              <span className="hero-frame pointer-events-none absolute -inset-x-4 -inset-y-3" aria-hidden>
+                <span className="absolute inset-0 rounded-[2px] border border-[var(--citrus)] opacity-80" />
+                <span className="absolute -top-[1.4rem] left-0 rounded-[3px] bg-[var(--citrus)] px-1.5 py-0.5 font-mono text-[0.6rem] font-medium leading-none text-white">
+                  headline
+                </span>
+                {[
+                  "-top-1 -left-1",
+                  "-top-1 -right-1",
+                  "-bottom-1 -left-1",
+                  "-bottom-1 -right-1",
+                  "top-1/2 -left-1 -translate-y-1/2",
+                  "top-1/2 -right-1 -translate-y-1/2",
+                  "-top-1 left-1/2 -translate-x-1/2",
+                  "-bottom-1 left-1/2 -translate-x-1/2",
+                ].map((pos) => (
+                  <span
+                    key={pos}
+                    className={`absolute size-2 rounded-[1px] border border-white bg-[var(--citrus)] shadow-sm ${pos}`}
+                  />
+                ))}
+              </span>
+            </div>
 
             <p className="hero-sub mt-7 max-w-md text-lg leading-relaxed text-[color:#57534a]">
               Fuel is the logbook for your body — macros and meals on one side,
@@ -622,6 +778,153 @@ export function LandingEditorial() {
               </p>
             </article>
           ))}
+        </div>
+      </section>
+
+      {/* ---------------- Inside Fuel (scroll showcase) ---------------- */}
+      <section
+        ref={insideRef}
+        id="inside"
+        className="relative border-t border-[var(--line)] bg-[var(--paper-2)] md:h-[320vh]"
+      >
+        <div className="md:sticky md:top-0 md:flex md:h-screen md:items-center">
+          <div className="mx-auto w-full max-w-6xl px-6 py-16 md:py-0">
+            {/* heading */}
+            <div className="reveal max-w-2xl">
+              <span className="font-mono text-xs uppercase tracking-[0.16em] text-[var(--citrus-ink)]">
+                Inside Fuel
+              </span>
+              <h2 className="mt-4 font-heading font-medium text-[clamp(2rem,4vw,3rem)] leading-[1.05] tracking-[-0.02em]">
+                The real app,{" "}
+                <span className="relative whitespace-nowrap">
+                  not a mockup.
+                  <svg
+                    className="absolute -bottom-1.5 left-0 h-2.5 w-full text-[var(--citrus)]"
+                    viewBox="0 0 200 10"
+                    fill="none"
+                    preserveAspectRatio="none"
+                    aria-hidden
+                  >
+                    <path
+                      d="M2 7C40 2 70 9 108 5s72-4 90 1"
+                      stroke="currentColor"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </span>
+              </h2>
+              <p className="mt-4 text-[var(--muted)]">
+                Everything below is Fuel's actual interface, wired to live example
+                data. Scroll to move through it.
+              </p>
+            </div>
+
+            {/* desktop: pinned stage that swaps on scroll */}
+            <div className="mt-12 hidden gap-12 md:grid md:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)]">
+              {/* feature list */}
+              <div className="self-center">
+                <div className="flex flex-col gap-2">
+                  {showcase.map((f, i) => {
+                    const active = i === activeFeature
+                    return (
+                      <button
+                        key={f.n}
+                        type="button"
+                        onClick={() => scrollToFeature(i)}
+                        className={`group relative overflow-hidden rounded-xl border px-5 py-4 text-left transition-all duration-300 ${
+                          active
+                            ? "border-[var(--line)] bg-[var(--surface)] shadow-[0_2px_18px_rgba(20,18,15,0.06)]"
+                            : "border-transparent opacity-55 hover:opacity-90"
+                        }`}
+                      >
+                        <span
+                          className={`absolute inset-y-3 left-0 w-0.5 rounded-full bg-[var(--citrus)] transition-opacity duration-300 ${
+                            active ? "opacity-100" : "opacity-0"
+                          }`}
+                        />
+                        <div className="flex items-center gap-3">
+                          <span
+                            className={`font-mono text-xs ${
+                              active ? "text-[var(--citrus-ink)]" : "text-[var(--muted)]"
+                            }`}
+                          >
+                            {f.n}
+                          </span>
+                          <span className="font-mono text-[0.7rem] uppercase tracking-[0.16em] text-[var(--muted)]">
+                            {f.kicker}
+                          </span>
+                        </div>
+                        <h3 className="mt-2 font-heading text-xl font-medium tracking-tight text-[var(--ink)]">
+                          {f.title}
+                        </h3>
+                        <div
+                          className="grid transition-[grid-template-rows] duration-300 ease-out"
+                          style={{ gridTemplateRows: active ? "1fr" : "0fr" }}
+                        >
+                          <p className="overflow-hidden text-[15px] leading-relaxed text-[var(--muted)]">
+                            <span className="block pt-2">{f.blurb}</span>
+                          </p>
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* framed screen — crossfades between the app screens */}
+              <div className="self-center">
+                <div className="relative h-[620px]">
+                  {showcase.map((f, i) => {
+                    const Preview = f.Preview
+                    return (
+                      <div
+                        key={f.n}
+                        className={`absolute inset-0 transition-all duration-500 ease-out ${
+                          i === activeFeature
+                            ? "opacity-100 translate-y-0"
+                            : "pointer-events-none translate-y-3 opacity-0"
+                        }`}
+                        aria-hidden={i !== activeFeature}
+                      >
+                        <ScreenFrame url={f.url} mode={f.mode} className="h-full">
+                          <Preview />
+                        </ScreenFrame>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* mobile: the same screens, stacked */}
+            <div className="mt-10 flex flex-col gap-12 md:hidden">
+              {showcase.map((f) => {
+                const Preview = f.Preview
+                return (
+                  <div key={f.n} className="reveal">
+                    <div className="flex items-center gap-3">
+                      <span className="font-mono text-xs text-[var(--citrus-ink)]">{f.n}</span>
+                      <span className="font-mono text-[0.7rem] uppercase tracking-[0.16em] text-[var(--muted)]">
+                        {f.kicker}
+                      </span>
+                    </div>
+                    <h3 className="mt-2 font-heading text-xl font-medium tracking-tight text-[var(--ink)]">
+                      {f.title}
+                    </h3>
+                    <p className="mt-2 text-[15px] leading-relaxed text-[var(--muted)]">
+                      {f.blurb}
+                    </p>
+                    <div className="mt-5">
+                      <ScreenFrame url={f.url} mode={f.mode}>
+                        <Preview />
+                      </ScreenFrame>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
         </div>
       </section>
 

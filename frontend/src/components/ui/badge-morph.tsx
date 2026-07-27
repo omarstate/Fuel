@@ -23,7 +23,7 @@ const SPRING_DRAW = { type: "spring" as const, stiffness: 300, damping: 15 }
 const ACCENT: Record<Status, string> = {
   idle: "",
   loading: "",
-  success: "text-emerald-500",
+  success: "morph-success text-[#d9fa36]",
   error: "text-red-500",
 }
 
@@ -35,7 +35,7 @@ function getGlow(status: Status): string {
     case "loading":
       return `${base}, 0 0 24px -6px rgba(96,165,250,0.4)`
     case "success":
-      return `${base}, 0 0 24px -6px rgba(52,211,153,0.5)`
+      return `${base}, 0 0 24px -6px rgba(217,250,54,0.5)`
     case "error":
       return `${base}, 0 0 24px -6px rgba(248,113,113,0.45)`
   }

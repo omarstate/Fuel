@@ -1,8 +1,14 @@
 import { z } from "zod"
 
+// Optional UI language — AI prose (descriptions, insights, suggestion reasons)
+// comes back in this language. Defaults to English; older/legacy callers that
+// omit it are unaffected.
+const langSchema = z.enum(["en", "ar"]).optional().default("en")
+
 // POST /ai/meals/lookup body.
 export const lookupRequestSchema = z.object({
   query: z.string().trim().min(2).max(200),
+  lang: langSchema,
 })
 
 const nonNegative = z.number().nonnegative()
@@ -79,6 +85,7 @@ export const suggestRequestSchema = z.object({
     carbs: z.number().min(0).max(1000),
     fat: z.number().min(0).max(400),
   }),
+  lang: langSchema,
 })
 
 // Coach-insights narrative returned by Gemini (before we attach server-computed

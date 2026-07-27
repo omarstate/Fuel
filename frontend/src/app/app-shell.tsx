@@ -25,7 +25,7 @@ function AppShellInner() {
   } as React.CSSProperties
 
   return (
-    <SidebarProvider style={themeVars}>
+    <SidebarProvider dir="ltr" style={themeVars}>
       <AppSidebar />
       <SidebarInset className="bg-char">
         <div className="min-h-svh px-6 py-8 sm:px-10">

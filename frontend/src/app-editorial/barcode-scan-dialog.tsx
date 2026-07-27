@@ -23,9 +23,16 @@ import {
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { MorphButton, type MorphStatus } from "@/components/ui/morph-button"
 import { useBarcodeScanner } from "@/app-editorial/use-barcode-scanner"
-import { portionFactor, scaled, toReview, type Review } from "@/app-editorial/label-portion"
+import {
+  applyPortion,
+  eatenText,
+  toCatalogBase,
+  toReview,
+  type Review,
+} from "@/app-editorial/label-portion"
 import { LabelReview } from "@/app-editorial/label-review"
-import { lookupBarcode } from "@/lib/api"
+import { invalidateMealsCache } from "@/app-editorial/library/use-paged-meals"
+import { lookupBarcode, saveAiMealsToCatalog } from "@/lib/api"
 import { mealTypeLabel, suggestedMealType, type Meal, type MealType } from "@/app/nutrition/types"
 
 const isBarcodeLike = (s: string) => /^\d{8,14}$/.test(s.trim())
@@ -103,11 +110,7 @@ export function BarcodeScanDialog({
   }
 
   function setPortion(p: Partial<Pick<Review, "grams" | "servings">>) {
-    setReview((prev) => {
-      if (!prev) return prev
-      const next = { ...prev, ...p }
-      return { ...next, ...scaled(next.base, portionFactor(next)) }
-    })
+    setReview((prev) => (prev ? applyPortion(prev, p) : prev))
   }
 
   function handleManual() {
@@ -134,7 +137,7 @@ export function BarcodeScanDialog({
       id: crypto.randomUUID(),
       name: review.name.trim(),
       mealType,
-      servingSize: review.servingSize.trim() || undefined,
+      servingSize: eatenText(review) || review.servingSize.trim() || undefined,
       calories: Number(review.calories) || 0,
       protein: Number(review.protein) || 0,
       carbs: Number(review.carbs) || 0,
@@ -146,6 +149,16 @@ export function BarcodeScanDialog({
       setSaveStatus("error")
       setTimeout(() => setSaveStatus("idle"), 1300)
       return
+    }
+    // Best-effort: also add the scanned product to the shared "AI" catalog
+    // (deduped server-side by name). Non-blocking so the morph isn't delayed.
+    const catalogBase = toCatalogBase(review)
+    if (catalogBase) {
+      saveAiMealsToCatalog([
+        { name: review.name.trim(), description: review.note || undefined, ...catalogBase },
+      ])
+        .then(() => invalidateMealsCache())
+        .catch(() => {})
     }
     setSaveStatus("success")
     toast.success("Logged from barcode.")

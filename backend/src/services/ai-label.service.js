@@ -5,8 +5,11 @@
 // does NOT use Search grounding — every fact is on the label in the photo. The
 // hard parts are all in the prompt: Egyptian/EU labels are usually per-100g
 // (US labels per-serving), values may be in Arabic, and energy is often printed
-// in kilojoules. The client shows a review step, so a misread digit is caught
-// by the user before anything is logged.
+// in kilojoules. When both a per-100g and a per-serving column are printed we
+// prefer the per-100g column (it's basis-stable and lets the client scale to
+// any grams eaten) while still capturing the serving size; values stated per
+// whole package are reported as one (large) serving. The client shows a review
+// step, so a misread digit is caught by the user before anything is logged.
 
 import { generateJson } from "./gemini.client.js"
 
@@ -17,7 +20,8 @@ You are given a PHOTO of a packaged food product. It most likely shows the Nutri
 Follow these rules carefully:
 1. BASIS: Labels state values per 100 g/ml OR per serving/portion — sometimes both in two columns.
    - If only one basis is printed, use it and report which one.
-   - If BOTH are printed, report the PER-SERVING column and set basis to "per_serving".
+   - If BOTH a per-100g and a per-serving column are printed, report the PER-100g column and set basis to "per_100g", but still capture the serving column's size in servingSize/servingGrams (rule 4).
+   - If the values are stated for the WHOLE package/container ("per pack", "per bag", "لكل عبوة", "للعبوة كاملة"), set basis to "per_serving", describe the package in servingSize (e.g. "1 bag (1 kg)"), and put its net weight in grams/ml in servingGrams when readable (a 1 kg bag → 1000).
    - Report basis as "per_100g" (covers per 100 g and per 100 ml) or "per_serving".
 2. ENERGY: If energy is given in kilojoules (kJ) only, convert to kilocalories: kcal = kJ / 4.184. If both kJ and kcal are shown, use the kcal value. Always return calories in kcal.
 3. ARABIC: The label may be in Arabic, English, or both. Read either. Return all field names and the product name in English.

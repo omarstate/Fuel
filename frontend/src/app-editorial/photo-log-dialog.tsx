@@ -22,9 +22,16 @@ import {
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { MorphButton, type MorphStatus } from "@/components/ui/morph-button"
 import { compressImage } from "@/app-editorial/image-compress"
-import { portionFactor, scaled, toReview, type Review } from "@/app-editorial/label-portion"
+import {
+  applyPortion,
+  eatenText,
+  toCatalogBase,
+  toReview,
+  type Review,
+} from "@/app-editorial/label-portion"
 import { LabelReview } from "@/app-editorial/label-review"
-import { extractMealPhoto } from "@/lib/api"
+import { invalidateMealsCache } from "@/app-editorial/library/use-paged-meals"
+import { extractMealPhoto, saveAiMealsToCatalog } from "@/lib/api"
 import { mealTypeLabel, suggestedMealType, type Meal, type MealType } from "@/app/nutrition/types"
 
 export function PhotoLogDialog({
@@ -90,11 +97,7 @@ export function PhotoLogDialog({
 
   // Portion change → rescale the macro fields from the label's base values.
   function setPortion(p: Partial<Pick<Review, "grams" | "servings">>) {
-    setReview((prev) => {
-      if (!prev) return prev
-      const next = { ...prev, ...p }
-      return { ...next, ...scaled(next.base, portionFactor(next)) }
-    })
+    setReview((prev) => (prev ? applyPortion(prev, p) : prev))
   }
 
   async function handleSave() {
@@ -112,7 +115,7 @@ export function PhotoLogDialog({
       id: crypto.randomUUID(),
       name: review.name.trim(),
       mealType,
-      servingSize: review.servingSize.trim() || undefined,
+      servingSize: eatenText(review) || review.servingSize.trim() || undefined,
       calories: Number(review.calories) || 0,
       protein: Number(review.protein) || 0,
       carbs: Number(review.carbs) || 0,
@@ -124,6 +127,16 @@ export function PhotoLogDialog({
       setSaveStatus("error")
       setTimeout(() => setSaveStatus("idle"), 1300)
       return
+    }
+    // Best-effort: also add the product to the shared "AI" catalog (deduped
+    // server-side by name). Non-blocking so the morph success isn't delayed.
+    const catalogBase = toCatalogBase(review)
+    if (catalogBase) {
+      saveAiMealsToCatalog([
+        { name: review.name.trim(), description: review.note || undefined, ...catalogBase },
+      ])
+        .then(() => invalidateMealsCache())
+        .catch(() => {})
     }
     setSaveStatus("success")
     toast.success("Logged from label.")
@@ -241,9 +254,7 @@ export function PhotoLogDialog({
               <DialogHeader>
                 <DialogTitle>Review label</DialogTitle>
                 <DialogDescription>
-                  {review.basis === "per_100g"
-                    ? "Values were read per 100 g — set how much you ate and check the totals."
-                    : "Set how many servings you had and check the totals."}
+                  Set how much you ate and check the totals before logging.
                 </DialogDescription>
               </DialogHeader>
 

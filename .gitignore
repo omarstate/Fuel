@@ -30,3 +30,8 @@ pnpm-debug.log*
 .vscode/*
 !.vscode/extensions.json
 .idea
+
+# iOS (Xcode)
+ios/**/xcuserdata/
+ios/DerivedData/
+ios/build/

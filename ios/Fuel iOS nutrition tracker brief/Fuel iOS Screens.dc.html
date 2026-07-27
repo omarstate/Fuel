@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#EFEBE1;font-family:'Figtree',system-ui,sans-serif}
+a{color:#5C6D0A;text-decoration:none}a:hover{color:#FF6B35}
+.dv-turn{padding:40px 44px 32px;border-bottom:1px solid rgba(0,0,0,.08);scroll-margin-top:16px}
+.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 20px}
+.dv-tid{font:600 10px 'JetBrains Mono',monospace;padding:3px 7px;background:#14120F;color:#F7F3EA;border-radius:4px;text-decoration:none}
+.dv-tname{font:600 13px/1.2 'Figtree',sans-serif;color:#14120F}
+.dv-opts{display:flex;flex-wrap:wrap;gap:36px;align-items:flex-start}
+.dv-opt{flex:none;display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px}
+.dv-oid{font:600 10.5px 'JetBrains Mono',monospace;padding:3px 7px;background:rgba(20,18,15,.08);color:#14120F;border-radius:5px;text-decoration:none}
+.dv-olabel{display:flex;align-items:baseline;gap:8px;font:500 11px/1.3 'Figtree',sans-serif;color:rgba(20,18,15,.55)}
+.dv-opt:target .dv-oid{background:#FF6B35;color:#fff}
+.dv-next{margin:26px 0 0;font:12px/1.5 'Figtree',sans-serif;color:rgba(20,18,15,.5)}
+</style>
+</helmet>
+<section class="dv-turn" id="t1">
+<div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">Fuel iOS — first pass, light mode</span></div>
+<div style="max-width:680px;margin:0 0 24px;background:#FFFDF7;border:1px solid rgba(20,18,15,0.08);border-radius:18px;padding:18px 20px;font-size:12.5px;line-height:1.55;color:#3E3A30">
+<div style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#6F6A5C;margin-bottom:8px">ASSUMPTIONS + SYSTEM</div>
+Canvas 402×874 (iPhone 17 Pro), bottom tab bar <b>Today · Library · Coach · Progress · Profile</b>. Web sidebar collapses: Overview→a dashboard reachable from Progress, My meals + History pushed screens (back chevron). Type stand-ins: <b>Figtree</b> for Google Sans Flex, <b>JetBrains Mono</b> for all numbers/eyebrows. Volt = fills only; green text is #5C6D0A; citrus = primary actions. Cards: #FFFDF7 + ink-8% hairline + 18pt corners, no shadow. Glass only on the floating tab bar + FAB. Data: Egyptian meals (ful, koshari, molokhia), 2,200 kcal / 165g protein goals. <a class="dv-oid" href="#1a">1a</a> and <a class="dv-oid" href="#1b">1b</a> are the same Today screen with two data-viz treatments — ring hero vs editorial big-number + bars.
+</div>
+<div class="dv-opts">
+
+<div class="dv-opt" id="1a" data-screen-label="1a Today ring">
+<div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>Today — calorie ring hero</div>
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+<div style="height:100%;position:relative;background:#F7F3EA;overflow:hidden;font-family:'Figtree',sans-serif">
+  <div style="padding:74px 20px 0;display:flex;align-items:flex-end;justify-content:space-between">
+    <div>
+      <div style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#6F6A5C">MONDAY, JUL 20</div>
+      <div style="font:700 34px/1.1 'Figtree',sans-serif;color:#14120F;margin-top:5px">Today</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;background:rgba(217,250,54,0.45);border-radius:999px;padding:6px 12px;margin-bottom:4px">
+      <span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#5C6D0A">5 DAY STREAK</span>
+    </div>
+  </div>
+  <div style="padding:16px 16px 0;display:flex;flex-direction:column;gap:12px">
+    <div style="background:#FFFDF7;border:1px solid rgba(20,18,15,0.08);border-radius:18px;padding:18px;display:flex;align-items:center;gap:18px">
+      <div style="position:relative;width:132px;height:132px;flex:none">
+        <svg width="132" height="132" viewBox="0 0 132 132" style="transform:rotate(-90deg)">
+          <circle cx="66" cy="66" r="56" fill="none" stroke="#EDE7D6" stroke-width="12"></circle>
+          <circle cx="66" cy="66" r="56" fill="none" stroke="#D9FA36" stroke-width="12" stroke-linecap="round" stroke-dasharray="169 352"></circle>
+        </svg>
+        <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px">
+          <span style="font:700 26px 'JetBrains Mono',monospace;color:#14120F;letter-spacing:-0.02em">1,060</span>
+          <span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#6F6A5C">KCAL</span>
+        </div>
+      </div>
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:9px">
+        <div>
+          <div style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#6F6A5C">CONSUMED</div>
+          <div style="font:600 17px 'Figtree',sans-serif;color:#14120F;margin-top:2px">of 2,200 kcal</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="background:rgba(217,250,54,0.45);border-radius:8px;padding:4px 8px;font:600 11px 'JetBrains Mono',monospace;color:#5C6D0A">1,140 left</span>
+          <span style="font:500 12px 'Figtree',sans-serif;color:#6F6A5C">on pace</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:7px;margin-top:2px">
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#6F6A5C">PROTEIN</span><span style="font:600 10px 'JetBrains Mono',monospace;color:#14120F">37/165g</span></div>
+            <div style="height:5px;border-radius:99px;background:#EDE7D6;margin-top:3px"><div style="width:22%;height:5px;border-radius:99px;background:#FF6B35"></div></div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#6F6A5C">CARBS</span><span style="font:600 10px 'JetBrains Mono',monospace;color:#14120F">170/220g</span></div>
+            <div style="height:5px;border-radius:99px;background:#EDE7D6;margin-top:3px"><div style="width:77%;height:5px;border-radius:99px;background:#D9A441"></div></div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#6F6A5C">FAT</span><span style="font:600 10px 'JetBrains Mono',monospace;color:#14120F">26/70g</span></div>
+            <div style="height:5px;border-radius:99px;background:#EDE7D6;margin-top:3px"><div style="width:37%;height:5px;border-radius:99px;background:#D9FA36"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="background:#FFFDF7;border:1px solid rgba(20,18,15,0.08);border-radius:18px;overflow:hidden">
+      <div style="padding:14px 16px 12px;display:flex;flex-direction:column;gap:6px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline">
+          <span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#6F6A5C">BREAKFAST</span>
+          <span style="font:600 12px 'JetBrains Mono',monospace;color:#14120F">380 <span style="font-size:9px;color:#6F6A5C">KCAL</span></span>
+        </div>
+        <div style="font:600 16px 'Figtree',sans-serif;color:#14120F">Ful medames w/ baladi bread</div>
+        <div style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#6F6A5C">1 BOWL (300G) · <span style="color:#FF6B35">P 18</span> <span style="color:#D9A441">C 52</span> <span style="color:#5C6D0A">F 12</span></div>
+      </div>
+      <div style="height:1px;background:rgba(20,18,15,0.08);margin:0 16px"></div>
+      <div style="padding:14px 16px 12px;display:flex;flex-direction:column;gap:6px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline">
+          <span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#6F6A5C">LUNCH</span>
+          <span style="font:600 12px 'JetBrains Mono',monospace;color:#14120F">680 <span style="font-size:9px;color:#6F6A5C">KCAL</span></span>
+        </div>
+        <div style="font:600 16px 'Figtree',sans-serif;color:#14120F">Koshari, large bowl</div>
+        <div style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#6F6A5C">1 BOWL (450G) · <span style="color:#FF6B35">P 19</span> <span style="color:#D9A441">C 118</span> <span style="color:#5C6D0A">F 14</span></div>
+      </div>
+      <div style="height:1px;background:rgba(20,18,15,0.08);margin:0 16px"></div>
+      <div style="padding:14px 16px;display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#6F6A5C">DINNER</span>
+          <div style="font:500 13px 'Figtree',sans-serif;color:#A8A292;margin-top:4px">Nothing logged yet</div>
+        </div>
+        <span style="font:600 13px 'Figtree',sans-serif;color:#FF6B35">+ Add</span>
+      </div>
+      <div style="height:1px;background:rgba(20,18,15,0.08);margin:0 16px"></div>
+      <div style="padding:14px 16px;display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#6F6A5C">SNACK</span>
+          <div style="font:500 13px 'Figtree',sans-serif;color:#A8A292;margin-top:4px">Nothing logged yet</div>
+        </div>
+        <span style="font:600 13px 'Figtree',sans-serif;color:#FF6B35">+ Add</span>
+      </div>
+    </div>
+  </div>
+  <div style="position:absolute;right:18px;bottom:112px;z-index:31;width:58px;height:58px;border-radius:999px;background:#FF6B35;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(255,107,53,0.35)">
+    <svg width="24" height="24" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="#FFFDF7" stroke-width="2.6" stroke-linecap="round"></path></svg>
+  </div>
+  <div style="position:absolute;left:14px;right:14px;bottom:26px;z-index:30">
+    <div style="display:flex;align-items:center;justify-content:space-around;padding:9px 8px 7px;border-radius:999px;backdrop-filter:blur(16px) saturate(160%);-webkit-backdrop-filter:blur(16px) saturate(160%);background:rgba(255,253,247,0.72);border:1px solid rgba(20,18,15,0.08);box-shadow:0 8px 24px rgba(20,18,15,0.08)">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px;width:58px"><svg width="21" height="21" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7" stroke="#FF6B35" stroke-width="1.9"></circle><circle cx="10" cy="10" r="2.2" fill="#FF6B35"></circle></svg><span style="font:700 10px 'Figtree',sans-serif;color:#FF6B35">Today</span></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px;width:58px"><svg width="21" height="21" viewBox="0 0 20 20" fill="none"><rect x="3" y="3.5" width="14" height="13" rx="2.5" stroke="#6F6A5C" stroke-width="1.7"></rect><path d="M10 3.5v13" stroke="#6F6A5C" stroke-width="1.7"></path></svg><span style="font:600 10px 'Figtree',sans-serif;color:#6F6A5C">Library</span></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px;width:58px"><svg width="21" height="21" viewBox="0 0 20 20" fill="none"><rect x="2.5" y="3.5" width="15" height="11" rx="5.5" stroke="#6F6A5C" stroke-width="1.7"></rect><path d="M7 17l2.5-2.5" stroke="#6F6A5C" stroke-width="1.7" stroke-linecap="round"></path><circle cx="7" cy="9" r="1.1" fill="#6F6A5C"></circle><circle cx="10" cy="9" r="1.1" fill="#6F6A5C"></circle><circle cx="13" cy="9" r="1.1" fill="#6F6A5C"></circle></svg><span style="font:600 10px 'Figtree',sans-serif;color:#6F6A5C">Coach</span></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px;width:58px"><svg width="21" height="21" viewBox="0 0 20 20" fill="none"><path d="M3 14.5l5-5 3 3 6-6.5" stroke="#6F6A5C" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path></svg><span style="font:600 10px 'Figtree',sans-serif;color:#6F6A5C">Progress</span></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px;width:58px"><svg width="21" height="21" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="7" r="3.2" stroke="#6F6A5C" stroke-width="1.7"></circle><path d="M4.2 16.5c1-3.2 3.1-4.4 5.8-4.4s4.8 1.2 5.8 4.4" stroke="#6F6A5C" stroke-width="1.7" stroke-linecap="round"></path></svg><span style="font:600 10px 'Figtree',sans-serif;color:#6F6A5C">Profile</span></div>
+    </div>
+  </div>
+</div>
+</x-import>
+</div>
+
+<div class="dv-opt" id="1b" data-screen-label="1b Today bars">
+<div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a>Today — editorial number + bars</div>
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+<div style="height:100%;position:relative;background:#F7F3EA;overflow:hidden;font-family:'Figtree',sans-serif">
+  <div style="padding:74px 20px 0">
+    <div style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#6F6A5C">MONDAY, JUL 20</div>
+    <div style="font:700 34px/1.1 'Figtree',sans-serif;color:#14120F;margin-top:5px">Today</div>
+  </div>
+  <div style="padding:16px 16px 0;display:flex;flex-direction:column;gap:12px">
+    <div style="background:#FFFDF7;border:1px solid rgba(20,18,15,0.08);border-radius:18px;padding:20px 18px">
+      <div style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#6F6A5C">CALORIES</div>
+      <div style="display:flex;align-items:baseline;gap:10px;margin-top:6px">
+        <span style="font:700 46px/1 'JetBrains Mono',monospace;color:#14120F;letter-spacing:-0.03em">1,060</span>
+        <span style="font:500 15px 'Figtree',sans-serif;color:#6F6A5C">of 2,200 kcal</span>
+      </div>
+      <div style="height:10px;border-radius:99px;background:#EDE7D6;margin-top:14px;overflow:hidden"><div style="width:48%;height:10px;border-radius:99px;background:#D9FA36"></div></div>
+      <div style="display:flex;justify-content:space-between;margin-top:8px">
+        <span style="font:600 11px 'JetBrains Mono',monospace;color:#5C6D0A">1,140 LEFT · ON PACE</span>
+        <span style="font:500 11px 'JetBrains Mono',monospace;color:#6F6A5C">GOAL 2,200</span>
+      </div>
+      <div style="height:1px;background:rgba(20,18,15,0.08);margin:16px 0 14px"></div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#6F6A5C">PROTEIN</span><span style="font:600 12px 'JetBrains Mono',monospace;color:#14120F">37<span style="color:#6F6A5C">/165g</span></span></div>
+          <div style="height:8px;border-radius:99px;background:#EDE7D6;margin-top:5px"><div style="width:22%;height:8px;border-radius:99px;background:#FF6B35"></div></div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#6F6A5C">CARBS</span><span style="font:600 12px 'JetBrains Mono',monospace;color:#14120F">170<span style="color:#6F6A5C">/220g</span></span></div>
+          <div style="height:8px;border-radius:99px;background:#EDE7D6;margin-top:5px"><div style="width:77%;height:8px;border-radius:99px;background:#D9A441"></div></div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#6F6A5C">FAT</span><span style="font:600 12px 'JetBrains Mono',monospace;color:#14120F">26<span style="color:#6F6A5C">/70g</span></span></div>
+          <div style="height:8px;border-radius:99px;background:#EDE7D6;margin-top:5px"><div style="width:37%;height:8px;border-radius:99px;background:#D9FA36"></div></div>
+        </div>
+      </div>
+    </div>
+    <div style="background:#FFFDF7;border:1px solid rgba(20,18,15,0.08);border-radius:18px;overflow:hidden">
+      <div style="padding:12px 16px;display:flex;align-items:center;gap:12px">
+        <span style="font:600 10px 'JetBrains Mono',monospace;color:#6F6A5C;width:40px">08:20</span>
+        <div style="flex:1;min-width:0">
+          <div style="font:600 15px 'Figtree',sans-serif;color:#14120F">Ful medames w/ baladi bread</div>
+          <div style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#6F6A5C;margin-top:2px">BREAKFAST · <span style="color:#FF6B35">P 18</span> <span style="color:#D9A441">C 52</span> <span style="color:#5C6D0A">F 12</span></div>
+        </div>
+        <span style="font:600 12px 'JetBrains Mono',monospace;color:#14120F">380</span>
+      </div>
+      <div style="height:1px;background:rgba(20,18,15,0.08);margin:0 16px"></div>
+      <div style="padding:12px 16px;display:flex;align-items:center;gap:12px">
+        <span style="font:600 10px 'JetBrains Mono',monospace;color:#6F6A5C;width:40px">14:05</span>
+        <div style="flex:1;min-width:0">
+          <div style="font:600 15px 'Figtree',sans-serif;color:#14120F">Koshari, large bowl</div>
+          <div style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#6F6A5C;margin-top:2px">LUNCH · <span style="color:#FF6B35">P 19</span> <span style="color:#D9A441">C 118</span> <span style="color:#5C6D0A">F 14</span></div>
+        </div>
+        <span style="font:600 12px 'JetBrains Mono',monospace;color:#14120F">680</span>
+      </div>
+      <div style="height:1px;background:rgba(20,18,15,0.08);margin:0 16px"></div>
+      <div style="padding:12px 16px;display:flex;align-items:center;gap:12px">
+        <span style="font:600 10px 'JetBrains Mono',monospace;color:#C9C3B2;width:40px">--:--</span>
+        <div style="flex:1;font:500 13px 'Figtree',sans-serif;color:#A8A292">Dinner not logged</div>
+        <span style="font:600 13px 'Figtree',sans-serif;color:#FF6B35">+ Add</span>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px">
+      <div style="flex:1;background:#14120F;border-radius:14px;padding:13px 0;display:flex;align-items:center;justify-content:center;gap:7px">
+        <svg width="16" height="16" viewBox="0 0 16 16"><path d="M8 2v12M2 8h12" stroke="#F7F3EA" stroke-width="2" stroke-linecap="round"></path></svg>
+        <span style="font:600 14px 'Figtree',sans-serif;color:#F7F3EA">Add meal</span>
+      </div>
+      <div style="flex:1;background:#FFFDF7;border:1px solid rgba(20,18,15,0.08);border-radius:14px;padding:13px 0;display:flex;align-items:center;justify-content:center;gap:7px">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1.5l1.4 3.4 3.6.3-2.7 2.4.8 3.5L8 9.2l-3.1 1.9.8-3.5L3 5.2l3.6-.3L8 1.5z" stroke="#5C6D0A" stroke-width="1.4" stroke-linejoin="round"></path></svg>
+        <span style="font:600 14px 'Figtree',sans-serif;color:#5C6D0A">AI estimate</span>
+      </div>
+    </div>
+  </div>
+  <div style="position:absolute;left:14px;right:14px;bottom:26px;z-index:30">
+    <div style="display:flex;align-items:center;justify-content:space-around;padding:9px 8px 7px;border-radius:999px;backdrop-filter:blur(16px) saturate(160%);-webkit-backdrop-filter:blur(16px) saturate(160%);background:rgba(255,253,247,0.72);border:1px solid rgba(20,18,15,0.08);box-shadow:0 8px 24px rgba(20,18,15,0.08)">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px;width:58px"><svg width="21" height="21" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7" stroke="#FF6B35" stroke-width="1.9"></circle><circle cx="10" cy="10" r="2.2" fill="#FF6B35"></circle></svg><span style="font:700 10px 'Figtree',sans-serif;color:#FF6B35">Today</span></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px;width:58px"><svg width="21" height="21" viewBox="0 0 20 20" fill="none"><rect x="3" y="3.5" width="14" height="13" rx="2.5" stroke="#6F6A5C" stroke-width="1.7"></rect><path d="M10 3.5v13" stroke="#6F6A5C" stroke-width="1.7"></path></svg><span style="font:600 10px 'Figtree',sans-serif;color:#6F6A5C">Library</span></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px;width:58px"><svg width="21" height="21" viewBox="0 0 20 20" fill="none"><rect x="2.5" y="3.5" width="15" height="11" rx="5.5" stroke="#6F6A5C" stroke-width="1.7"></rect><path d="M7 17l2.5-2.5" stroke="#6F6A5C" stroke-width="1.7" stroke-linecap="round"></path><circle cx="7" cy="9" r="1.1" fill="#6F6A5C"></circle><circle cx="10" cy="9" r="1.1" fill="#6F6A5C"></circle><circle cx="13" cy="9" r="1.1" fill="#6F6A5C"></circle></svg><span style="font:600 10px 'Figtree',sans-serif;color:#6F6A5C">Coach</span></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px;width:58px"><svg width="21" height="21" viewBox="0 0 20 20" fill="none"><path d="M3 14.5l5-5 3 3 6-6.5" stroke="#6F6A5C" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path></svg><span style="font:600 10px 'Figtree',sans-serif;color:#6F6A5C">Progress</span></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px;width:58px"><svg width="21" height="21" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="7" r="3.2" stroke="#6F6A5C" stroke-width="1.7"></circle><path d="M4.2 16.5c1-3.2 3.1-4.4 5.8-4.4s4.8 1.2 5.8 4.4" stroke="#6F6A5C" stroke-width="1.7" stroke-linecap="round"></path></svg><span style="font:600 10px 'Figtree',sans-serif;color:#6F6A5C">Profile</span></div>
+    </div>
+  </div>
+</div>
+</x-import>
+</div>
+
+<div class="dv-opt" id="1c" data-screen-label="1c Overview">
+<div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a>Overview — dashboard (via Progress)</div>
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+<div style="height:100%;position:relative;background:#F7F3EA;overflow:hidden;font-family:'Figtree',sans-serif">
+  <div style="padding:74px 20px 0;display:flex;align-items:flex-end;justify-content:space-between">
+    <div>
+      <div style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#6F6A5C">MONDAY, JUL 20</div>
+      <div style="font:700 34px/1.1 'Figtree',sans-serif;color:#14120F;margin-top:5px">Overview</div>
+    </div>
+    <div style="background:rgba(217,250,54,0.45);border-radius:999px;padding:6px 12px;margin-bottom:4px">
+      <span style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#5C6D0A">5 DAY STREAK</span>
+    </div>
+  </div>
+  <div style="padding:16px 16px 0;display:flex;flex-direction:column;gap:12px">
+    <div style="background:#FFFDF7;border:1px solid rgba(20,18,15,0.08);border-radius:18px;padding:16px 18px;display:flex;align-items:center;gap:16px">
+      <div style="position:relative;width:104px;height:104px;flex:none">
+        <svg width="104" height="104" viewBox="0 0 104 104" style="transform:rotate(-90deg)">
+          <circle cx="52" cy="52" r="44" fill="none" stroke="#EDE7D6" stroke-width="10"></circle>
+          <circle cx="52" cy="52" r="44" fill="none" stroke="#D9FA36" stroke-width="10" stroke-linecap="round" stroke-dasharray="133 276"></circle>
+        </svg>
+        <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+          <span style="font:700 20px 'JetBrains Mono',monospace;color:#14120F">1,060</span>
+          <span style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#6F6A5C">KCAL</span>
+        </div>
+      </div>
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#6F6A5C">PROTEIN</span><span style="font:600 10px 'JetBrains Mono',monospace;color:#14120F">37/165g</span></div>
+        <div style="height:5px;border-radius:99px;background:#EDE7D6;margin-top:-4px"><div style="width:22%;height:5px;border-radius:99px;background:#FF6B35"></div></div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#6F6A5C">CARBS</span><span style="font:600 10px 'JetBrains Mono',monospace;color:#14120F">170/220g</span></div>
+        <div style="height:5px;border-radius:99px;background:#EDE7D6;margin-top:-4px"><div style="width:77%;height:5px;border-radius:99px;background:#D9A441"></div></div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#6F6A5C">FAT</span><span style="font:600 10px 'JetBrains Mono',monospace;color:#14120F">26/70g</span></div>
+        <div style="height:5px;border-radius:99px;background:#EDE7D6;margin-top:-4px"><div style="width:37%;height:5px;border-radius:99px;background:#D9FA36"></div></div>
+      </div>
+    </div>
+    <div style="display:flex;gap:12px">
+      <div style="flex:1;background:#FFFDF7;border:1px solid rgba(20,18,15,0.08);border-radius:18px;padding:14px 16px">
+        <div style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#6F6A5C">ON-TARGET STREAK</div>
+        <div style="font:700 30px 'JetBrains Mono',monospace;color:#14120F;margin-top:8px">5<span style="font:600 13px 'Figtree',sans-serif;color:#6F6A5C"> days</span></div>
+        <div style="font:500 11px 'Figtree',sans-serif;color:#6F6A5C;margin-top:2px">best: 12 days</div>
+      </div>
+      <div style="flex:1;background:#FFFDF7;border:1px solid rgba(20,18,15,0.08);border-radius:18px;padding:14px 16px">
+        <div style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#6F6A5C">PROTEIN LEFT</div>
+        <div style="font:700 30px 'JetBrains Mono',monospace;color:#14120F;margin-top:8px">128<span style="font:600 13px 'Figtree',sans-serif;color:#6F6A5C"> g</span></div>
+        <div style="font:500 11px 'Figtree',sans-serif;color:#6F6A5C;margin-top:2px">of 165g target</div>
+      </div>
+    </div>
+    <div style="background:#FFFDF7;border:1px solid rgba(20,18,15,0.08);border-radius:18px;padding:16px 18px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline">
+        <div>
+          <div style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#6F6A5C">THIS WEEK</div>
+          <div style="font:600 16px 'Figtree',sans-serif;color:#14120F;margin-top:3px">Calories vs goal</div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center">
+          <span style="display:flex;align-items:center;gap:4px;font:500 9px 'JetBrains Mono',monospace;color:#6F6A5C"><span style="width:7px;height:7px;border-radius:99px;background:#D9FA36;display:inline-block"></span>ON</span>
+          <span style="display:flex;align-items:center;gap:4px;font:500 9px 'JetBrains Mono',monospace;color:#6F6A5C"><span style="width:7px;height:7px;border-radius:99px;background:#FF6B35;display:inline-block"></span>OVER</span>
+        </div>
+      </div>
+      <div style="position:relative;height:110px;margin-top:14px">
+        <div style="position:absolute;left:0;right:0;top:10px;border-top:1.5px dashed rgba(20,18,15,0.25)"></div>
+        <div style="position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:space-between;padding:0 4px">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px;width:28px"><div style="width:16px;height:78px;border-radius:6px;background:#D9FA36"></div><span style="font:600 9px 'JetBrains Mono',monospace;color:#6F6A5C">M</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px;width:28px"><div style="width:16px;height:104px;border-radius:6px;background:#FF6B35"></div><span style="font:600 9px 'JetBrains Mono',monospace;color:#6F6A5C">T</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px;width:28px"><div style="width:16px;height:84px;border-radius:6px;background:#D9FA36"></div><span style="font:600 9px 'JetBrains Mono',monospace;color:#6F6A5C">W</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px;width:28px"><div style="width:16px;height:90px;border-radius:6px;background:#D9FA36"></div><span style="font:600 9px 'JetBrains Mono',monospace;color:#6F6A5C">T</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px;width:28px"><div style="width:16px;height:72px;border-radius:6px;background:#D9FA36"></div><span style="font:600 9px 'JetBrains Mono',monospace;color:#6F6A5C">F</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px;width:28px"><div style="width:16px;height:44px;border-radius:6px;background:#EDE7D6"></div><span style="font:600 9px 'JetBrains Mono',monospace;color:#6F6A5C">S</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px;width:28px"><div style="width:16px;height:8px;border-radius:6px;background:#EDE7D6"></div><span style="font:600 9px 'JetBrains Mono',monospace;color:#6F6A5C">S</span></div>
+        </div>
+      </div>
+      <div style="display:flex;gap:18px;margin-top:14px;padding-top:12px;border-top:1px solid rgba(20,18,15,0.08)">
+        <div style="flex:1"><div style="font:600 8.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#6F6A5C">ON TARGET</div><div style="font:700 16px 'JetBrains Mono',monospace;color:#14120F;margin-top:3px">4/6<span style="font:500 10px 'Figtree',sans-serif;color:#6F6A5C"> days</span></div></div>
+        <div style="flex:1"><div style="font:600 8.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#6F6A5C">DAILY AVG</div><div style="font:700 16px 'JetBrains Mono',monospace;color:#14120F;margin-top:3px">2,014</div></div>
+        <div style="flex:1"><div style="font:600 8.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#6F6A5C">NET VS GOAL</div><div style="font:700 16px 'JetBrains Mono',monospace;color:#5C6D0A;margin-top:3px">-1,118</div></div>
+      </div>
+    </div>
+  </div>
+  <div style="position:absolute;left:14px;right:14px;bottom:26px;z-index:30">
+    <div style="display:flex;align-items:center;justify-content:space-around;padding:9px 8px 7px;border-radius:999px;backdrop-filter:blur(16px) saturate(160%);-webkit-backdrop-filter:blur(16px) saturate(160%);background:rgba(255,253,247,0.72);border:1px solid rgba(20,18,15,0.08);box-shadow:0 8px 24px rgba(20,18,15,0.08)">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px;width:58px"><svg width="21" height="21" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7" stroke="#6F6A5C" stroke-width="1.9"></circle><circle cx="10" cy="10" r="2.2" fill="#6F6A5C"></circle></svg><span style="font:600 10px 'Figtree',sans-serif;color:#6F6A5C">Today</span></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px;width:58px"><svg width="21" height="21" viewBox="0 0 20 20" fill="none"><rect x="3" y="3.5" width="14" height="13" rx="2.5" stroke="#6F6A5C" stroke-width="1.7"></rect><path d="M10 3.5v13" stroke="#6F6A5C" stroke-width="1.7"></path></svg><span style="font:600 10px 'Figtree',sans-serif;color:#6F6A5C">Library</span></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px;width:58px"><svg width="21" height="21" viewBox="0 0 20 20" fill="none"><rect x="2.5" y="3.5" width="15" height="11" rx="5.5" stroke="#6F6A5C" stroke-width="1.7"></rect><path d="M7 17l2.5-2.5" stroke="#6F6A5C" stroke-width="1.7" stroke-linecap="round"></path><circle cx="7" cy="9" r="1.1" fill="#6F6A5C"></circle><circle cx="10" cy="9" r="1.1" fill="#6F6A5C"></circle><circle cx="13" cy="9" r="1.1" fill="#6F6A5C"></circle></svg><span style="font:600 10px 'Figtree',sans-serif;color:#6F6A5C">Coach</span></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px;width:58px"><svg width="21" height="21" viewBox="0 0 20 20" fill="none"><path d="M3 14.5l5-5 3 3 6-6.5" stroke="#FF6B35" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path></svg><span style="font:700 10px 'Figtree',sans-serif;color:#FF6B35">Progress</span></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px;width:58px"><svg width="21" height="21" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="7" r="3.2" stroke="#6F6A5C" stroke-width="1.7"></circle><path d="M4.2 16.5c1-3.2 3.1-4.4 5.8-4.4s4.8 1.2 5.8 4.4" stroke="#6F6A5C" stroke-width="1.7" stroke-linecap="round"></path></svg><span style="font:600 10px 'Figtree',sans-serif;color:#6F6A5C">Profile</span></div>
+    </div>
+  </div>
+</div>
+</x-import>
+</div>
+
+<div class="dv-opt" id="1d" data-screen-label="1d Library">
+<div class="dv-olabel"><a class="dv-oid" href="#1d">1d</a>Meal library</div>
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+<div style="height:100%;position:relative;background:#F7F3EA;overflow:hidden;font-family:'Figtree',sans-serif">
+  <div style="padding:74px 20px 0;display:flex;align-items:flex-end;justify-content:space-between">
+    <div>
+      <div style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#6F6A5C">NUTRITION · LIBRARY</div>
+      <div style="font:700 34px/1.1 'Figtree',sans-serif;color:#14120F;margin-top:5px">Library</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;background:#FF6B35;border-radius:999px;padding:9px 14px;margin-bottom:4px">
+      <svg width="13" height="13" viewBox="0 0 14 14"><path d="M7 1.5v11M1.5 7h11" stroke="#FFFDF7" stroke-width="2.2" stroke-linecap="round"></path></svg>
+      <span style="font:600 13px 'Figtree',sans-serif;color:#FFFDF7">Add meal</span>
+    </div>
+  </div>
+  <div style="padding:14px 16px 0;display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;align-items:center;gap:9px;background:#FFFDF7;border:1px solid rgba(20,18,15,0.08);border-radius:12px;padding:12px 14px">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5" stroke="#6F6A5C" stroke-width="1.7"></circle><path d="M11 11l3.5 3.5" stroke="#6F6A5C" stroke-width="1.7" stroke-linecap="round"></path></svg>
+      <span style="font:500 15px 'Figtree',sans-serif;color:#A8A292">Search meals…</span>
+    </div>
+    <div style="display:flex;gap:7px;overflow:hidden">
+      <span style="flex:none;background:#14120F;color:#F7F3EA;border-radius:999px;padding:7px 13px;font:600 10px 'JetBrains Mono',monospace;letter-spacing:.08em">ALL</span>
+      <span style="flex:none;background:#FFFDF7;border:1px solid rgba(20,18,15,0.08);color:#6F6A5C;border-radius:999px;padding:7px 13px;font:600 10px 'JetBrains Mono',monospace;letter-spacing:.08em">BREAKFAST</span>
+      <span style="flex:none;background:#FFFDF7;border:1px solid rgba(20,18,15,0.08);color:#6F6A5C;border-radius:999px;padding:7px 13px;font:600 10px 'JetBrains Mono',monospace;letter-spacing:.08em">LUNCH</span>
+      <span style="flex:none;background:#FFFDF7;border:1px solid rgba(20,18,15,0.08);color:#6F6A5C;border-radius:999px;padding:7px 13px;font:600 10px 'JetBrains Mono',monospace;letter-spacing:.08em">DINNER</span>
+      <span style="flex:none;background:#FFFDF7;border:1px solid rgba(20,18,15,0.08);color:#6F6A5C;border-radius:999px;padding:7px 13px;font:600 10px 'JetBrains Mono',monospace;letter-spacing:.08em">SNACKS</span>
+    </div>
+    <div style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#6F6A5C;padding:2px 4px 0">MEALS 69</div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="background:#FFFDF7;border:1px solid rgba(20,18,15,0.08);border-radius:18px;padding:15px 16px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px">
+          <span style="font:600 17px 'Figtree',sans-serif;color:#14120F">Koshari, large bowl</span>
+          <span style="font:700 19px 'JetBrains Mono',monospace;color:#14120F;flex:none">~680<span style="font:600 9px 'JetBrains Mono',monospace;color:#6F6A5C"> KCAL</span></span>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:8px">
+          <span style="background:rgba(217,250,54,0.45);border-radius:6px;padding:3px 7px;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#5C6D0A">AI DISCOVERED</span>
+          <span style="background:rgba(255,107,53,0.12);border-radius:6px;padding:3px 7px;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#C2551F">AI ESTIMATE</span>
+        </div>
+        <div style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#6F6A5C;margin-top:8px">1 BOWL (450G)</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px">
+          <span style="font:600 11px 'JetBrains Mono',monospace;color:#14120F;white-space:nowrap;flex:none"><span style="color:#FF6B35">P</span> 19&nbsp;&nbsp;<span style="color:#D9A441">C</span> 118&nbsp;&nbsp;<span style="color:#5C6D0A">F</span> 14</span>
+          <span style="display:flex;align-items:center;gap:5px;background:#14120F;border-radius:999px;padding:8px 13px"><svg width="11" height="11" viewBox="0 0 12 12"><path d="M6 1v10M1 6h10" stroke="#F7F3EA" stroke-width="2" stroke-linecap="round"></path></svg><span style="font:600 12px 'Figtree',sans-serif;color:#F7F3EA">Add to today</span></span>
+        </div>
+      </div>
+      <div style="background:#FFFDF7;border:1px solid rgba(20,18,15,0.08);border-radius:18px;padding:15px 16px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px">
+          <span style="font:600 17px 'Figtree',sans-serif;color:#14120F">Ful medames w/ baladi bread</span>
+          <span style="font:700 19px 'JetBrains Mono',monospace;color:#14120F;flex:none">380<span style="font:600 9px 'JetBrains Mono',monospace;color:#6F6A5C"> KCAL</span></span>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:8px">
+          <span style="background:rgba(217,250,54,0.45);border-radius:6px;padding:3px 7px;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#5C6D0A">BREAKFAST</span>
+        </div>
+        <div style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#6F6A5C;margin-top:8px">1 BOWL (300G)</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px">
+          <span style="font:600 11px 'JetBrains Mono',monospace;color:#14120F;white-space:nowrap;flex:none"><span style="color:#FF6B35">P</span> 18&nbsp;&nbsp;<span style="color:#D9A441">C</span> 52&nbsp;&nbsp;<span style="color:#5C6D0A">F</span> 12</span>
+          <span style="display:flex;align-items:center;gap:5px;background:#14120F;border-radius:999px;padding:8px 13px"><svg width="11" height="11" viewBox="0 0 12 12"><path d="M6 1v10M1 6h10" stroke="#F7F3EA" stroke-width="2" stroke-linecap="round"></path></svg><span style="font:600 12px 'Figtree',sans-serif;color:#F7F3EA">Add to today</span></span>
+        </div>
+      </div>
+      <div style="background:#FFFDF7;border:1px solid rgba(20,18,15,0.08);border-radius:18px;padding:15px 16px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px">
+          <span style="font:600 17px 'Figtree',sans-serif;color:#14120F">Molokhia w/ rice &amp; chicken</span>
+          <span style="font:700 19px 'JetBrains Mono',monospace;color:#14120F;flex:none">~595<span style="font:600 9px 'JetBrains Mono',monospace;color:#6F6A5C"> KCAL</span></span>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:8px">
+          <span style="background:rgba(217,250,54,0.45);border-radius:6px;padding:3px 7px;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#5C6D0A">AI DISCOVERED</span>
+          <span style="background:rgba(255,107,53,0.12);border-radius:6px;padding:3px 7px;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#C2551F">AI ESTIMATE</span>
+        </div>
+        <div style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#6F6A5C;margin-top:8px">1 PLATE (420G)</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px">
+          <span style="font:600 11px 'JetBrains Mono',monospace;color:#14120F;white-space:nowrap;flex:none"><span style="color:#FF6B35">P</span> 42&nbsp;&nbsp;<span style="color:#D9A441">C</span> 58&nbsp;&nbsp;<span style="color:#5C6D0A">F</span> 22</span>
+          <span style="display:flex;align-items:center;gap:5px;background:#14120F;border-radius:999px;padding:8px 13px"><svg width="11" height="11" viewBox="0 0 12 12"><path d="M6 1v10M1 6h10" stroke="#F7F3EA" stroke-width="2" stroke-linecap="round"></path></svg><span style="font:600 12px 'Figtree',sans-serif;color:#F7F3EA">Add to today</span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div style="position:absolute;left:14px;right:14px;bottom:26px;z-index:30">
+    <div style="display:flex;align-items:center;justify-content:space-around;padding:9px 8px 7px;border-radius:999px;backdrop-filter:blur(16px) saturate(160%);-webkit-backdrop-filter:blur(16px) saturate(160%);background:rgba(255,253,247,0.72);border:1px solid rgba(20,18,15,0.08);box-shadow:0 8px 24px rgba(20,18,15,0.08)">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px;width:58px"><svg width="21" height="21" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7" stroke="#6F6A5C" stroke-width="1.9"></circle><circle cx="10" cy="10" r="2.2" fill="#6F6A5C"></circle></svg><span style="font:600 10px 'Figtree',sans-serif;color:#6F6A5C">Today</span></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px;width:58px"><svg width="21" height="21" viewBox="0 0 20 20" fill="none"><rect x="3" y="3.5" width="14" height="13" rx="2.5" stroke="#FF6B35" stroke-width="1.7"></rect><path d="M10 3.5v13" stroke="#FF6B35" stroke-width="1.7"></path></svg><span style="font:700 10px 'Figtree',sans-serif;color:#FF6B35">Library</span></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px;width:58px"><svg width="21" height="21" viewBox="0 0 20 20" fill="none"><rect x="2.5" y="3.5" width="15" height="11" rx="5.5" stroke="#6F6A5C" stroke-width="1.7"></rect><path d="M7 17l2.5-2.5" stroke="#6F6A5C" stroke-width="1.7" stroke-linecap="round"></path><circle cx="7" cy="9" r="1.1" fill="#6F6A5C"></circle><circle cx="10" cy="9" r="1.1" fill="#6F6A5C"></circle><circle cx="13" cy="9" r="1.1" fill="#6F6A5C"></circle></svg><span style="font:600 10px 'Figtree',sans-serif;color:#6F6A5C">Coach</span></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px;width:58px"><svg width="21" height="21" viewBox="0 0 20 20" fill="none"><path d="M3 14.5l5-5 3 3 6-6.5" stroke="#6F6A5C" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path></svg><span style="font:600 10px 'Figtree',sans-serif;color:#6F6A5C">Progress</span></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px;width:58px"><svg width="21" height="21" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="7" r="3.2" stroke="#6F6A5C" stroke-width="1.7"></circle><path d="M4.2 16.5c1-3.2 3.1-4.4 5.8-4.4s4.8 1.2 5.8 4.4" stroke="#6F6A5C" stroke-width="1.7" stroke-linecap="round"></path></svg><span style="font:600 10px 'Figtree',sans-serif;color:#6F6A5C">Profile</span></div>
+    </div>
+  </div>
+</div>
+</x-import>
+</div>
+
+<div class="dv-opt" id="1e" data-screen-label="1e My meals">
+<div class="dv-olabel"><a class="dv-oid" href="#1e">1e</a>My meals — pushed from Library</div>
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+<div style="height:100%;position:relative;background:#F7F3EA;overflow:hidden;font-family:'Figtree',sans-serif">
+  <div style="padding:66px 16px 0;display:flex;align-items:center;justify-content:space-between">
+    <div style="display:flex;align-items:center;gap:5px">
+      <svg width="11" height="18" viewBox="0 0 12 20" fill="none"><path d="M10 2L2 10l8 8" stroke="#FF6B35" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+      <span style="font:500 16px 'Figtree',sans-serif;color:#FF6B35">Library</span>
+    </div>
+    <span style="font:500 16px 'Figtree',sans-serif;color:#FF6B35">Edit</span>
+  </div>
+  <div style="padding:14px 20px 0;display:flex;align-items:flex-end;justify-content:space-between">
+    <div>
+      <div style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#6F6A5C">NUTRITION · MY MEALS</div>
+      <div style="font:700 34px/1.1 'Figtree',sans-serif;color:#14120F;margin-top:5px">My meals</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;background:#FF6B35;border-radius:999px;padding:9px 14px;margin-bottom:4px">
+      <svg width="13" height="13" viewBox="0 0 14 14"><path d="M7 1.5v11M1.5 7h11" stroke="#FFFDF7" stroke-width="2.2" stroke-linecap="round"></path></svg>
+      <span style="font:600 13px 'Figtree',sans-serif;color:#FFFDF7">Add meal</span>
+    </div>
+  </div>
+  <div style="padding:6px 20px 0;font:400 14px/1.45 'Figtree',sans-serif;color:#6F6A5C;max-width:330px">The meals you've contributed to the catalog. Edit or remove them any time.</div>
+  <div style="padding:16px 16px 0;display:flex;flex-direction:column;gap:10px">
+    <div style="background:#FFFDF7;border:1px solid rgba(20,18,15,0.08);border-radius:18px;padding:15px 16px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px">
+        <span style="font:600 17px 'Figtree',sans-serif;color:#14120F">Mama's molokhia</span>
+        <span style="font:700 19px 'JetBrains Mono',monospace;color:#14120F;flex:none">~595<span style="font:600 9px 'JetBrains Mono',monospace;color:#6F6A5C"> KCAL</span></span>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:8px">
+        <span style="background:rgba(217,250,54,0.45);border-radius:6px;padding:3px 7px;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#5C6D0A">MY RECIPE</span>
+        <span style="background:rgba(255,107,53,0.12);border-radius:6px;padding:3px 7px;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#C2551F">AI ESTIMATE</span>
+      </div>
+      <div style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#6F6A5C;margin-top:8px">1 PLATE (420G) · <span style="color:#FF6B35">P 42</span> <span style="color:#D9A441">C 58</span> <span style="color:#5C6D0A">F 22</span></div>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <span style="flex:1;text-align:center;background:#F7F3EA;border:1px solid rgba(20,18,15,0.08);border-radius:10px;padding:9px 0;font:600 12px 'Figtree',sans-serif;color:#14120F">Edit</span>
+        <span style="flex:1;text-align:center;background:#F7F3EA;border:1px solid rgba(20,18,15,0.08);border-radius:10px;padding:9px 0;font:600 12px 'Figtree',sans-serif;color:#C0392B">Remove</span>
+        <span style="flex:1.4;text-align:center;background:#14120F;border-radius:10px;padding:9px 0;font:600 12px 'Figtree',sans-serif;color:#F7F3EA">+ Add to today</span>
+      </div>
+    </div>
+    <div style="background:#FFFDF7;border:1px solid rgba(20,18,15,0.08);border-radius:18px;padding:15px 16px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px">
+        <span style="font:600 17px 'Figtree',sans-serif;color:#14120F">Hawawshi, Alexandrian</span>
+        <span style="font:700 19px 'JetBrains Mono',monospace;color:#14120F;flex:none">~610<span style="font:600 9px 'JetBrains Mono',monospace;color:#6F6A5C"> KCAL</span></span>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:8px">
+        <span style="background:rgba(217,250,54,0.45);border-radius:6px;padding:3px 7px;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#5C6D0A">MY RECIPE</span>
+        <span style="background:rgba(255,107,53,0.12);border-radius:6px;padding:3px 7px;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#C2551F">AI ESTIMATE</span>
+      </div>
+      <div style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#6F6A5C;margin-top:8px">1 PIECE (350G) · <span style="color:#FF6B35">P 28</span> <span style="color:#D9A441">C 55</span> <span style="color:#5C6D0A">F 30</span></div>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <span style="flex:1;text-align:center;background:#F7F3EA;border:1px solid rgba(20,18,15,0.08);border-radius:10px;padding:9px 0;font:600 12px 'Figtree',sans-serif;color:#14120F">Edit</span>
+        <span style="flex:1;text-align:center;background:#F7F3EA;border:1px solid rgba(20,18,15,0.08);border-radius:10px;padding:9px 0;font:600 12px 'Figtree',sans-serif;color:#C0392B">Remove</span>
+        <span style="flex:1.4;text-align:center;background:#14120F;border-radius:10px;padding:9px 0;font:600 12px 'Figtree',sans-serif;color:#F7F3EA">+ Add to today</span>
+      </div>
+    </div>
+    <div style="background:#FFFDF7;border:1px solid rgba(20,18,15,0.08);border-radius:18px;padding:15px 16px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px">
+        <span style="font:600 17px 'Figtree',sans-serif;color:#14120F">HiPro protein shake</span>
+        <span style="font:700 19px 'JetBrains Mono',monospace;color:#14120F;flex:none">187<span style="font:600 9px 'JetBrains Mono',monospace;color:#6F6A5C"> KCAL</span></span>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:8px">
+        <span style="background:rgba(217,250,54,0.45);border-radius:6px;padding:3px 7px;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#5C6D0A">LABEL SCAN</span>
+      </div>
+      <div style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#6F6A5C;margin-top:8px">1 BOTTLE (250ML) · <span style="color:#FF6B35">P 20</span> <span style="color:#D9A441">C 18</span> <span style="color:#5C6D0A">F 4</span></div>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <span style="flex:1;text-align:center;background:#F7F3EA;border:1px solid rgba(20,18,15,0.08);border-radius:10px;padding:9px 0;font:600 12px 'Figtree',sans-serif;color:#14120F">Edit</span>
+        <span style="flex:1;text-align:center;background:#F7F3EA;border:1px solid rgba(20,18,15,0.08);border-radius:10px;padding:9px 0;font:600 12px 'Figtree',sans-serif;color:#C0392B">Remove</span>
+        <span style="flex:1.4;text-align:center;background:#14120F;border-radius:10px;padding:9px 0;font:600 12px 'Figtree',sans-serif;color:#F7F3EA">+ Add to today</span>
+      </div>
+    </div>
+  </div>
+</div>
+</x-import>
+</div>
+
+<div class="dv-opt" id="1f" data-screen-label="1f History">
+<div class="dv-olabel"><a class="dv-oid" href="#1f">1f</a>Meal history — pushed from Progress</div>
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+<div style="height:100%;position:relative;background:#F7F3EA;overflow:hidden;font-family:'Figtree',sans-serif">
+  <div style="padding:66px 16px 0;display:flex;align-items:center;justify-content:space-between">
+    <div style="display:flex;align-items:center;gap:5px">
+      <svg width="11" height="18" viewBox="0 0 12 20" fill="none"><path d="M10 2L2 10l8 8" stroke="#FF6B35" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+      <span style="font:500 16px 'Figtree',sans-serif;color:#FF6B35">Progress</span>
+    </div>
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2.5" y="3.5" width="15" height="14" rx="3" stroke="#FF6B35" stroke-width="1.7"></rect><path d="M2.5 7.5h15M6.5 2v3M13.5 2v3" stroke="#FF6B35" stroke-width="1.7" stroke-linecap="round"></path></svg>
+  </div>
+  <div style="padding:14px 20px 0">
+    <div style="font:600 11px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#6F6A5C">NUTRITION · HISTORY</div>
+    <div style="font:700 34px/1.1 'Figtree',sans-serif;color:#14120F;margin-top:5px">History</div>
+    <div style="font:400 14px/1.45 'Figtree',sans-serif;color:#6F6A5C;margin-top:6px">Everything you've logged in the last 30 days, by day.</div>
+  </div>
+  <div style="padding:16px 16px 0;display:flex;flex-direction:column;gap:12px">
+    <div style="background:#FFFDF7;border:1px solid rgba(20,18,15,0.08);border-radius:18px;overflow:hidden">
+      <div style="padding:14px 16px 12px;display:flex;justify-content:space-between;align-items:flex-end;border-bottom:1px solid rgba(20,18,15,0.08)">
+        <div>
+          <div style="font:700 17px 'Figtree',sans-serif;color:#14120F">Today</div>
+          <div style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#6F6A5C;margin-top:3px">2 MEALS</div>
+        </div>
+        <div style="font:600 11px 'JetBrains Mono',monospace;color:#6F6A5C;white-space:nowrap;flex:none"><span style="color:#FF6B35">P</span> 37 <span style="color:#D9A441">C</span> 170 <span style="color:#5C6D0A">F</span> 26&nbsp;&nbsp;<span style="font:700 15px 'JetBrains Mono',monospace;color:#14120F">1,060</span> kcal</div>
+      </div>
+      <div style="padding:12px 16px;display:flex;justify-content:space-between;align-items:center;gap:12px">
+        <div style="min-width:0">
+          <div style="font:600 15px 'Figtree',sans-serif;color:#14120F">Koshari, large bowl</div>
+          <div style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#6F6A5C;margin-top:2px">LUNCH · 1 BOWL (450G)</div>
+        </div>
+        <span style="flex:none;font:600 12px 'JetBrains Mono',monospace;color:#14120F">680 <span style="font-size:9px;color:#6F6A5C">KCAL</span></span>
+      </div>
+      <div style="height:1px;background:rgba(20,18,15,0.08);margin:0 16px"></div>
+      <div style="padding:12px 16px;display:flex;justify-content:space-between;align-items:center;gap:12px">
+        <div style="min-width:0">
+          <div style="font:600 15px 'Figtree',sans-serif;color:#14120F">Ful medames w/ baladi bread</div>
+          <div style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#6F6A5C;margin-top:2px">BREAKFAST · 1 BOWL (300G)</div>
+        </div>
+        <span style="flex:none;font:600 12px 'JetBrains Mono',monospace;color:#14120F">380 <span style="font-size:9px;color:#6F6A5C">KCAL</span></span>
+      </div>
+    </div>
+    <div style="background:#FFFDF7;border:1px solid rgba(20,18,15,0.08);border-radius:18px;overflow:hidden">
+      <div style="padding:14px 16px 12px;display:flex;justify-content:space-between;align-items:flex-end;border-bottom:1px solid rgba(20,18,15,0.08)">
+        <div>
+          <div style="font:700 17px 'Figtree',sans-serif;color:#14120F">Sun, Jul 19</div>
+          <div style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#6F6A5C;margin-top:3px">4 MEALS</div>
+        </div>
+        <div style="font:600 11px 'JetBrains Mono',monospace;color:#6F6A5C;white-space:nowrap;flex:none"><span style="color:#FF6B35">P</span> 149 <span style="color:#D9A441">C</span> 181 <span style="color:#5C6D0A">F</span> 73&nbsp;&nbsp;<span style="font:700 15px 'JetBrains Mono',monospace;color:#14120F">2,015</span> kcal</div>
+      </div>
+      <div style="padding:12px 16px;display:flex;justify-content:space-between;align-items:center;gap:12px">
+        <div style="min-width:0">
+          <div style="font:600 15px 'Figtree',sans-serif;color:#14120F">HiPro protein shake</div>
+          <div style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#6F6A5C;margin-top:2px">DINNER · 1 BOTTLE (250ML)</div>
+        </div>
+        <span style="flex:none;font:600 12px 'JetBrains Mono',monospace;color:#14120F">187 <span style="font-size:9px;color:#6F6A5C">KCAL</span></span>
+      </div>
+      <div style="height:1px;background:rgba(20,18,15,0.08);margin:0 16px"></div>
+      <div style="padding:12px 16px;display:flex;justify-content:space-between;align-items:center;gap:12px">
+        <div style="min-width:0">
+          <div style="font:600 15px 'Figtree',sans-serif;color:#14120F">Grilled kofta &amp; rice</div>
+          <div style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#6F6A5C;margin-top:2px">DINNER · 1 PLATE (380G)</div>
+        </div>
+        <span style="flex:none;font:600 12px 'JetBrains Mono',monospace;color:#14120F">540 <span style="font-size:9px;color:#6F6A5C">KCAL</span></span>
+      </div>
+      <div style="height:1px;background:rgba(20,18,15,0.08);margin:0 16px"></div>
+      <div style="padding:12px 16px;display:flex;justify-content:space-between;align-items:center;gap:12px">
+        <div style="min-width:0">
+          <div style="font:600 15px 'Figtree',sans-serif;color:#14120F">Molokhia w/ rice &amp; chicken</div>
+          <div style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#6F6A5C;margin-top:2px">LUNCH · 1 PLATE (420G)</div>
+        </div>
+        <span style="flex:none;font:600 12px 'JetBrains Mono',monospace;color:#14120F">595 <span style="font-size:9px;color:#6F6A5C">KCAL</span></span>
+      </div>
+      <div style="height:1px;background:rgba(20,18,15,0.08);margin:0 16px"></div>
+      <div style="padding:12px 16px;display:flex;justify-content:space-between;align-items:center;gap:12px">
+        <div style="min-width:0">
+          <div style="font:600 15px 'Figtree',sans-serif;color:#14120F">Breakfast honey mustard chicken</div>
+          <div style="font:500 10px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#6F6A5C;margin-top:2px">BREAKFAST · 1 SANDWICH</div>
+        </div>
+        <span style="flex:none;font:600 12px 'JetBrains Mono',monospace;color:#14120F">495 <span style="font-size:9px;color:#6F6A5C">KCAL</span></span>
+      </div>
+    </div>
+    <div style="background:#FFFDF7;border:1px solid rgba(20,18,15,0.08);border-radius:18px;overflow:hidden">
+      <div style="padding:14px 16px 12px;display:flex;justify-content:space-between;align-items:flex-end">
+        <div>
+          <div style="font:700 17px 'Figtree',sans-serif;color:#14120F">Sat, Jul 18</div>
+          <div style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#6F6A5C;margin-top:3px">7 MEALS</div>
+        </div>
+        <div style="font:600 11px 'JetBrains Mono',monospace;color:#6F6A5C;white-space:nowrap;flex:none"><span style="color:#FF6B35">P</span> 209 <span style="color:#D9A441">C</span> 186 <span style="color:#5C6D0A">F</span> 66&nbsp;&nbsp;<span style="font:700 15px 'JetBrains Mono',monospace;color:#14120F">2,270</span> kcal</div>
+      </div>
+    </div>
+  </div>
+  <div style="position:absolute;left:14px;right:14px;bottom:26px;z-index:30">
+    <div style="display:flex;align-items:center;justify-content:space-around;padding:9px 8px 7px;border-radius:999px;backdrop-filter:blur(16px) saturate(160%);-webkit-backdrop-filter:blur(16px) saturate(160%);background:rgba(255,253,247,0.72);border:1px solid rgba(20,18,15,0.08);box-shadow:0 8px 24px rgba(20,18,15,0.08)">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px;width:58px"><svg width="21" height="21" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7" stroke="#6F6A5C" stroke-width="1.9"></circle><circle cx="10" cy="10" r="2.2" fill="#6F6A5C"></circle></svg><span style="font:600 10px 'Figtree',sans-serif;color:#6F6A5C">Today</span></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px;width:58px"><svg width="21" height="21" viewBox="0 0 20 20" fill="none"><rect x="3" y="3.5" width="14" height="13" rx="2.5" stroke="#6F6A5C" stroke-width="1.7"></rect><path d="M10 3.5v13" stroke="#6F6A5C" stroke-width="1.7"></path></svg><span style="font:600 10px 'Figtree',sans-serif;color:#6F6A5C">Library</span></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px;width:58px"><svg width="21" height="21" viewBox="0 0 20 20" fill="none"><rect x="2.5" y="3.5" width="15" height="11" rx="5.5" stroke="#6F6A5C" stroke-width="1.7"></rect><path d="M7 17l2.5-2.5" stroke="#6F6A5C" stroke-width="1.7" stroke-linecap="round"></path><circle cx="7" cy="9" r="1.1" fill="#6F6A5C"></circle><circle cx="10" cy="9" r="1.1" fill="#6F6A5C"></circle><circle cx="13" cy="9" r="1.1" fill="#6F6A5C"></circle></svg><span style="font:600 10px 'Figtree',sans-serif;color:#6F6A5C">Coach</span></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px;width:58px"><svg width="21" height="21" viewBox="0 0 20 20" fill="none"><path d="M3 14.5l5-5 3 3 6-6.5" stroke="#FF6B35" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path></svg><span style="font:700 10px 'Figtree',sans-serif;color:#FF6B35">Progress</span></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px;width:58px"><svg width="21" height="21" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="7" r="3.2" stroke="#6F6A5C" stroke-width="1.7"></circle><path d="M4.2 16.5c1-3.2 3.1-4.4 5.8-4.4s4.8 1.2 5.8 4.4" stroke="#6F6A5C" stroke-width="1.7" stroke-linecap="round"></path></svg><span style="font:600 10px 'Figtree',sans-serif;color:#6F6A5C">Profile</span></div>
+    </div>
+  </div>
+</div>
+</x-import>
+</div>
+
+</div>
+<p class="dv-next">Try next: "dark variants of <a class="dv-oid" href="#1a">1a</a> and <a class="dv-oid" href="#1d">1d</a>" · "go with the ring from <a class="dv-oid" href="#1a">1a</a>, design the Add-meal sheet + AI lookup flow" · "Coach chat + label scanner screens"</p>
+</section>
+
+</x-dc>
+</body>
+</html>

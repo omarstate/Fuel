@@ -117,6 +117,7 @@ export function ToonhubPage() {
 
   return (
     <div
+      dir="ltr"
       className="relative w-full overflow-hidden"
       style={{
         backgroundColor: IMAGES[activeIndex].bg,

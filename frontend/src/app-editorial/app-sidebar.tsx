@@ -39,42 +39,46 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { LanguageToggle } from "@/components/language-toggle"
 import { LogoMark } from "@/app-editorial/logo-mark"
 import { useMode, type Mode } from "@/components/site/mode-context"
 import { editorialAccent, editorialSpark } from "@/app-editorial/theme"
 import { useAuth } from "@/lib/auth"
+import { useI18n } from "@/lib/i18n"
+import type { MessageKey } from "@/lib/i18n/en"
 import { cn } from "@/lib/utils"
 
 const nutritionItems = [
-  { href: "/dashboard/nutrition", label: "Overview", icon: Home, soon: false },
-  { href: "/dashboard/nutrition/today", label: "Today", icon: CalendarCheck, soon: false },
-  { href: "/dashboard/library", label: "Library", icon: BookOpen, soon: false },
-  { href: "/dashboard/my-meals", label: "My Meals", icon: ChefHat, soon: false },
-  { href: "/dashboard/nutrition/history", label: "History", icon: History, soon: false },
-  { href: "/dashboard/nutrition", label: "Recipes", icon: Soup, soon: true },
-  { href: "/dashboard/nutrition", label: "Water", icon: GlassWater, soon: true },
-]
+  { href: "/dashboard/nutrition", labelKey: "nav.overview", icon: Home, soon: false },
+  { href: "/dashboard/nutrition/today", labelKey: "nav.today", icon: CalendarCheck, soon: false },
+  { href: "/dashboard/library", labelKey: "nav.library", icon: BookOpen, soon: false },
+  { href: "/dashboard/my-meals", labelKey: "nav.myMeals", icon: ChefHat, soon: false },
+  { href: "/dashboard/nutrition/history", labelKey: "nav.history", icon: History, soon: false },
+  { href: "/dashboard/nutrition", labelKey: "nav.recipes", icon: Soup, soon: true },
+  { href: "/dashboard/nutrition", labelKey: "nav.water", icon: GlassWater, soon: true },
+] satisfies { href: string; labelKey: MessageKey; icon: typeof Home; soon: boolean }[]
 
 const workoutItems = [
-  { href: "/dashboard/workouts", label: "Overview", icon: Home, soon: false },
-  { href: "/dashboard/workouts/library", label: "Library", icon: ListChecks, soon: false },
-  { href: "/dashboard/workouts/history", label: "My Workouts", icon: ClipboardList, soon: false },
-  { href: "/dashboard/workouts", label: "Progress", icon: TrendingUp, soon: true },
-]
+  { href: "/dashboard/workouts", labelKey: "nav.overview", icon: Home, soon: false },
+  { href: "/dashboard/workouts/library", labelKey: "nav.workoutsLibrary", icon: ListChecks, soon: false },
+  { href: "/dashboard/workouts/history", labelKey: "nav.myWorkouts", icon: ClipboardList, soon: false },
+  { href: "/dashboard/workouts", labelKey: "nav.progress", icon: TrendingUp, soon: true },
+] satisfies { href: string; labelKey: MessageKey; icon: typeof Home; soon: boolean }[]
 
-const toggleOptions: { value: Mode; label: string; icon: typeof Utensils }[] = [
-  { value: "nutrition", label: "Nutrition", icon: Utensils },
-  { value: "workouts", label: "Workouts", icon: Dumbbell },
+const toggleOptions: { value: Mode; labelKey: MessageKey; icon: typeof Utensils }[] = [
+  { value: "nutrition", labelKey: "nav.nutrition", icon: Utensils },
+  { value: "workouts", labelKey: "nav.workouts", icon: Dumbbell },
 ]
 
 function SegmentedModeToggle() {
   const { mode } = useMode()
   const navigate = useNavigate()
   const { setOpenMobile } = useSidebar()
+  const { t } = useI18n()
 
   return (
     <div className="flex rounded-full border border-sidebar-border bg-secondary p-1">
-      {toggleOptions.map(({ value, label, icon: Icon }) => (
+      {toggleOptions.map(({ value, labelKey, icon: Icon }) => (
         <button
           key={value}
           type="button"
@@ -100,7 +104,7 @@ function SegmentedModeToggle() {
           )}
           <span className="relative z-10 flex items-center justify-center gap-1.5">
             <Icon className="size-3.5" />
-            {label}
+            {t(labelKey)}
           </span>
         </button>
       ))}
@@ -114,15 +118,16 @@ export function AppSidebar() {
   const { mode } = useMode()
   const { user, signOut } = useAuth()
   const { setOpenMobile } = useSidebar()
+  const { t, dir } = useI18n()
   const spark = editorialSpark[mode]
 
   const email = user?.email ?? ""
   const displayName = (user?.user_metadata?.display_name as string | undefined)?.trim()
-  const name = displayName || (email ? email.split("@")[0] : "Account")
+  const name = displayName || (email ? email.split("@")[0] : t("nav.account"))
   const initials = (name.slice(0, 2) || "FU").toUpperCase()
 
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="icon" side={dir === "rtl" ? "right" : "left"}>
       <SidebarHeader className="gap-4 px-2 pt-2">
         <Link to="/" className="flex items-center gap-2.5 px-1">
           <LogoMark
@@ -142,21 +147,21 @@ export function AppSidebar() {
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel className="flex items-center gap-1.5">
-            <Utensils className="size-3.5" /> Nutrition
+            <Utensils className="size-3.5" /> {t("nav.nutrition")}
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {nutritionItems.map((item) => (
-                <SidebarMenuItem key={item.label}>
+                <SidebarMenuItem key={item.labelKey}>
                   <SidebarMenuButton
                     asChild
                     isActive={!item.soon && location.pathname === item.href}
-                    tooltip={item.label}
+                    tooltip={t(item.labelKey)}
                     className="h-11 text-[0.95rem] md:h-8 md:text-sm"
                     onClick={(e) => {
                       if (item.soon) {
                         e.preventDefault()
-                        toast(`${item.label} is coming soon.`)
+                        toast(t("common.comingSoon", { feature: t(item.labelKey) }))
                         return
                       }
                       setOpenMobile(false)
@@ -164,7 +169,7 @@ export function AppSidebar() {
                   >
                     <Link to={item.href}>
                       <item.icon />
-                      <span>{item.label}</span>
+                      <span>{t(item.labelKey)}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -175,21 +180,21 @@ export function AppSidebar() {
 
         <SidebarGroup>
           <SidebarGroupLabel className="flex items-center gap-1.5">
-            <Dumbbell className="size-3.5" /> Workouts
+            <Dumbbell className="size-3.5" /> {t("nav.workouts")}
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {workoutItems.map((item) => (
-                <SidebarMenuItem key={item.label}>
+                <SidebarMenuItem key={item.labelKey}>
                   <SidebarMenuButton
                     asChild
                     isActive={!item.soon && location.pathname === item.href}
-                    tooltip={item.label}
+                    tooltip={t(item.labelKey)}
                     className="h-11 text-[0.95rem] md:h-8 md:text-sm"
                     onClick={(e) => {
                       if (item.soon) {
                         e.preventDefault()
-                        toast(`${item.label} is coming soon.`)
+                        toast(t("common.comingSoon", { feature: t(item.labelKey) }))
                         return
                       }
                       setOpenMobile(false)
@@ -197,7 +202,7 @@ export function AppSidebar() {
                   >
                     <Link to={item.href}>
                       <item.icon />
-                      <span>{item.label}</span>
+                      <span>{t(item.labelKey)}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -210,6 +215,9 @@ export function AppSidebar() {
       <SidebarSeparator />
 
       <SidebarFooter>
+        <div className="flex justify-center pb-1 group-data-[collapsible=icon]:hidden">
+          <LanguageToggle />
+        </div>
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>
@@ -221,7 +229,7 @@ export function AppSidebar() {
                     </AvatarFallback>
                   </Avatar>
                   <span className="truncate capitalize">{name}</span>
-                  <ChevronsUpDown className="ml-auto size-4 text-muted-foreground" />
+                  <ChevronsUpDown className="ms-auto size-4 text-muted-foreground" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent side="top" align="start" className="w-(--radix-dropdown-menu-trigger-width) min-w-56">
@@ -231,10 +239,10 @@ export function AppSidebar() {
                     setOpenMobile(false)
                   }}
                 >
-                  <UserRound /> Profile
+                  <UserRound /> {t("nav.profile")}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => signOut()}>
-                  <LogOut /> Sign out
+                  <LogOut /> {t("nav.signOut")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

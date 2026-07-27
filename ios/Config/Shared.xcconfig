@@ -1,0 +1,20 @@
+// Shared build configuration for the Fuel iOS app.
+// Values are surfaced to the app through Config/Info.plist ($(VAR) substitution)
+// and read at runtime by AppConfig.swift.
+//
+// Note: "//" would start an xcconfig comment, so URLs split the slashes with an
+// empty $() variable reference ("https:/$()/host") to avoid a literal "//".
+
+// Supabase project (same project the web app uses; publishable key is safe to ship — RLS protects data).
+SUPABASE_URL = https:/$()/ezwkjdbzjwspjkblkdzd.supabase.co
+SUPABASE_KEY = sb_publishable_aiMm6vXBernpExG_k2Olew_ZcUkevdE
+
+// DesignSystem/FuelColors.swift defines Color.fuelVolt etc. explicitly so the
+// names are stable and independent of codegen. Turn off auto-generated asset
+// symbols so they don't collide with (duplicate) those explicit extensions.
+ASSETCATALOG_COMPILER_GENERATE_ASSET_SYMBOLS = NO
+
+// Code signing: Apple Development team (omarstate@ymail.com) for running on a
+// physical device. Automatic signing generates the provisioning profile.
+DEVELOPMENT_TEAM = NR66Y95V62
+CODE_SIGN_STYLE = Automatic
