@@ -2,32 +2,57 @@ import SwiftUI
 import VisionKit
 import AVFoundation
 
-// Full-screen barcode flow. On a capable device with camera permission it shows
-// the live VisionKit scanner under a Liquid-Glass overlay (reticle, torch,
-// cancel, "type the code"); on the first hit it stops, looks the code up via
-// Open Food Facts, and routes into the shared review sheet. Simulator /
-// unsupported / permission-denied fall back cleanly to manual code entry.
-// Soft states (not found, no macros) and outages each get a designed screen with
-// a manual-entry escape hatch, and a "scan again" affordance closes the loop.
+// Full-screen barcode flow. It opens on a chooser naming the two things a scan
+// can do — ADD TO LIBRARY (scan → prefilled catalog form → saved to the shared
+// meal database, the original flow) and QUICK LOG (scan → portion review with
+// a section picker → straight into today's log, reusing the photo flow's
+// LabelReviewSheet). Only after a pick does the camera spin up, so the capture
+// session always starts from a user gesture. On a capable device with camera
+// permission it shows the live VisionKit scanner under a Liquid-Glass overlay
+// (reticle, torch, cancel, "type the code"); on the first hit it stops, looks
+// the code up via Open Food Facts, and routes by the chosen purpose. Simulator
+// / unsupported / permission-denied fall back cleanly to manual code entry.
+// Soft states (not found, no macros) and outages each get a designed screen
+// with a purpose-matched escape hatch — hand-enter into the catalog form, or
+// hand-enter and log — and a "scan again" affordance closes the loop.
 struct BarcodeScanView: View {
+  /// Section to preselect when a quick-log scan reaches the review sheet
+  /// (e.g. the Add-meal panel, which is already scoped to one section).
+  var preselectedType: MealType? = nil
+  /// Called with the created catalog meal after a successful save, so hosts
+  /// showing the catalog (the add panel) can invalidate their cached pages.
+  var onSaved: (CatalogMeal) -> Void = { _ in }
+
   @Environment(\.dismiss) private var dismiss
 
-  @State private var stage: Stage = .initializing
+  @State private var stage: Stage = .choosing
+  @State private var purpose: Purpose = .quickLog
   @State private var cameraReady = false
   @State private var isScanning = false
   @State private var torchOn = false
   @State private var manualCode = ""
+  @State private var formContext: CatalogFormContext?
+  @State private var didSaveFromForm = false
   @State private var reviewContext: LabelReviewContext?
   @State private var didLogFromReview = false
   @FocusState private var codeFieldFocused: Bool
 
+  /// What the scan is FOR — picked on the opening screen. Drives where a found
+  /// product goes (the shared catalog vs today's log) and every escape hatch.
+  private enum Purpose {
+    case addToCatalog
+    case quickLog
+  }
+
   private enum Stage: Equatable {
+    case choosing
     case initializing
     case scanning
     case lookingUp(code: String)
     case manualEntry(reason: FallbackReason?)
     case notFound(code: String)
     case failed(PresentableError, code: String?)
+    case saved
     case logged
   }
 
@@ -58,9 +83,14 @@ struct BarcodeScanView: View {
 
       overlay
     }
-    .task { await setUp() }
+    .sheet(item: $formContext, onDismiss: handleFormDismiss) { ctx in
+      CatalogMealForm(mode: .create, prefill: ctx.prefill) { meal in
+        didSaveFromForm = true
+        onSaved(meal)
+      }
+    }
     .sheet(item: $reviewContext, onDismiss: handleReviewDismiss) { ctx in
-      LabelReviewSheet(review: ctx.review, brand: ctx.brand) {
+      LabelReviewSheet(review: ctx.review, brand: ctx.brand, preselectedType: preselectedType) {
         didLogFromReview = true
       }
     }
@@ -78,6 +108,8 @@ struct BarcodeScanView: View {
   @ViewBuilder
   private var overlay: some View {
     switch stage {
+    case .choosing:
+      chooserScreen
     case .initializing:
       ProgressView()
         .controlSize(.large)
@@ -92,14 +124,97 @@ struct BarcodeScanView: View {
       softStateScreen(
         icon: "barcode.viewfinder",
         title: "Product not found",
-        message: "\(code) isn't in the barcode database yet. Enter its details by hand, or snap the nutrition label instead.",
+        message: purpose == .quickLog
+          ? "\(code) isn't in the barcode database yet. Enter its details by hand to log it anyway."
+          : "\(code) isn't in the barcode database yet. Enter its details by hand to add it to the meal library.",
         code: code
       )
     case let .failed(error, code):
       failureScreen(error: error, code: code)
+    case .saved:
+      successScreen(
+        title: "Added to library",
+        message: "Saved to the meal database — log it from the catalog whenever you eat it. Scan another product or you're done."
+      )
     case .logged:
-      loggedScreen
+      successScreen(
+        title: "Logged to today",
+        message: "It's on today's log. Scan another product or you're done."
+      )
     }
+  }
+
+  // MARK: - Purpose chooser
+
+  // The two things a scan can do, as two big cards. The camera only starts
+  // after a pick, so the capture session always begins from a user gesture.
+  private var chooserScreen: some View {
+    contentScaffold {
+      VStack(spacing: 24) {
+        VStack(spacing: 10) {
+          Image(systemName: "barcode.viewfinder")
+            .font(.system(size: 40))
+            .foregroundStyle(Color.fuelVoltInk)
+          Text("Scan a barcode")
+            .font(.fuelTitle2)
+            .foregroundStyle(Color.fuelInk)
+          Text("What should this scan do?")
+            .font(.fuelBody(.subheadline))
+            .foregroundStyle(Color.fuelSubtle)
+        }
+
+        VStack(spacing: 12) {
+          purposeCard(
+            icon: "books.vertical.fill",
+            tint: .fuelBlueInk,
+            title: "Add to library",
+            subtitle: "Save the product to the shared meal database — into your meals and everyone's catalog."
+          ) { choose(.addToCatalog) }
+
+          purposeCard(
+            icon: "flame.fill",
+            tint: .fuelVoltInk,
+            title: "Quick log",
+            subtitle: "Scan and log it straight into today — you pick which meal it lands in."
+          ) { choose(.quickLog) }
+        }
+      }
+    }
+  }
+
+  private func purposeCard(
+    icon: String,
+    tint: Color,
+    title: LocalizedStringKey,
+    subtitle: LocalizedStringKey,
+    action: @escaping () -> Void
+  ) -> some View {
+    Button(action: action) {
+      HStack(spacing: 14) {
+        Image(systemName: icon)
+          .font(.system(size: 22, weight: .semibold))
+          .foregroundStyle(tint)
+          .frame(width: 52, height: 52)
+          .background(tint.opacity(0.14), in: .rect(cornerRadius: 16))
+        VStack(alignment: .leading, spacing: 3) {
+          Text(title)
+            .font(.fuelHeading(.headline))
+            .foregroundStyle(Color.fuelInk)
+          Text(subtitle)
+            .font(.fuelBody(.footnote))
+            .foregroundStyle(Color.fuelSubtle)
+            .multilineTextAlignment(.leading)
+        }
+        Spacer(minLength: 0)
+        Image(systemName: "chevron.right")
+          .font(.footnote.weight(.semibold))
+          .foregroundStyle(Color.fuelSubtle)
+      }
+      .padding(16)
+      .contentShape(.rect)
+    }
+    .buttonStyle(.plain)
+    .fuelCard()
   }
 
   // MARK: - Scanner overlay (glass, floating layer)
@@ -128,7 +243,7 @@ struct BarcodeScanView: View {
         loadingCard(code: code)
           .padding(.top, 24)
       } else {
-        Text("Point at a product barcode")
+        Text(purpose == .quickLog ? "Scan to log to today" : "Scan to add to the library")
           .font(.fuelBody(.subheadline, weight: 500))
           .foregroundStyle(.white)
           .padding(.top, 20)
@@ -258,9 +373,9 @@ struct BarcodeScanView: View {
           .multilineTextAlignment(.center)
 
         Button {
-          reviewContext = LabelReviewContext(review: LabelPortion.manualReview())
+          openManualDetails()
         } label: {
-          Text("Enter details manually").frame(maxWidth: .infinity).padding(.vertical, 4)
+          Text(manualDetailsTitle).frame(maxWidth: .infinity).padding(.vertical, 4)
         }
         .buttonStyle(.glassProminent)
         .tint(.fuelCitrus)
@@ -287,9 +402,9 @@ struct BarcodeScanView: View {
           onDismiss: nil
         )
         Button {
-          reviewContext = LabelReviewContext(review: LabelPortion.manualReview())
+          openManualDetails()
         } label: {
-          Text("Enter details manually").frame(maxWidth: .infinity).padding(.vertical, 4)
+          Text(manualDetailsTitle).frame(maxWidth: .infinity).padding(.vertical, 4)
         }
         .buttonStyle(.glass)
         .tint(.fuelCitrus)
@@ -302,16 +417,18 @@ struct BarcodeScanView: View {
     }
   }
 
-  private var loggedScreen: some View {
+  // Shared terminal screen for both purposes ("Added to library" / "Logged to
+  // today"): a check, the purpose's message, scan-again, done.
+  private func successScreen(title: LocalizedStringKey, message: LocalizedStringKey) -> some View {
     contentScaffold {
       VStack(spacing: 16) {
         Image(systemName: "checkmark.circle.fill")
           .font(.system(size: 48))
           .foregroundStyle(Color.fuelVoltInk)
-        Text("Logged")
+        Text(title)
           .font(.fuelTitle2)
           .foregroundStyle(Color.fuelInk)
-        Text("Added to today. Scan another product or you're done.")
+        Text(message)
           .font(.fuelBody(.subheadline))
           .foregroundStyle(Color.fuelSubtle)
           .multilineTextAlignment(.center)
@@ -374,6 +491,12 @@ struct BarcodeScanView: View {
 
   // MARK: - Setup & flow
 
+  private func choose(_ p: Purpose) {
+    purpose = p
+    stage = .initializing
+    Task { await setUp() }
+  }
+
   private func setUp() async {
     guard DataScannerViewController.isSupported, DataScannerViewController.isAvailable else {
       stage = .manualEntry(reason: .unsupported)
@@ -426,13 +549,71 @@ struct BarcodeScanView: View {
       do {
         let product = try await FuelAPI.barcodeLookup(code: code)
         if product.found {
-          reviewContext = LabelReviewContext(review: LabelPortion.toReview(product), brand: product.brand)
+          route(found: product)
         } else {
           stage = .notFound(code: code)
         }
       } catch {
         stage = .failed(PresentableError(error), code: code)
       }
+    }
+  }
+
+  /// A found product goes where the chosen purpose says: the catalog form to
+  /// save it to the shared database, or the review sheet to log it to today.
+  private func route(found product: BarcodeProduct) {
+    switch purpose {
+    case .addToCatalog:
+      formContext = CatalogFormContext(prefill: Self.prefill(for: product))
+    case .quickLog:
+      reviewContext = LabelReviewContext(review: LabelPortion.toReview(product), brand: product.brand)
+    }
+  }
+
+  /// The purpose-matched hand-entry escape hatch: a blank catalog form when
+  /// adding to the library, a blank editable review (which logs to today and
+  /// best-effort contributes to the catalog) for quick log.
+  private func openManualDetails() {
+    switch purpose {
+    case .addToCatalog: formContext = CatalogFormContext(prefill: nil)
+    case .quickLog: reviewContext = LabelReviewContext(review: LabelPortion.manualReview())
+    }
+  }
+
+  private var manualDetailsTitle: LocalizedStringKey {
+    purpose == .quickLog ? "Enter details & log" : "Enter details manually"
+  }
+
+  /// Map a found product onto the catalog form. Per-100g labels keep their
+  /// basis explicit ("100 g" serving); per-serving labels carry the label's own
+  /// serving string. Brand becomes the description so the name stays clean.
+  private static func prefill(for product: BarcodeProduct) -> CatalogMealForm.Prefill {
+    let serving: String
+    switch product.basis {
+    case .per100g: serving = "100 g"
+    case .perServing:
+      let s = product.servingSize.trimmingCharacters(in: .whitespaces)
+      serving = s.isEmpty ? String(localized: "1 serving") : s
+    }
+    return CatalogMealForm.Prefill(
+      name: product.name?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "",
+      description: product.brand?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "",
+      servingSize: serving,
+      calories: Int(product.calories.rounded()),
+      protein: Int(product.protein.rounded()),
+      carbs: Int(product.carbs.rounded()),
+      fat: Int(product.fat.rounded())
+    )
+  }
+
+  private func handleFormDismiss() {
+    if didSaveFromForm {
+      didSaveFromForm = false
+      stage = .saved
+    } else if cameraReady {
+      resumeScanning()
+    } else {
+      openManualEntry()
     }
   }
 
@@ -446,6 +627,13 @@ struct BarcodeScanView: View {
       openManualEntry()
     }
   }
+}
+
+// Identifiable wrapper so a scanned product's prefill (or a blank manual entry,
+// `prefill == nil`) can drive `.sheet(item:)`.
+private struct CatalogFormContext: Identifiable {
+  let id = UUID()
+  let prefill: CatalogMealForm.Prefill?
 }
 
 #Preview {

@@ -1,6 +1,7 @@
 import SwiftUI
 
-// The shared portion-review step for both M5 flows (barcode + photo label).
+// The portion-review step shared by the photo-label flow and the barcode
+// flow's quick-log purpose (add-to-library scans go to CatalogMealForm instead).
 // Given a `Review` from `LabelPortion.toReview`, it lets the user name the
 // product, say how much they ate (the control adapts to the label's basis), see
 // the scaled macros update live, correct anything by hand, pick a section, and
@@ -24,11 +25,13 @@ struct LabelReviewSheet: View {
   private let repo = MealLogRepository()
   private let suggested = MealTypeSuggestion.suggested()
 
-  init(review: Review, brand: String? = nil, onLogged: @escaping () -> Void = {}) {
+  /// `preselectedType` pins the section (e.g. a host already scoped to one
+  /// meal); otherwise the time-of-day suggestion starts selected.
+  init(review: Review, brand: String? = nil, preselectedType: MealType? = nil, onLogged: @escaping () -> Void = {}) {
     self.brand = brand
     self.onLogged = onLogged
     _review = State(initialValue: review)
-    _mealType = State(initialValue: MealTypeSuggestion.suggested())
+    _mealType = State(initialValue: preselectedType ?? MealTypeSuggestion.suggested())
   }
 
   private var sectionOrder: [MealType] {

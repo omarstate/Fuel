@@ -33,6 +33,9 @@ struct DataScannerView: UIViewControllerRepresentable {
   func updateUIViewController(_ scanner: DataScannerViewController, context: Context) {
     context.coordinator.onScan = onScan
     if isScanning, !context.coordinator.isRunning {
+      // Re-arm the one-shot latch: without this, resuming after a sheet was
+      // cancelled over the live camera left a scanner that never reports.
+      context.coordinator.didReport = false
       try? scanner.startScanning()
       context.coordinator.isRunning = true
     } else if !isScanning, context.coordinator.isRunning {
@@ -51,7 +54,7 @@ struct DataScannerView: UIViewControllerRepresentable {
   final class Coordinator: NSObject, DataScannerViewControllerDelegate {
     var onScan: (String) -> Void
     var isRunning = false
-    private var didReport = false
+    var didReport = false
 
     init(onScan: @escaping (String) -> Void) { self.onScan = onScan }
 

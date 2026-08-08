@@ -11,7 +11,21 @@ struct CatalogMealForm: View {
     case edit(CatalogMeal)
   }
 
+  /// Seed values for create mode — used by the barcode flow to hand a scanned
+  /// product over for review before it's saved to the shared catalog. The user
+  /// still picks the category (required) and can correct anything.
+  struct Prefill: Equatable {
+    var name = ""
+    var description = ""
+    var servingSize = ""
+    var calories: Int?
+    var protein: Int?
+    var carbs: Int?
+    var fat: Int?
+  }
+
   let mode: Mode
+  var prefill: Prefill?
   /// Called with the created/updated meal after a successful save.
   var onSaved: (CatalogMeal) -> Void = { _ in }
 
@@ -64,12 +78,18 @@ struct CatalogMealForm: View {
           }
         }
 
-        Section("Serving") {
-          TextField("e.g. 1 bowl — optional", text: $servingSize)
+        Section {
+          TextField("e.g. 1 bowl (250 g) — optional", text: $servingSize)
             .focused($focus, equals: .serving)
           TextField("Description — optional", text: $description, axis: .vertical)
             .lineLimit(1...3)
             .focused($focus, equals: .description)
+        } header: {
+          Text("Serving")
+        } footer: {
+          // The add-to-log sheet parses this weight to offer grams-based
+          // portions, so nudge every new meal to carry one.
+          Text("Include the weight — like \"1 bowl (250 g)\" — so it can be logged by exact grams, not just servings.")
         }
 
         Section("Nutrition") {
@@ -142,15 +162,27 @@ struct CatalogMealForm: View {
   // MARK: - Data
 
   private func prefillIfNeeded() {
-    guard !didPrefill, case let .edit(meal) = mode else { return }
-    name = meal.name
-    categoryId = meal.category?.id ?? ""
-    servingSize = meal.servingSize ?? ""
-    description = meal.description ?? ""
-    calories = intString(meal.calories)
-    protein = intString(meal.protein)
-    carbs = intString(meal.carbs)
-    fat = intString(meal.fat)
+    guard !didPrefill else { return }
+    switch mode {
+    case let .edit(meal):
+      name = meal.name
+      categoryId = meal.category?.id ?? ""
+      servingSize = meal.servingSize ?? ""
+      description = meal.description ?? ""
+      calories = intString(meal.calories)
+      protein = intString(meal.protein)
+      carbs = intString(meal.carbs)
+      fat = intString(meal.fat)
+    case .create:
+      guard let prefill else { return }
+      name = prefill.name
+      description = prefill.description
+      servingSize = prefill.servingSize
+      calories = prefill.calories.map(String.init) ?? ""
+      protein = prefill.protein.map(String.init) ?? ""
+      carbs = prefill.carbs.map(String.init) ?? ""
+      fat = prefill.fat.map(String.init) ?? ""
+    }
     didPrefill = true
   }
 

@@ -21,6 +21,12 @@ struct MainTabView: View {
   private static let barHeight: CGFloat = 56
   private static let plusSize: CGFloat = 58
 
+  /// How much room the floating bar takes up above the bottom safe area.
+  /// `TabView` does not propagate its `safeAreaInset` into the tab content, so
+  /// scrolling screens pad their content by this to keep the last row reachable
+  /// instead of stranding it under the glass.
+  static let floatingBarClearance: CGFloat = barHeight + 4
+
   var body: some View {
     TabView(selection: $selection) {
       // `.toolbar(.hidden, for: .tabBar)` on each tab's CONTENT suppresses the
@@ -127,8 +133,10 @@ struct MainTabView: View {
     .accessibilityAction { selection = tab }
   }
 
-  // Every log entry point, behind one plus. Solid citrus (not glass) so it reads
-  // as the single primary action and stays distinct from the tab capsule.
+  // Every add entry point, behind one plus. All of them log to today; barcode
+  // opens on its own chooser — quick-log the scan into today, or add the
+  // product to the shared catalog. Solid citrus (not glass) so it reads as the
+  // single primary action and stays distinct from the tab capsule.
   private var logMenu: some View {
     Menu {
       Button { request(.manual) } label: {
@@ -150,7 +158,7 @@ struct MainTabView: View {
         .foregroundStyle(Color.fuelBackground)
         .frame(width: Self.plusSize, height: Self.plusSize)
         .background(Color.fuelVolt, in: .circle)
-        .shadow(color: Color.fuelVolt.opacity(0.35), radius: 12, y: 3)
+        .shadow(color: .black.opacity(0.12), radius: 12, y: 3)
     }
     .buttonStyle(.plain)
     .accessibilityLabel(Text("Log meal"))

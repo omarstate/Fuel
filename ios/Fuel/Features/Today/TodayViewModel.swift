@@ -10,10 +10,14 @@ import Observation
 @Observable
 final class TodayViewModel {
   private let repo = MealLogRepository()
+  private let health = HealthService()
 
   private(set) var meals: [LoggedMeal] = []
   /// Local dayKey → summed calories over the streak window (server snapshot).
   private(set) var perDayCalories: [String: Int] = [:]
+  /// Active energy burned today, read from Apple Health. 0 when unavailable or
+  /// not authorized — the hero simply omits the "+N burned" line then.
+  private(set) var burned = 0
 
   private(set) var hasLoadedOnce = false
   private(set) var isRefreshing = false
@@ -84,6 +88,9 @@ final class TodayViewModel {
       isRefreshing = false
       hasLoadedOnce = true
     }
+    // Health runs alongside the log but outside the throwing group: a missing
+    // or denied Health permission must never fail the meals load.
+    async let burnedToday = health.todayActiveEnergyBurned()
     do {
       async let todayMeals = repo.meals(on: Date())
       async let totals = repo.dailyCalorieTotals()
@@ -94,6 +101,7 @@ final class TodayViewModel {
     } catch {
       self.error = PresentableError(error)
     }
+    self.burned = await burnedToday
   }
 
   // MARK: - Mutations
@@ -134,4 +142,5 @@ final class TodayViewModel {
       self.error = PresentableError(error)
     }
   }
+
 }
