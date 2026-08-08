@@ -20,6 +20,8 @@
 	<string>Fuel uses the microphone so you can log a meal by saying what you ate, in Egyptian Arabic or English.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>Fuel turns what you say into text so your spoken meal can be matched to foods and logged.</string>
+	<key>NSHealthShareUsageDescription</key>
+	<string>Fuel reads your active energy from Health to show calories burned today.</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>NSAppTransportSecurity</key>

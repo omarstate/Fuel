@@ -15,6 +15,7 @@ import { supabase } from "../config/supabase.js"
 import { rowToCatalogMeal } from "../models/catalog-meal.model.js"
 import { generateJson } from "./gemini.client.js"
 import { ApiError } from "../utils/api-error.js"
+import { matchMealName, deriveFactor } from "../utils/match-meal-name.js"
 import {
   voiceParseSchema,
   voiceParsedItemSchema,
@@ -42,6 +43,14 @@ const MANUAL_ENTRY_NOTE = {
   en: "Couldn't estimate this one automatically — enter its macros by hand.",
   ar: "مقدرناش نحسب العنصر ده لوحدنا — دخّل السعرات والماكروز بنفسك.",
 }
+
+const RATE_LIMIT_NOTE = {
+  en: "The AI is rate-limited right now — try again in a minute, or enter the macros by hand.",
+  ar: "الذكاء الاصطناعي واصل حده دلوقتي — جرّب تاني بعد دقيقة، أو دخّل الماكروز بنفسك.",
+}
+
+const isRateLimit = (error) =>
+  `${error?.message ?? ""} ${error?.details ?? ""}`.includes("429")
 
 // -------------------------------------------------------------------------
 // `aliases` column tolerance
@@ -115,7 +124,12 @@ TASK 1 — ITEMS. Extract every DISTINCT food or drink the user says they ate or
 
 TASK 2 — MEAL SECTION. Only if the user actually says which meal it belongs to, map it: فطار/الفطار/فطور/breakfast → "breakfast"; غدا/الغدا/غداء/lunch → "lunch"; عشا/العشا/عشاء/dinner → "dinner"; سناك/تصبيرة/وجبة خفيفة/snack → "snack". If they do not say, return null — never guess from the food itself.
 
-TASK 3 — CATALOG MATCH. The app's meal catalog is below, one compact JSON object per line: {"id","name","aliases","servingSize"}. Set "catalogId" to an entry's id ONLY when the item is genuinely the SAME food. Colloquial Egyptian names DO count as a match (بيض مسلوق = "Boiled Eggs", عيش توست = "Toast", فول = "Foul Medames"), and so does anything listed in that entry's "aliases". A different preparation, a different brand, or a mere category cousin is NOT a match (فراخ مشوية is not "Fried Chicken"). When you are not sure, return null instead of a wrong match — a wrong match logs the wrong food and the wrong macros. Only ever use an id that appears in the list below.
+TASK 3 — CATALOG MATCH. The app's meal catalog is below, one compact JSON object per line: {"id","name","aliases","servingSize"}. For EVERY item, scan the whole list before deciding — do not give up early. Set "catalogId" to an entry's id when the item is genuinely the SAME food:
+- Colloquial Egyptian names count (بيض مسلوق = "Boiled Eggs", عيش توست = "Toast", فول = "Foul Medames"), as does anything in an entry's "aliases".
+- Singular/plural and word-order differences count ("boiled egg" = "3 baladi eggs boiled").
+- A generic item DOES match a branded catalog entry of the same basic food when no generic entry exists ("toast" → "Rich Bake protein toast") — this is the user's personal catalog, so the branded entry is almost certainly what they mean.
+- A different preparation or a mere category cousin is NOT a match (فراخ مشوية is not "Fried Chicken"), and a qualified item must keep its qualifier ("skimmed milk" is not "full-fat milk").
+When genuinely torn, return null. Only ever use an id that appears in the list below.
 
 TASK 4 — FACTOR. When you matched an entry, set "factor" to (the amount the user spoke) ÷ (that entry's "servingSize"). Examples: spoken "3 eggs" against servingSize "1 egg (50g)" → 3; spoken "200ml" against "1 cup (240ml)" → 0.83; spoken "نص رغيف" against "1 loaf" → 0.5; spoken with no amount → 1. If the entry has no servingSize or the ratio is not workable, return null.
 
@@ -145,7 +159,7 @@ Return at most ${MAX_VOICE_ITEMS} items. If the transcript mentions no food or d
 // Step 4 — the Egypt-first grounded estimate prompt (per unmatched item)
 // -------------------------------------------------------------------------
 
-const ESTIMATE_PROMPT = ({ spoken, name, quantity, unit, lang = "en" }) => {
+const ESTIMATE_PROMPT = ({ spoken, name, quantity, unit, lang = "en", useSearch = true }) => {
   const amount = [
     quantity == null ? null : `quantity ${quantity}`,
     unit ? `unit "${unit}"` : null,
@@ -160,23 +174,32 @@ const ESTIMATE_PROMPT = ({ spoken, name, quantity, unit, lang = "en" }) => {
 Write "name", "servingSize" and "note" in Arabic, in wording an Egyptian would use. Keep brand names in their original Latin script. The JSON keys stay in English, and every number stays as Western digits.`
       : ""
 
+  const sourceInstruction = useSearch
+    ? `Use Google Search to find accurate nutrition facts, and PRIORITIZE the Egyptian market:
+1. First, look for the item exactly as sold or cooked in Egypt — Egyptian branch menus, Egyptian fast-food portions, local Egyptian brands, Egyptian home-cooking portions, and Arabic-language sources. Egyptian portion sizes and recipes differ from other countries, so prefer local data.
+2. Only if no Egyptian data exists, use the closest Middle-East / regional equivalent.
+3. Only if that is also unavailable, fall back to global data.`
+    : `Estimate from your own knowledge of food nutrition, prioritizing how this item is typically sold or cooked in EGYPT (local brands, Egyptian portions and recipes). You have no web access, so set "sourceUrl" to null, be honest in "confidence", and mention in "note" that this is a knowledge-based estimate.`
+
   return `You are a nutrition estimator for a fitness app whose users are primarily in Egypt.
 
 The user said out loud that they had: "${spoken}".
 Canonical name for it: "${name}".${amount ? `\nParsed amount — ${amount}.` : ""}
 
-Use Google Search to find accurate nutrition facts, and PRIORITIZE the Egyptian market:
-1. First, look for the item exactly as sold or cooked in Egypt — Egyptian branch menus, Egyptian fast-food portions, local Egyptian brands, Egyptian home-cooking portions, and Arabic-language sources. Egyptian portion sizes and recipes differ from other countries, so prefer local data.
-2. Only if no Egyptian data exists, use the closest Middle-East / regional equivalent.
-3. Only if that is also unavailable, fall back to global data.
+${sourceInstruction}
 
-CRITICAL — estimate the macros for THE WHOLE AMOUNT THE USER SPOKE, not for one generic serving. "3 boiled eggs" means the totals for 3 eggs, with "servingSize" reading "3 eggs (~150g)". "200ml skimmed milk" means the totals for 200ml. If no amount was spoken, assume one typical Egyptian serving and say which one in "servingSize".
+CRITICAL — BASE SERVING + FACTOR. Pick ONE natural base serving for this food and estimate macros for THAT base serving only:
+- countable foods → exactly ONE piece: "1 slice (~25g)", "1 egg (50g)", "1 رغيف بلدي (~90g)"
+- foods measured in ml or g → a round base of "100 ml" or "100 g"
+- plated/composed dishes → one typical Egyptian serving, named clearly ("1 bowl (~350g)")
+Then set "factor" = (the amount the user spoke) ÷ (your base serving): "3 slices" against "1 slice" → 3; "200ml" against "100 ml" → 2; "نص رغيف" against "1 رغيف" → 0.5; no amount spoken → 1. The macros must cover the BASE serving, NEVER the whole spoken amount — the app multiplies by "factor" itself and lets the user adjust it.
 
 Respond with ONLY a raw JSON object — no markdown, no code fences, no commentary — using exactly this shape:
 {
-  "name": "concise name for what was eaten, e.g. Boiled Eggs",
-  "servingSize": "the amount these macros cover, e.g. 3 eggs (~150g)",
-  "calories": integer kcal for that amount,
+  "name": "concise name for the food itself, no quantity words, e.g. Boiled Egg",
+  "servingSize": "the base serving these macros cover, e.g. 1 egg (50g)",
+  "factor": number,
+  "calories": integer kcal for the base serving,
   "protein": integer grams,
   "carbs": integer grams,
   "fat": integer grams,
@@ -186,7 +209,7 @@ Respond with ONLY a raw JSON object — no markdown, no code fences, no commenta
   "note": "one short sentence on the source or any assumption you made"
 }
 
-All macros must be non-negative integers covering the spoken amount. "ranges" is a plausible min-max band around each point estimate, with min <= point <= max; return null only when the numbers are solid enough that a band adds nothing. If a value is genuinely unknown, give your best reasonable estimate rather than 0.${arabicInstruction}`
+All macros must be non-negative integers covering the base serving. "ranges" bands the base serving too, with min <= point <= max; return null only when the numbers are solid enough that a band adds nothing. If a value is genuinely unknown, give your best reasonable estimate rather than 0.${arabicInstruction}`
 }
 
 // -------------------------------------------------------------------------
@@ -205,56 +228,93 @@ const httpUrlOrNull = (value) => {
   }
 }
 
-const softFailEstimate = (item, lang) => ({
-  kind: "estimate",
-  ok: false,
-  spoken: item.spoken,
-  quantity: item.quantity,
-  unit: item.unit,
-  name: item.spoken,
-  servingSize: "",
-  calories: 0,
-  protein: 0,
-  carbs: 0,
-  fat: 0,
-  ranges: null,
-  sourceUrl: null,
-  confidence: null,
-  note: MANUAL_ENTRY_NOTE[lang] ?? MANUAL_ENTRY_NOTE.en,
-})
+const softFailEstimate = (item, lang, rateLimited = false) => {
+  const note = rateLimited ? RATE_LIMIT_NOTE : MANUAL_ENTRY_NOTE
+  return {
+    kind: "estimate",
+    ok: false,
+    spoken: item.spoken,
+    quantity: item.quantity,
+    unit: item.unit,
+    name: item.name || item.spoken,
+    servingSize: "",
+    factor: 1,
+    calories: 0,
+    protein: 0,
+    carbs: 0,
+    fat: 0,
+    ranges: null,
+    sourceUrl: null,
+    confidence: null,
+    note: note[lang] ?? note.en,
+  }
+}
 
+const runEstimate = async (item, lang, useSearch) => {
+  const { data, sources } = await generateJson({
+    useSearch,
+    temperature: 0.2,
+    prompt: ESTIMATE_PROMPT({ ...item, lang, useSearch }),
+  })
+
+  const parsed = voiceEstimateSchema.parse(data)
+  const name = parsed.name?.trim() || item.name || item.spoken
+
+  return {
+    kind: "estimate",
+    ok: true,
+    spoken: item.spoken,
+    quantity: item.quantity,
+    unit: item.unit,
+    name,
+    servingSize: parsed.servingSize?.trim() ?? "",
+    factor: clampFactor(parsed.factor),
+    calories: roundInt(parsed.calories),
+    protein: roundInt(parsed.protein),
+    carbs: roundInt(parsed.carbs),
+    fat: roundInt(parsed.fat),
+    ranges: normalizeRanges(parsed.ranges),
+    sourceUrl: httpUrlOrNull(parsed.sourceUrl) ?? httpUrlOrNull(sources[0]?.uri),
+    confidence: parsed.confidence ?? null,
+    note: parsed.note?.trim() ?? "",
+  }
+}
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
+// Degradation ladder per item: web-grounded estimate → knowledge-based
+// estimate (grounded search has its own small free-tier quota that exhausts
+// long before plain generation does) → soft-fail to manual entry. A
+// knowledge-based guess for toast or koshari is far better than a zero row.
 const estimateOne = async (item, lang) => {
   try {
-    const { data, sources } = await generateJson({
-      useSearch: true,
-      temperature: 0.2,
-      prompt: ESTIMATE_PROMPT({ ...item, lang }),
-    })
-
-    const parsed = voiceEstimateSchema.parse(data)
-    const name = parsed.name?.trim() || item.name || item.spoken
-
-    return {
-      kind: "estimate",
-      ok: true,
-      spoken: item.spoken,
-      quantity: item.quantity,
-      unit: item.unit,
-      name,
-      servingSize: parsed.servingSize?.trim() ?? "",
-      calories: roundInt(parsed.calories),
-      protein: roundInt(parsed.protein),
-      carbs: roundInt(parsed.carbs),
-      fat: roundInt(parsed.fat),
-      ranges: normalizeRanges(parsed.ranges),
-      sourceUrl: httpUrlOrNull(parsed.sourceUrl) ?? httpUrlOrNull(sources[0]?.uri),
-      confidence: parsed.confidence ?? null,
-      note: parsed.note?.trim() ?? "",
+    return await runEstimate(item, lang, true)
+  } catch (groundedError) {
+    console.error(`[ai-voice] grounded estimate failed for "${item.name}", trying ungrounded:`, groundedError?.message ?? groundedError)
+    await sleep(1000)
+    try {
+      return await runEstimate(item, lang, false)
+    } catch (error) {
+      // Soft-fail this one item only — the review sheet offers manual entry.
+      // Logged because a silent zero-macro row looks like a dumb model to the
+      // user when the real cause is a schema mismatch or a rate limit.
+      console.error(`[ai-voice] estimate failed for "${item.name}":`, error?.message ?? error)
+      return softFailEstimate(item, lang, isRateLimit(error) || isRateLimit(groundedError))
     }
-  } catch {
-    // Soft-fail this one item only — the review sheet offers manual entry.
-    return softFailEstimate(item, lang)
   }
+}
+
+// Run at most `limit` estimates at once so a multi-item utterance doesn't
+// burst straight through the per-minute quota that just rate-limited it.
+const mapWithConcurrency = async (entries, limit, task) => {
+  let next = 0
+  const workers = Array.from({ length: Math.min(limit, entries.length) }, async () => {
+    while (next < entries.length) {
+      const index = next++
+      await task(entries[index])
+    }
+  })
+  await Promise.all(workers)
 }
 
 // -------------------------------------------------------------------------
@@ -290,7 +350,20 @@ export const parseVoiceLog = async ({ transcript, lang = "en" }) => {
     const item = result.data
     const spoken = item.spoken?.trim() || item.name
     // Never trust a model-supplied id: it must be one we actually sent.
-    const catalogId = item.catalogId && candidateIds.has(item.catalogId) ? item.catalogId : null
+    let catalogId = item.catalogId && candidateIds.has(item.catalogId) ? item.catalogId : null
+    let factor = item.catalogId ? clampFactor(item.factor) : 1
+
+    // The model is occasionally lazy about matching. Deterministic token
+    // containment against names + aliases catches what it missed, and works
+    // out the multiplier from the quantity it DID parse.
+    if (!catalogId) {
+      const fallbackId = matchMealName([item.name, item.nameAr, spoken].filter(Boolean), candidates)
+      if (fallbackId) {
+        catalogId = fallbackId
+        const row = candidates.find((candidate) => candidate.id === fallbackId)
+        factor = clampFactor(deriveFactor(item.quantity ?? null, item.unit ?? null, row?.serving_size ?? null))
+      }
+    }
 
     items.push({
       spoken,
@@ -299,7 +372,7 @@ export const parseVoiceLog = async ({ transcript, lang = "en" }) => {
       quantity: item.quantity ?? null,
       unit: item.unit ?? null,
       catalogId,
-      factor: clampFactor(item.factor),
+      factor,
       confidence: item.confidence ?? null,
     })
 
@@ -345,11 +418,9 @@ export const parseVoiceLog = async ({ transcript, lang = "en" }) => {
     }
   })
 
-  await Promise.all(
-    pending.map(async ({ index, item }) => {
-      results[index] = await estimateOne(item, lang)
-    })
-  )
+  await mapWithConcurrency(pending, 2, async ({ index, item }) => {
+    results[index] = await estimateOne(item, lang)
+  })
 
   return { mealType: parsed.mealType ?? null, items: results }
 }

@@ -35,7 +35,7 @@ struct WeekChartCard: View {
         statsRow
         Text(summary.text)
           .font(.fuelBody(.caption, weight: 600))
-          .foregroundStyle(summary.onTrack ? Color.fuelVoltInk : Color.fuelOver)
+          .foregroundStyle(summary.onTrack ? Color.fuelVoltInk : Color.fuelOverInk)
           .padding(.horizontal, 10)
           .padding(.vertical, 5)
           .background(
@@ -104,7 +104,7 @@ struct WeekChartCard: View {
             y: .value("kcal", day.calories),
             width: .fixed(16)
           )
-          .foregroundStyle(day.isToday ? Color.fuelVolt : Color.fuelInk.opacity(0.22))
+          .foregroundStyle(day.isToday ? Color.fuelVolt : Color.fuelInk.opacity(0.45))
           .cornerRadius(4)
           .accessibilityLabel(Text(letters[day.index]))
           .accessibilityValue(Text("\(day.calories) kcal"))

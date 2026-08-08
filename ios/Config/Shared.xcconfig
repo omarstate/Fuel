@@ -18,3 +18,8 @@ ASSETCATALOG_COMPILER_GENERATE_ASSET_SYMBOLS = NO
 // physical device. Automatic signing generates the provisioning profile.
 DEVELOPMENT_TEAM = NR66Y95V62
 CODE_SIGN_STYLE = Automatic
+
+// HealthKit (read-only active energy, see Core/Health/HealthService.swift). The
+// entitlement also makes automatic signing add the HealthKit capability to the
+// provisioning profile.
+CODE_SIGN_ENTITLEMENTS = Config/Fuel.entitlements

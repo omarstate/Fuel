@@ -18,6 +18,11 @@ const ADMIN_EMAILS = (process.env.ADMIN_EMAILS ?? "")
 // Google Search grounding used for looking up real-world nutrition data.
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY ?? ""
 const GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-2.5-flash"
+// Tried when the primary model 429s/errors — free-tier keys rate-limit each
+// model separately, so the lite tier's own quota keeps requests flowing. The
+// rolling "-latest" alias survives model deprecations (pinned lite model ids
+// have already 404'd as "no longer available to new users" on this key).
+const GEMINI_FALLBACK_MODEL = process.env.GEMINI_FALLBACK_MODEL ?? "gemini-flash-lite-latest"
 
 export const env = {
   PORT: Number(process.env.PORT) || 4000,
@@ -28,5 +33,6 @@ export const env = {
   adminEmails: ADMIN_EMAILS,
   GEMINI_API_KEY,
   GEMINI_MODEL,
+  GEMINI_FALLBACK_MODEL,
   isGeminiConfigured: Boolean(GEMINI_API_KEY),
 }

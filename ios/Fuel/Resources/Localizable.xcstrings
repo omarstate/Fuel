@@ -25,22 +25,22 @@
         }
       }
     },
+    "/%lldg" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "/%lldجم"
+          }
+        }
+      }
+    },
     "%@" : {
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@"
-          }
-        }
-      }
-    },
-    "%@ · %lld kcal" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@ · %2$lld kcal"
           }
         }
       }
@@ -95,7 +95,21 @@
         }
       }
     },
+    "%@ isn't in the barcode database yet. Enter its details by hand to add it to the meal library." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "لم يُدرَج %@ في قاعدة بيانات الباركود بعد. أدخل تفاصيله يدويًا لإضافته إلى مكتبة الوجبات."
+          }
+        }
+      }
+    },
+    "%@ isn't in the barcode database yet. Enter its details by hand to log it anyway." : {
+
+    },
     "%@ isn't in the barcode database yet. Enter its details by hand, or snap the nutrition label instead." : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -358,12 +372,42 @@
         }
       }
     },
+    "%lld eaten" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld مُستهلكة"
+          }
+        }
+      }
+    },
     "%lld grams protein, %lld grams carbs, %lld grams fat" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "%1$lld grams protein, %2$lld grams carbs, %3$lld grams fat"
+          }
+        }
+      }
+    },
+    "%lld item · %@" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld عنصر · %@"
+          }
+        }
+      }
+    },
+    "%lld items · %@" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld عناصر · %@"
           }
         }
       }
@@ -475,28 +519,8 @@
         }
       }
     },
-    "%lld kcal over · %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$lld kcal over · %2$@"
-          }
-        }
-      }
-    },
     "%lld left" : {
 
-    },
-    "%lld left · %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$lld left · %2$@"
-          }
-        }
-      }
     },
     "%lld meals" : {
       "extractionState" : "manual",
@@ -565,6 +589,12 @@
     },
     "%lld of %lld" : {
       "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld من %2$lld"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
@@ -589,6 +619,16 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "%1$lld of %2$lld calories, %3$lld of %4$lld grams protein"
+          }
+        }
+      }
+    },
+    "%lld of %lld kcal" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld من %lld سعرة"
           }
         }
       }
@@ -666,8 +706,28 @@
         }
       }
     },
+    "+ Add" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "+ إضافة"
+          }
+        }
+      }
+    },
     "+%@" : {
 
+    },
+    "+%lld burned" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "+%lld محروقة"
+          }
+        }
+      }
     },
     "~%lld" : {
 
@@ -725,12 +785,35 @@
         }
       }
     },
+    "1 serving = %@ g. Step servings, or type the exact grams you ate — the nutrition rescales from the serving's facts." : {
+
+    },
     "A few quick details and we'll compute your daily calorie and macro targets. You can change these anytime." : {
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "بعض التفاصيل السريعة وسنحسب لك هدفك اليومي من السعرات والماكرو. يمكنك تغييرها في أي وقت."
+          }
+        }
+      }
+    },
+    "A little behind — %@ has room" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "متأخّر قليلًا — %@ فيه متّسع"
+          }
+        }
+      }
+    },
+    "A little behind — room to spare" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "متأخّر قليلًا — لديك متّسع"
           }
         }
       }
@@ -832,9 +915,29 @@
       }
     },
     "Add manually" : {
-
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "اكتبها بنفسك"
+          }
+        }
+      }
     },
     "Add meal" : {
+
+    },
+    "Add to" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ضيف في"
+          }
+        }
+      }
+    },
+    "Add to library" : {
 
     },
     "Add to today" : {
@@ -860,12 +963,54 @@
         }
       }
     },
+    "Added to library" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "أُضيفت إلى المكتبة"
+          }
+        }
+      }
+    },
     "Added to today. Scan another product or you're done." : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "أُضيفت إلى اليوم. امسح منتجًا آخر أو انتهيت."
+          }
+        }
+      }
+    },
+    "Adds it to today's log" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "يضيفها إلى سجلّ اليوم"
+          }
+        }
+      }
+    },
+    "Afternoon" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "نهارك سعيد"
+          }
+        }
+      }
+    },
+    "Afternoon, %@" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "نهارك سعيد، %@"
           }
         }
       }
@@ -901,11 +1046,22 @@
       }
     },
     "Ahead of pace" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "متقدّم على الوتيرة"
+          }
+        }
+      }
+    },
+    "Ahead of pace — nicely on track" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "متقدّم على الوتيرة — أنت على المسار"
           }
         }
       }
@@ -950,6 +1106,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "البحث الذكي عن وجبة"
+          }
+        }
+      }
+    },
+    "All" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "الكل"
           }
         }
       }
@@ -1283,7 +1449,14 @@
       }
     },
     "Clear search" : {
-
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "امسح البحث"
+          }
+        }
+      }
     },
     "Close" : {
       "localizations" : {
@@ -1609,6 +1782,7 @@
       }
     },
     "e.g. 1 bowl — optional" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -1617,6 +1791,9 @@
           }
         }
       }
+    },
+    "e.g. 1 bowl (250 g) — optional" : {
+
     },
     "e.g. 1 plate (450g) — optional" : {
       "localizations" : {
@@ -1764,6 +1941,9 @@
         }
       }
     },
+    "Enter details & log" : {
+
+    },
     "Enter details manually" : {
       "localizations" : {
         "ar" : {
@@ -1810,6 +1990,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "جارٍ تقدير وجبتك…"
+          }
+        }
+      }
+    },
+    "Evening" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "مساء الخير"
+          }
+        }
+      }
+    },
+    "Evening, %@" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "مساء الخير، %@"
           }
         }
       }
@@ -1987,6 +2187,16 @@
         }
       }
     },
+    "goal %lld" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "الهدف %lld"
+          }
+        }
+      }
+    },
     "goal %lld %@" : {
       "localizations" : {
         "en" : {
@@ -2127,6 +2337,12 @@
         }
       }
     },
+    "Include the weight — like \"1 bowl (250 g)\" — so it can be logged by exact grams, not just servings." : {
+
+    },
+    "It's on today's log. Scan another product or you're done." : {
+
+    },
     "Item name" : {
       "localizations" : {
         "ar" : {
@@ -2200,6 +2416,16 @@
     },
     "Leave blank to keep your current password. Minimum 6 characters." : {
 
+    },
+    "Left to eat" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "المتبقّي للأكل"
+          }
+        }
+      }
     },
     "Library" : {
       "localizations" : {
@@ -2416,6 +2642,16 @@
         }
       }
     },
+    "Log with your voice, a scan, or pick from the catalog below." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "سجّل بصوتك، أو امسح، أو اختار من الكتالوج تحت."
+          }
+        }
+      }
+    },
     "Log your first meal" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2442,6 +2678,7 @@
 
     },
     "Logged" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -2450,6 +2687,9 @@
           }
         }
       }
+    },
+    "Logged to today" : {
+
     },
     "Logged today" : {
       "localizations" : {
@@ -2595,7 +2835,14 @@
 
     },
     "Meals %lld" : {
-
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "وجبات %lld"
+          }
+        }
+      }
     },
     "Meals you add to the catalog show up here." : {
       "localizations" : {
@@ -2677,6 +2924,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "حصص أكثر"
+          }
+        }
+      }
+    },
+    "Morning" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "صباح الخير"
+          }
+        }
+      }
+    },
+    "Morning, %@" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "صباح الخير، %@"
           }
         }
       }
@@ -2828,8 +3095,15 @@
         }
       }
     },
-    "Nothing logged yet" : {
-
+    "Nothing yet · tap to add" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "لا شيء بعد · اضغط للإضافة"
+          }
+        }
+      }
     },
     "Nutrition" : {
       "localizations" : {
@@ -2877,6 +3151,7 @@
       }
     },
     "On pace" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -2890,11 +3165,22 @@
 
     },
     "Over goal" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "تجاوزت الهدف"
+          }
+        }
+      }
+    },
+    "Over goal — ease up tonight" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تجاوزت الهدف — خفّف الليلة"
           }
         }
       }
@@ -3002,6 +3288,7 @@
 
     },
     "Point at a product barcode" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -3073,6 +3360,20 @@
           }
         }
       }
+    },
+    "Quick add · you eat these a lot" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "إضافة سريعة · تأكل هذه كثيرًا"
+          }
+        }
+      }
+    },
+    "Quick log" : {
+
     },
     "Reading nutrition data…" : {
       "localizations" : {
@@ -3226,7 +3527,18 @@
         }
       }
     },
+    "Right on pace" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "على الوتيرة تمامًا"
+          }
+        }
+      }
+    },
     "Room to spare" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -3266,6 +3578,19 @@
         }
       }
     },
+    "Save the product to the shared meal database — into your meals and everyone's catalog." : {
+
+    },
+    "Saved to the meal database — log it from the catalog whenever you eat it. Scan another product or you're done." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "حُفظت في قاعدة بيانات الوجبات — سجّلها من الكتالوج وقتما تأكلها. امسح منتجًا آخر أو انتهيت."
+          }
+        }
+      }
+    },
     "Say or type what you ate" : {
       "localizations" : {
         "ar" : {
@@ -3286,6 +3611,9 @@
         }
       }
     },
+    "Scan a barcode" : {
+
+    },
     "Scan again" : {
       "localizations" : {
         "ar" : {
@@ -3296,6 +3624,9 @@
         }
       }
     },
+    "Scan and log it straight into today — you pick which meal it lands in." : {
+
+    },
     "Scan another" : {
       "localizations" : {
         "ar" : {
@@ -3305,6 +3636,12 @@
           }
         }
       }
+    },
+    "Scan to add to the library" : {
+
+    },
+    "Scan to log to today" : {
+
     },
     "Scope" : {
       "extractionState" : "stale",
@@ -3758,6 +4095,16 @@
         }
       }
     },
+    "Try another category — or enter this meal yourself." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "جرّب قسم تاني — أو اكتب الأكلة بنفسك."
+          }
+        }
+      }
+    },
     "Try today" : {
       "localizations" : {
         "ar" : {
@@ -3971,6 +4318,9 @@
           }
         }
       }
+    },
+    "What should this scan do?" : {
+
     },
     "What you said" : {
       "localizations" : {

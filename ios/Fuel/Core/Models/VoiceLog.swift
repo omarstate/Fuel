@@ -60,8 +60,10 @@ struct VoiceCatalogItem: Decodable, Equatable, Sendable {
   }
 }
 
-// An item the model estimated instead of matching. Macros already cover the
-// spoken amount, so `servingSize` reads like "3 eggs (~150g)".
+// An item the model estimated instead of matching. Macros cover ONE base
+// serving (`servingSize`, e.g. "1 slice (~25g)"); `factor` is how many of that
+// base serving the user spoke ("3 slices" → 3), applied client-side exactly
+// like a catalog match's multiplier.
 struct VoiceEstimateItem: Decodable, Equatable, Sendable {
   let ok: Bool
   let spoken: String
@@ -69,6 +71,7 @@ struct VoiceEstimateItem: Decodable, Equatable, Sendable {
   let unit: String?
   let name: String
   let servingSize: String
+  let factor: Double
   let calories: Double
   let protein: Double
   let carbs: Double
@@ -79,7 +82,7 @@ struct VoiceEstimateItem: Decodable, Equatable, Sendable {
   let note: String
 
   private enum CodingKeys: String, CodingKey {
-    case ok, spoken, quantity, unit, name, servingSize
+    case ok, spoken, quantity, unit, name, servingSize, factor
     case calories, protein, carbs, fat, ranges, sourceUrl, confidence, note
   }
 
@@ -91,6 +94,7 @@ struct VoiceEstimateItem: Decodable, Equatable, Sendable {
     unit = try c.decodeIfPresent(String.self, forKey: .unit)
     name = try c.decodeIfPresent(String.self, forKey: .name) ?? ""
     servingSize = try c.decodeIfPresent(String.self, forKey: .servingSize) ?? ""
+    factor = (try? c.decodeIfPresent(Double.self, forKey: .factor)) ?? 1
     calories = Self.lenientDouble(c, .calories)
     protein = Self.lenientDouble(c, .protein)
     carbs = Self.lenientDouble(c, .carbs)
@@ -103,7 +107,7 @@ struct VoiceEstimateItem: Decodable, Equatable, Sendable {
 
   init(
     ok: Bool, spoken: String, quantity: Double?, unit: String?, name: String, servingSize: String,
-    calories: Double, protein: Double, carbs: Double, fat: Double,
+    factor: Double, calories: Double, protein: Double, carbs: Double, fat: Double,
     ranges: CatalogMeal.MacroRanges?, sourceUrl: String?, confidence: VoiceConfidence?, note: String
   ) {
     self.ok = ok
@@ -112,6 +116,7 @@ struct VoiceEstimateItem: Decodable, Equatable, Sendable {
     self.unit = unit
     self.name = name
     self.servingSize = servingSize
+    self.factor = factor
     self.calories = calories
     self.protein = protein
     self.carbs = carbs

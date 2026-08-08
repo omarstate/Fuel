@@ -5,37 +5,46 @@ The bar is: **a polished, professional iOS 26 app** — Liquid Glass, seamless, 
 
 ## Product identity
 
-Fuel is a nutrition tracker (Egypt-first food data, AI assisted). The identity is **dark-only** —
-a charcoal canvas with an "activity rings" hero (green calories + blue protein), a direct port of the
-web app's dark Today redesign. The app locks to dark via `.preferredColorScheme(.dark)` on `RootView`,
-so every color set is scheme-independent (a single universal value renders identically light/dark).
+Fuel is a nutrition tracker (Egypt-first food data, AI assisted). The identity is **light-only** —
+a warm cream, editorial canvas carrying opaque cream-white cards, ported from the web app's light
+editorial surface. The app locks to light via `.preferredColorScheme(.light)` on `RootView`, so every
+color set is scheme-independent (a single universal value renders identically light/dark).
 
 | Token (asset catalog name) | Value | Use |
 |---|---|---|
-| `FuelBackground` | `#0B0D11` charcoal | screen background |
-| `FuelSurface` | `#17191F` | solid grouped list rows (cards use glass, below) |
-| `FuelInk` | `#F3F5F7` near-white | primary text |
-| `FuelSubtle` | `#9099A3` | secondary text |
-| `FuelVolt` | `#4BE08A` green | brand accent FILL — primary buttons, plus disc, selection, calorie ring |
-| `FuelVoltInk` | `#5CE39B` green | brand green **text/icons/thin strokes** (date eyebrow, links, active tab, fat readouts) |
-| `FuelOlive` | `#4BE08A` green | the LARGE green fill (calorie ring, fat/goal bars, on-target chart bars). Same green as volt |
-| `FuelOver` | `#FF7A59` coral | over-target signal (pace line, over pills, over-ring). Warm, never alarm red |
-| `FuelCitrus` | `#4BE08A` green | **historical name — now the green brand accent.** Kept so the many accent call-sites (button tints, links, active states) re-point without edits. NOT protein |
-| `FuelCitrusInk` | `#5CE39B` green | green brand accent ink (same role as `FuelVoltInk`) |
-| `FuelBlue` | `#3F8DFF` blue | **protein** fill — the inner ring + protein macro bar |
-| `FuelBlueInk` | `#5C9DFF` blue | **protein** text/icons (protein readouts, protein stat tiles) |
-| `FuelGold` / `FuelGoldInk` | `#D9A441` / `#E7C46B` | carbs fill / ink |
-| `FuelDestructive` | `#FF6B6B` | delete/danger |
+| `FuelBackground` | `#F7F3EA` warm cream | screen background (web `--background`) |
+| `FuelSurface` | `#FFFDF7` cream-white | the opaque card fill + solid grouped list rows (web `--card`) |
+| `FuelInk` | `#14120F` warm near-black | primary text; also every hairline/track, at 6–8% opacity |
+| `FuelSubtle` | `#6F6A5C` warm gray | secondary text |
+| `FuelVolt` | `#3AA35B` green | brand accent FILL — primary buttons, plus disc, selection, progress fills |
+| `FuelVoltInk` | `#2E8044` green | brand green **text/icons/thin strokes** (links, active tab, "+N burned", the global `.tint`) |
+| `FuelOlive` | `#3AA35B` green | the LARGE green fill (protein bar, lunch segment, on-target chart bars). Same green as volt |
+| `FuelOver` | `#C85A3C` terracotta | over-target signal, the **fat** fill and the snack section. Warm, never alarm red |
+| `FuelOverInk` | `#AD4A30` terracotta | terracotta **text/icons** (over-goal pace line, over pills) |
+| `FuelCitrus` | `#3AA35B` green | **historical name — the green brand accent.** Kept so the many accent call-sites (button tints, links, active states) re-point without edits. NOT protein |
+| `FuelCitrusInk` | `#2E8044` green | green brand accent ink (same role as `FuelVoltInk`) |
+| `FuelBlue` | `#3D6FD1` blue | the **dinner** section fill |
+| `FuelBlueInk` | `#315CB0` blue | blue text/icons |
+| `FuelGold` / `FuelGoldInk` | `#CE9440` / `#A9741F` | carbs + breakfast + streak fill / ink |
+| `FuelDestructive` | `#C0392B` | delete/danger |
 
-Define all as color sets in `Fuel/Resources/Assets.xcassets` (asset symbol generation is on), expose
-via `Color.fuelVolt`-style extensions. Never hardcode hex in views (the only exceptions are the
-full-screen camera overlay in `BarcodeScanView`, which is black/white over a live feed).
+Define all as color sets in `Fuel/Resources/Assets.xcassets` (asset symbol generation is off — the
+`Color.fuelVolt` extensions in `DesignSystem/FuelColors.swift` ARE the API). Never hardcode hex in
+views (the only exceptions are the full-screen camera overlay in `BarcodeScanView`, which is
+black/white over a live feed).
 
-Macro color convention (matches the web dark identity): **protein = blue** (`FuelBlue` / `FuelBlueInk`),
-**carbs = gold** (`FuelGold` / `FuelGoldInk`), **fat = green** (`FuelOlive` / `FuelVoltInk`), and
-**calories = green** (`FuelOlive`). Progress bars NEVER turn red when over target — they keep their
-macro color and clamp at 100%; "over" is signalled by the pace line / pills in `FuelOver`.
-`FuelDestructive` is reserved exclusively for destructive actions.
+**Fill vs ink is load-bearing on cream.** A saturated fill (`FuelVolt`, `FuelOver`, `FuelGold`) is
+readable as a bar, a dot or a disc, and *not* readable as small text — small text and icons always
+take the `*Ink` variant. That includes the global `.tint`, which colors system text.
+
+Macro color convention (matches the light editorial mockup): **protein = green**
+(`FuelOlive` / `FuelVoltInk`), **carbs = gold** (`FuelGold` / `FuelGoldInk`), **fat = terracotta**
+(`FuelOver` / `FuelOverInk`), and **calories = green** (`FuelOlive`) — all via `MacroPalette`.
+Meal sections have their own key, `MealTypePalette`: **breakfast gold, lunch green, dinner blue,
+snack terracotta**, shared by the Today section-card dots and the hero's stacked bar so the two read
+as one legend. Progress bars NEVER turn red when over target — they keep their color and clamp at
+100%; "over" is signalled by the pace line / pills in `FuelOver`/`FuelOverInk`. `FuelDestructive` is
+reserved exclusively for destructive actions.
 
 ## Typography — same identity as the web app
 
@@ -69,18 +78,44 @@ Use the semantic API — never `Font.custom(...)` or `.system(...)` for content 
   any unstyled text (Form labels, list rows) on the brand face too.
 - SF Symbols keep `.font(.system(size:))` / `.body.weight(...)` — those size glyphs, not text.
 
-## Shape & surfaces — dark glass
+## Shape & surfaces — opaque cream cards
 
-- **Corner radius:** cards/surfaces use **18pt** continuous corners (`FuelRadius.card`, mirrors the
-  web `--radius: 1.1rem`); small elements (inputs, chips) use **12pt** (`FuelRadius.small`).
-- **Cards are dark Liquid Glass:** use the `.fuelCard()` modifier — a `.regular` `.glassEffect` panel
-  with an 18pt continuous shape and a hairline `Color.white.opacity(0.08)` edge, **no drop shadow**.
-  Depth comes from the glass material, not shadows. This is the frosted-panel look on the charcoal
-  canvas (matching the web's faint `white/3` translucent cards, elevated with the iOS 26 material).
-- The Today hero is **bare on the canvas** (no card): the `ActivityRings` component IS the hero —
-  two concentric rings (green calories / blue protein), the two headline numbers stacked in Google
-  Sans Flex at the center, a legend, and a Carbs/Fat/Remaining stat strip.
+- **Corner radius:** cards/surfaces use **22pt** continuous corners (`FuelRadius.card`); small
+  elements (inputs, chips) use **12pt** (`FuelRadius.small`).
+- **Cards are opaque, not glass:** use the `.fuelCard()` modifier — a `Color.fuelSurface` fill in a
+  22pt continuous shape, a hairline `Color.fuelInk.opacity(0.06)` edge, and one soft drop shadow
+  (`.black.opacity(0.05)`, radius 14, y 5). On cream the separation comes from the shadow, not from
+  a material. `.fuelCard(in: someShape)` applies the same recipe to another silhouette (the Today
+  quick-add pills).
+- Glass is reserved for the **floating layer** — the bottom bar, chips, buttons, scanner controls.
+  Content never sits on glass.
 - Solid grouped list rows still use `Color.fuelSurface` via `.listRowBackground(...)`.
+- `ActivityRings` is retained but **unused** — the Today hero is now the "LEFT TO EAT" card below.
+
+## The Today screen
+
+A `ScrollView` + `LazyVStack` (16pt gutters) on `FuelBackground`, not a `List` — top to bottom:
+
+1. **Header**, bare on the canvas: the date eyebrow, a gold-dot streak pill on the right, and a
+   time-of-day greeting in `.fuelMasthead` ("Morning, Omar" — first name from the auth display name).
+2. **"LEFT TO EAT" hero card** — the remaining-kcal number at 52pt, "N eaten" and Health's
+   "+N burned" stacked beside it, a 10pt progress bar **segmented by meal section** (colors from
+   `MealTypePalette`; it rescales to consumed once over goal, so going over compresses rather than
+   overflows), and a plain-language pace line + `goal N`.
+3. **Three macro tiles** (protein / carbs / fat), each with a 4pt bar in its `MacroPalette` fill.
+4. **Quick add** — up to two pill cards for the meals this user repeats most (≥2 logs in 30 days,
+   not already eaten today). One tap logs straight into the section the clock suggests.
+5. **One collapsible card per meal section** — colored dot, name, "2 items · 1:15 PM", kcal subtotal.
+   Filled sections expand in place to their `MealRow`s plus a "+ Add"; empty ones are a direct
+   "Add" into `AddMealPanel`. Swipe-to-delete went away with the `List`; the row's trash button and
+   its long-press menu both still route through the confirmation dialog.
+
+**Burned calories come from HealthKit** (`Core/Health/HealthService.swift`): read-only, active energy
+only, `HKStatisticsQuery` cumulative sum since local midnight. Every failure path — Health absent,
+permission denied, query error — returns 0, and the fetch sits outside the throwing group in
+`TodayViewModel.refresh()` so it can never delay or fail the meal load. The entitlement lives in
+`Config/Fuel.entitlements` (wired via `CODE_SIGN_ENTITLEMENTS` in `Config/Shared.xcconfig`) and the
+usage string in `Config/Info.plist` + `Resources/InfoPlist.xcstrings`.
 
 ## Liquid Glass — how we use it
 
@@ -94,8 +129,8 @@ We build with the iOS 26 SDK; Liquid Glass is the point, not an afterthought. Ru
    Use `.glassEffect()` / `.glassEffect(.regular.tint(...).interactive())`, and wrap sibling glass
    elements in a `GlassEffectContainer` so they blend/morph correctly. Use `glassEffectID(_:in:)`
    with `@Namespace` when a control morphs (e.g. toolbar expanding into actions).
-3. **Content cards ARE dark glass.** On the charcoal canvas, `.fuelCard()` uses `.glassEffect` so
-   cards read as frosted glass panels — the identity leans into the material rather than flat fills.
+3. **Content cards are NOT glass.** On the cream canvas, `.fuelCard()` is an opaque `FuelSurface`
+   fill with a hairline and a soft shadow — frosted panels turn muddy over a light background.
    Bare text/rows still sit directly on `FuelBackground`/`FuelSurface`.
 4. Buttons: primary actions `.buttonStyle(.glassProminent)` tinted `FuelVolt` (green — the default
    `AsyncButton` tint), secondary `.buttonStyle(.glass)`. Never fake glass with `.ultraThinMaterial`.
@@ -129,7 +164,8 @@ We build with the iOS 26 SDK; Liquid Glass is the point, not an afterthought. Ru
 - **Numerals are always JetBrains Mono** (`Font.fuelMono`) — it is inherently monospaced, so it
   replaces the old `.monospacedDigit()` styling. See the Typography section for the full system.
 - Currency of information: today's screen answers "how am I doing right now?" in one glance —
-  ring, remaining kcal, pace label. Detail lives one tap deeper.
+  remaining kcal, the section-stacked bar, the pace line. Detail lives one tap deeper (sections
+  start collapsed). Detail lives one tap deeper.
 
 ## Architecture conventions
 

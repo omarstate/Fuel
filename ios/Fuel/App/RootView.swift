@@ -18,10 +18,13 @@ struct RootView: View {
       }
     }
     .animation(.smooth(duration: 0.35), value: app.phase)
-    .tint(.fuelVolt)
-    // The identity is dark-only: lock the whole app to the charcoal palette so
-    // system chrome (sheets, forms, pickers, nav bars) matches the tokens.
-    .preferredColorScheme(.dark)
+    // The global tint colors system TEXT (toolbar buttons, menu items, links),
+    // so it takes the green INK, not the fill — the fill is too light to read
+    // at body size on cream.
+    .tint(.fuelVoltInk)
+    // The identity is light-only: lock the whole app to the warm cream palette
+    // so system chrome (sheets, forms, pickers, nav bars) matches the tokens.
+    .preferredColorScheme(.light)
   }
 }
 

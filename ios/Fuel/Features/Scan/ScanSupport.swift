@@ -2,8 +2,8 @@ import Foundation
 
 // Small shared helpers for the M5 scan flows.
 
-/// Identifiable wrapper so a `Review` can drive `.sheet(item:)` for the shared
-/// LabelReviewSheet from either the barcode or photo flow.
+/// Identifiable wrapper so a `Review` can drive `.sheet(item:)` for the
+/// LabelReviewSheet from the photo flow.
 struct LabelReviewContext: Identifiable {
   let id = UUID()
   let review: Review

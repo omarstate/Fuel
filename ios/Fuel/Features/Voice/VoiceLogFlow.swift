@@ -335,7 +335,7 @@ struct VoiceLogFlow: View {
       if let meal = row.wrappedValue.meal {
         catalogBody(row, meal: meal)
       } else if row.wrappedValue.ok {
-        estimateBody(row.wrappedValue)
+        estimateBody(row)
       } else {
         manualBody(row)
       }
@@ -389,11 +389,17 @@ struct VoiceLogFlow: View {
     macroPreview(row.wrappedValue.scaled)
   }
 
-  // A grounded estimate we trust: read-only macros for the amount spoken.
+  // An estimate we trust: per-base-serving macros ("1 slice") with the same
+  // servings stepper as a catalog match, seeded from the quantity spoken.
   @ViewBuilder
-  private func estimateBody(_ row: VoiceRow) -> some View {
-    nameHeader(name: row.name, spoken: row.spoken, detail: row.servingSize)
-    macroPreview(row.scaled)
+  private func estimateBody(_ row: Binding<VoiceRow>) -> some View {
+    nameHeader(
+      name: row.wrappedValue.name,
+      spoken: row.wrappedValue.spoken,
+      detail: row.wrappedValue.servingSize
+    )
+    portionStepper(row)
+    macroPreview(row.wrappedValue.scaled)
   }
 
   // A soft failure: the user fills it in by hand and it becomes loggable.
@@ -507,13 +513,18 @@ struct VoiceLogFlow: View {
             .font(.fuelMono(.caption))
             .foregroundStyle(Color.fuelSubtle)
         }
+      } else if row.ok, row.factor != 1,
+                let serving = VoiceAliases.annotatedServingSize(factor: row.factor, base: row.servingSize) {
+        Text(serving)
+          .font(.fuelMono(.caption))
+          .foregroundStyle(Color.fuelSubtle)
       } else if !row.ok {
         Text("Couldn't estimate this one — add a name and calories to include it.")
           .foregroundStyle(Color.fuelCitrusInk)
       }
 
       if row.ok, let ranges = row.ranges {
-        Text(rangeSummary(ranges))
+        Text(rangeSummary(ranges, factor: row.factor))
           .font(.fuelMono(.caption))
           .foregroundStyle(Color.fuelSubtle)
           .environment(\.layoutDirection, .leftToRight)
@@ -532,9 +543,11 @@ struct VoiceLogFlow: View {
   }
 
   // "220–260 kcal · P 17–21 · C 1–3 · F 14–18" — an estimate's plausible band.
-  private func rangeSummary(_ ranges: CatalogMeal.MacroRanges) -> String {
+  // Ranges band the BASE serving, so they scale by the row's multiplier to stay
+  // consistent with the macros shown next to them.
+  private func rangeSummary(_ ranges: CatalogMeal.MacroRanges, factor: Double) -> String {
     func part(_ range: CatalogMeal.MacroRange) -> String {
-      "\(Int(range.min))–\(Int(range.max))"
+      "\(Int((range.min * factor).rounded()))–\(Int((range.max * factor).rounded()))"
     }
     return "\(part(ranges.calories)) kcal · P \(part(ranges.protein)) · C \(part(ranges.carbs)) · F \(part(ranges.fat))"
   }
@@ -687,7 +700,7 @@ private struct VoiceRow: Identifiable, Equatable {
     case .estimate(let estimate):
       spoken = estimate.spoken
       meal = nil
-      factor = 1
+      factor = Self.snapped(estimate.factor)
       name = estimate.name.isEmpty ? estimate.spoken : estimate.name
       servingSize = estimate.servingSize
       calories = Self.intString(estimate.calories)
@@ -719,8 +732,8 @@ private struct VoiceRow: Identifiable, Equatable {
   private var carbsValue: Int { NumberParsing.int(carbs) ?? 0 }
   private var fatValue: Int { NumberParsing.int(fat) ?? 0 }
 
-  /// Catalog macros scale by the multiplier; estimate macros already cover the
-  /// spoken amount, so they're used as typed.
+  /// Catalog AND estimate macros are per one base serving and scale by the
+  /// multiplier. Manual rows keep factor 1, so what's typed is what's logged.
   var scaled: PortionScaling.Macros {
     if let meal {
       return PortionScaling.macros(
@@ -731,11 +744,12 @@ private struct VoiceRow: Identifiable, Equatable {
         factor: factor
       )
     }
-    return PortionScaling.Macros(
-      calories: max(caloriesValue, 0),
-      protein: max(proteinValue, 0),
-      carbs: max(carbsValue, 0),
-      fat: max(fatValue, 0)
+    return PortionScaling.macros(
+      calories: Double(max(caloriesValue, 0)),
+      protein: Double(max(proteinValue, 0)),
+      carbs: Double(max(carbsValue, 0)),
+      fat: Double(max(fatValue, 0)),
+      factor: factor
     )
   }
 
@@ -757,6 +771,10 @@ private struct VoiceRow: Identifiable, Equatable {
   private var loggedServingSize: String? {
     if let meal {
       return VoiceAliases.annotatedServingSize(factor: factor, base: meal.servingSize)
+    }
+    if ok {
+      // Estimates are per base serving too — "3× 1 slice (~25g)".
+      return VoiceAliases.annotatedServingSize(factor: factor, base: servingSize)
     }
     let trimmed = servingSize.trimmingCharacters(in: .whitespacesAndNewlines)
     return trimmed.isEmpty ? nil : trimmed
@@ -781,17 +799,18 @@ private struct VoiceRow: Identifiable, Equatable {
 
   /// A confirmed estimate worth saving to the shared catalog, with the spoken
   /// phrase attached as an alias so the next utterance matches it directly.
+  /// Saves the UNSCALED base serving ("Toast — 1 slice, 70 kcal"), never the
+  /// spoken total, so the catalog entry stays reusable at any quantity.
   func commitInput() -> VoiceCommitMealInput? {
     guard meal == nil, ok, !trimmedName.isEmpty else { return nil }
-    let macros = scaled
     let serving = servingSize.trimmingCharacters(in: .whitespacesAndNewlines)
     return VoiceCommitMealInput(
       name: trimmedName,
       servingSize: serving.isEmpty ? String(localized: "1 serving") : serving,
-      calories: macros.calories,
-      protein: macros.protein,
-      carbs: macros.carbs,
-      fat: macros.fat,
+      calories: max(caloriesValue, 0),
+      protein: max(proteinValue, 0),
+      carbs: max(carbsValue, 0),
+      fat: max(fatValue, 0),
       sourceUrl: sourceUrl,
       ranges: ranges,
       aliases: VoiceAliases.deriveAliases(spoken: spoken, name: trimmedName)

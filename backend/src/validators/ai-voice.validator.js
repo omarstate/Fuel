@@ -61,6 +61,7 @@ export const voiceParseSchema = z.object({
 export const voiceEstimateSchema = z.object({
   name: z.string().trim().min(1).max(160).nullish(),
   servingSize: z.string().trim().max(120).nullish(),
+  factor: z.coerce.number().finite().nullish(),
   calories: z.coerce.number().finite().nullish(),
   protein: z.coerce.number().finite().nullish(),
   carbs: z.coerce.number().finite().nullish(),

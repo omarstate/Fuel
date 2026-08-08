@@ -27,7 +27,7 @@ struct ActivityRings: View {
       rings
       caloriesCard
       HStack(spacing: 10) {
-        macroCard(systemImage: "bolt.fill", tint: .fuelBlue, value: protein, goal: proteinTarget, label: "Protein")
+        macroCard(systemImage: "bolt.fill", tint: .fuelBlueInk, value: protein, goal: proteinTarget, label: "Protein")
         macroCard(systemImage: "leaf.fill", tint: .fuelGoldInk, value: carbs, goal: carbTarget, label: "Carbs")
         macroCard(systemImage: "drop.fill", tint: .fuelVoltInk, value: fat, goal: fatTarget, label: "Fat")
       }
@@ -44,13 +44,13 @@ struct ActivityRings: View {
       VStack(spacing: 2) {
         Text("\(consumed)")
           .font(.fuelHeading(52, weight: 700, relativeTo: .largeTitle))
-          .foregroundStyle(Color.fuelOlive)
+          .foregroundStyle(Color.fuelVoltInk)
           .contentTransition(.numericText())
           .minimumScaleFactor(0.5)
           .lineLimit(1)
         Text("\(protein)")
           .font(.fuelHeading(28, weight: 700, relativeTo: .title))
-          .foregroundStyle(Color.fuelBlue)
+          .foregroundStyle(Color.fuelBlueInk)
           .contentTransition(.numericText())
           .lineLimit(1)
       }
@@ -65,12 +65,11 @@ struct ActivityRings: View {
   private func ring(progress: Double, tint: Color, diameter: CGFloat, lineWidth: CGFloat) -> some View {
     ZStack {
       Circle()
-        .stroke(Color.white.opacity(0.06), style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
+        .stroke(Color.fuelInk.opacity(0.08), style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
       Circle()
         .trim(from: 0, to: min(max(progress, 0), 1))
         .stroke(tint, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
         .rotationEffect(.degrees(-90))
-        .shadow(color: tint.opacity(0.45), radius: 5)
         .animation(.snappy, value: progress)
     }
     .frame(width: diameter, height: diameter)
@@ -83,7 +82,7 @@ struct ActivityRings: View {
       HStack(spacing: 7) {
         Image(systemName: "flame.fill")
           .font(.footnote.weight(.semibold))
-          .foregroundStyle(over ? Color.fuelOver : Color.fuelOlive)
+          .foregroundStyle(over ? Color.fuelOverInk : Color.fuelVoltInk)
         Text("Calories").fuelEyebrow(size: 10)
         Spacer()
         Text("of \(calorieTarget) kcal")
@@ -94,7 +93,7 @@ struct ActivityRings: View {
       HStack(alignment: .firstTextBaseline, spacing: 3) {
         Text("\(consumed)")
           .font(.fuelHeading(30, weight: 700, relativeTo: .title))
-          .foregroundStyle(over ? Color.fuelOver : Color.fuelOlive)
+          .foregroundStyle(over ? Color.fuelOverInk : Color.fuelVoltInk)
           .contentTransition(.numericText())
           .minimumScaleFactor(0.6)
           .lineLimit(1)
@@ -142,7 +141,7 @@ struct ActivityRings: View {
     let progress = goal > 0 ? min(Double(value) / Double(goal), 1) : 0
     return GeometryReader { geo in
       ZStack(alignment: .leading) {
-        Capsule().fill(Color.white.opacity(0.08))
+        Capsule().fill(Color.fuelInk.opacity(0.08))
         Capsule()
           .fill(tint)
           .frame(width: max(geo.size.width * progress, progress > 0 ? 5 : 0))
