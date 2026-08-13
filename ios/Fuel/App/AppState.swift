@@ -38,6 +38,39 @@ final class AppState {
 
   func bumpLogRevision() { logRevision += 1 }
 
+  /// The workout twin of `logRevision`, deliberately separate: three meal
+  /// surfaces refetch on every `logRevision` bump, and a set logged mid-workout
+  /// shouldn't trigger any of them.
+  private(set) var workoutRevision = 0
+
+  func bumpWorkoutRevision() { workoutRevision += 1 }
+
+  // MARK: - App side
+
+  /// Which side of the app the tab bar shows — nutrition or workouts. The two
+  /// are separate surfaces with their own tab sets and accent (green vs orange),
+  /// mirroring the web app's sidebar mode toggle. Persisted so the app reopens
+  /// on the side you left it.
+  enum AppSide: String, CaseIterable {
+    case nutrition
+    case workouts
+  }
+
+  var side: AppSide = AppSide(
+    rawValue: UserDefaults.standard.string(forKey: "fuel.side") ?? ""
+  ) ?? .nutrition {
+    didSet { UserDefaults.standard.set(side.rawValue, forKey: "fuel.side") }
+  }
+
+  /// A workout flow picked from the global bottom bar's plus (workouts side).
+  /// Same park-and-forward pattern as `pendingLogRequest`, but the Workouts
+  /// home owns the session sheets, so it lands there instead of TodayView.
+  enum WorkoutIntent: Equatable {
+    case startSession
+  }
+
+  var pendingWorkoutIntent: WorkoutIntent?
+
   /// A log flow picked from the global bottom bar. The bar lives above the tab
   /// content, so it parks the request here and TodayView (which owns the meal
   /// log + its view model) presents the matching sheet.

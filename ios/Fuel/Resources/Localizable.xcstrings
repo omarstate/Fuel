@@ -35,12 +35,25 @@
         }
       }
     },
+    "#%lld" : {
+
+    },
     "%@" : {
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@"
+          }
+        }
+      }
+    },
+    "%@ · %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ · %2$@"
           }
         }
       }
@@ -95,6 +108,16 @@
         }
       }
     },
+    "%@ and its %lld logged sets will be removed from this session." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ and its %2$lld logged sets will be removed from this session."
+          }
+        }
+      }
+    },
     "%@ isn't in the barcode database yet. Enter its details by hand to add it to the meal library." : {
       "localizations" : {
         "ar" : {
@@ -115,6 +138,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "لم يُدرَج %@ في قاعدة بيانات الباركود بعد. أدخل تفاصيله يدويًا، أو صوّر جدول القيمة الغذائية بدلًا من ذلك."
+          }
+        }
+      }
+    },
+    "%@ kilograms by %@ reps" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ kilograms by %2$@ reps"
           }
         }
       }
@@ -372,6 +405,9 @@
         }
       }
     },
+    "%lld days ago" : {
+
+    },
     "%lld eaten" : {
       "localizations" : {
         "ar" : {
@@ -381,6 +417,9 @@
           }
         }
       }
+    },
+    "%lld exercises" : {
+
     },
     "%lld grams protein, %lld grams carbs, %lld grams fat" : {
       "localizations" : {
@@ -493,6 +532,16 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "%1$lld kcal · %2$lldg P · %3$lldg C · %4$lldg F left"
+          }
+        }
+      }
+    },
+    "%lld kcal · P %lld · C %lld · F %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld kcal · P %2$lld · C %3$lld · F %4$lld"
           }
         }
       }
@@ -623,6 +672,16 @@
         }
       }
     },
+    "%lld of %lld days on target" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld of %2$lld days on target"
+          }
+        }
+      }
+    },
     "%lld of %lld kcal" : {
       "localizations" : {
         "ar" : {
@@ -634,6 +693,37 @@
       }
     },
     "%lld over" : {
+
+    },
+    "%lld sets" : {
+
+    },
+    "%lld sets · %@ kg total" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld sets · %2$@ kg total"
+          }
+        }
+      }
+    },
+    "%lld sets · bodyweight" : {
+
+    },
+    "%lld sets down — momentum is real 💪" : {
+
+    },
+    "%lld sets in — most people quit before this 🔥" : {
+
+    },
+    "%lld sets. Certified workhorse 🏋️" : {
+
+    },
+    "%lld sets. You're a machine ⚙️" : {
+
+    },
+    "%lld weeks ago" : {
 
     },
     "%lld/%lld" : {
@@ -676,6 +766,9 @@
         }
       }
     },
+    "%lldd ago" : {
+
+    },
     "%lldF" : {
       "localizations" : {
         "ar" : {
@@ -706,6 +799,9 @@
         }
       }
     },
+    "%lldw ago" : {
+
+    },
     "+ Add" : {
       "localizations" : {
         "ar" : {
@@ -715,6 +811,9 @@
           }
         }
       }
+    },
+    "+ add weight" : {
+
     },
     "+%@" : {
 
@@ -728,6 +827,12 @@
           }
         }
       }
+    },
+    "±1" : {
+
+    },
+    "×" : {
+
     },
     "~%lld" : {
 
@@ -775,6 +880,9 @@
         }
       }
     },
+    "1 exercise" : {
+
+    },
     "1 serving" : {
       "localizations" : {
         "ar" : {
@@ -786,6 +894,21 @@
       }
     },
     "1 serving = %@ g. Step servings, or type the exact grams you ate — the nutrition rescales from the serving's facts." : {
+
+    },
+    "1 set" : {
+
+    },
+    "1 week ago" : {
+
+    },
+    "4" : {
+
+    },
+    "8-12" : {
+
+    },
+    "80 × 8   82.5 × 6" : {
 
     },
     "A few quick details and we'll compute your daily calorie and macro targets. You can change these anytime." : {
@@ -828,6 +951,9 @@
         }
       }
     },
+    "A workout can belong to several types — pick every one that fits." : {
+
+    },
     "About you" : {
       "localizations" : {
         "ar" : {
@@ -850,6 +976,9 @@
           }
         }
       }
+    },
+    "Activity today" : {
+
     },
     "Add" : {
       "localizations" : {
@@ -884,6 +1013,9 @@
         }
       }
     },
+    "Add a name and at least one type." : {
+
+    },
     "Add a name and calories to at least one item." : {
       "localizations" : {
         "ar" : {
@@ -913,6 +1045,24 @@
           }
         }
       }
+    },
+    "Add a weight or some reps to at least one set." : {
+
+    },
+    "Add a weight or some reps to log this one." : {
+
+    },
+    "Add a workout" : {
+
+    },
+    "Add an exercise" : {
+
+    },
+    "Add another set" : {
+
+    },
+    "Add exercise" : {
+
     },
     "Add manually" : {
       "localizations" : {
@@ -1172,6 +1322,7 @@
       }
     },
     "App" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -1237,6 +1388,9 @@
         }
       }
     },
+    "Bench press" : {
+
+    },
     "Best streak" : {
       "localizations" : {
         "ar" : {
@@ -1247,6 +1401,15 @@
         }
       }
     },
+    "Bodyweight" : {
+
+    },
+    "Both optional — they're a suggestion shown on the card, not a rule." : {
+
+    },
+    "bpm" : {
+
+    },
     "Breakfast" : {
       "localizations" : {
         "ar" : {
@@ -1256,6 +1419,12 @@
           }
         }
       }
+    },
+    "Breathe. The next set is yours." : {
+
+    },
+    "Browse the shared catalog and add your own, tagged with every type they belong to." : {
+
     },
     "Browse the shared catalog and drop any meal straight into today's log." : {
 
@@ -1269,6 +1438,12 @@
           }
         }
       }
+    },
+    "Burned" : {
+
+    },
+    "BW" : {
+
     },
     "Calorie split" : {
       "localizations" : {
@@ -1291,6 +1466,9 @@
       }
     },
     "Calories consumed" : {
+
+    },
+    "Calories must be between 800 and 10,000." : {
 
     },
     "Calories over goal" : {
@@ -1355,6 +1533,9 @@
         }
       }
     },
+    "Carbs must be between 0 and 1,000 g." : {
+
+    },
     "Category" : {
       "localizations" : {
         "ar" : {
@@ -1366,6 +1547,9 @@
       }
     },
     "Change password" : {
+
+    },
+    "Check this" : {
 
     },
     "Check your email" : {
@@ -1531,6 +1715,12 @@
         }
       }
     },
+    "Couldn't hear an exercise. Try “bench press 80 for 8”." : {
+
+    },
+    "Couldn't load workout types." : {
+
+    },
     "Couldn't log those items. Try again." : {
       "localizations" : {
         "ar" : {
@@ -1550,6 +1740,9 @@
           }
         }
       }
+    },
+    "Couldn't log those sets. Try again." : {
+
     },
     "Couldn't open that photo. Try another." : {
       "localizations" : {
@@ -1631,6 +1824,12 @@
         }
       }
     },
+    "Custom" : {
+
+    },
+    "Custom exercise name" : {
+
+    },
     "Cutting" : {
       "localizations" : {
         "ar" : {
@@ -1642,6 +1841,12 @@
       }
     },
     "Daily avg" : {
+
+    },
+    "Daily goal" : {
+
+    },
+    "Daily goals" : {
 
     },
     "Daily log" : {
@@ -1691,6 +1896,15 @@
     "Days logged" : {
 
     },
+    "Deactivate" : {
+
+    },
+    "Deactivate account" : {
+
+    },
+    "Deactivate account?" : {
+
+    },
     "Delete" : {
       "localizations" : {
         "ar" : {
@@ -1712,6 +1926,7 @@
       }
     },
     "Delete account" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -1722,6 +1937,7 @@
       }
     },
     "Delete account?" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -1730,6 +1946,9 @@
           }
         }
       }
+    },
+    "Delete set" : {
+
     },
     "Description — optional" : {
       "localizations" : {
@@ -1741,6 +1960,9 @@
         }
       }
     },
+    "Details" : {
+
+    },
     "Dinner" : {
       "localizations" : {
         "ar" : {
@@ -1750,6 +1972,9 @@
           }
         }
       }
+    },
+    "Discipline shows up even when motivation doesn't." : {
+
     },
     "Dismiss" : {
       "localizations" : {
@@ -1770,6 +1995,9 @@
           }
         }
       }
+    },
+    "Duration" : {
+
     },
     "e.g. %@" : {
       "localizations" : {
@@ -1868,6 +2096,9 @@
     "Edit personal data" : {
 
     },
+    "Editing your details in Profile recalculates these automatically." : {
+
+    },
     "Egyptian Arabic or English — say the amounts too, and the meal if you want one." : {
       "localizations" : {
         "ar" : {
@@ -1878,6 +2109,9 @@
         }
       }
     },
+    "Egyptian Arabic or English — say the weight and the reps." : {
+
+    },
     "Egyptian menus and portions are checked first." : {
       "localizations" : {
         "ar" : {
@@ -1887,6 +2121,12 @@
           }
         }
       }
+    },
+    "Elapsed" : {
+
+    },
+    "Elapsed session time" : {
+
     },
     "Email" : {
       "localizations" : {
@@ -1899,6 +2139,12 @@
       }
     },
     "Email changes aren't supported yet." : {
+
+    },
+    "End session" : {
+
+    },
+    "End this session?" : {
 
     },
     "Enter a different code" : {
@@ -1964,6 +2210,9 @@
         }
       }
     },
+    "Equipment — e.g. Barbell" : {
+
+    },
     "Estimate" : {
       "localizations" : {
         "ar" : {
@@ -2014,6 +2263,21 @@
         }
       }
     },
+    "Every rep counts. So does every breath." : {
+
+    },
+    "Every session you've completed in the last 30 days. Open one to see it exactly as you logged it." : {
+
+    },
+    "Exercise name" : {
+
+    },
+    "Exercises" : {
+
+    },
+    "Extend rest by 15 seconds" : {
+
+    },
     "Extra active" : {
       "localizations" : {
         "ar" : {
@@ -2034,6 +2298,9 @@
         }
       }
     },
+    "Fat must be between 0 and 500 g." : {
+
+    },
     "Female" : {
       "localizations" : {
         "ar" : {
@@ -2043,6 +2310,9 @@
           }
         }
       }
+    },
+    "Fewer reps" : {
+
     },
     "Fewer servings" : {
       "localizations" : {
@@ -2074,6 +2344,9 @@
         }
       }
     },
+    "Food" : {
+
+    },
     "Free-tier servers nap after a while. This can take up to a minute." : {
       "localizations" : {
         "ar" : {
@@ -2093,6 +2366,12 @@
           }
         }
       }
+    },
+    "Fuel · Version %@" : {
+
+    },
+    "Fuel can't hear you — microphone or speech access is off. Turn it on in Settings, or just type the sets." : {
+
     },
     "Fuel can't hear you — microphone or speech access is off. Turn it on in Settings, or just type what you ate." : {
       "localizations" : {
@@ -2197,16 +2476,6 @@
         }
       }
     },
-    "goal %lld %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "goal %1$lld %2$@"
-          }
-        }
-      }
-    },
     "Goal hit for today" : {
       "localizations" : {
         "ar" : {
@@ -2267,6 +2536,12 @@
         }
       }
     },
+    "Heart rate" : {
+
+    },
+    "Heart rate from %@" : {
+
+    },
     "Height" : {
       "localizations" : {
         "ar" : {
@@ -2317,6 +2592,9 @@
         }
       }
     },
+    "Home" : {
+
+    },
     "How much did you eat?" : {
       "localizations" : {
         "ar" : {
@@ -2326,6 +2604,12 @@
           }
         }
       }
+    },
+    "In progress" : {
+
+    },
+    "In this workout" : {
+
     },
     "In your library" : {
       "localizations" : {
@@ -2338,6 +2622,9 @@
       }
     },
     "Include the weight — like \"1 bowl (250 g)\" — so it can be logged by exact grams, not just servings." : {
+
+    },
+    "It may have been removed from another device." : {
 
     },
     "It's on today's log. Scan another product or you're done." : {
@@ -2391,6 +2678,15 @@
     "kcal/day" : {
 
     },
+    "kcal/day average" : {
+
+    },
+    "kg" : {
+
+    },
+    "kg · ±2.5" : {
+
+    },
     "Language" : {
       "localizations" : {
         "ar" : {
@@ -2414,6 +2710,12 @@
         }
       }
     },
+    "Last session" : {
+
+    },
+    "Last type" : {
+
+    },
     "Leave blank to keep your current password. Minimum 6 characters." : {
 
     },
@@ -2426,6 +2728,9 @@
           }
         }
       }
+    },
+    "Less weight" : {
+
     },
     "Library" : {
       "localizations" : {
@@ -2507,6 +2812,9 @@
         }
       }
     },
+    "Loading types…" : {
+
+    },
     "Loading…" : {
       "localizations" : {
         "ar" : {
@@ -2523,6 +2831,19 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "سجّل"
+          }
+        }
+      }
+    },
+    "Log %@ kg" : {
+
+    },
+    "Log %@ kg × %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Log %1$@ kg × %2$lld"
           }
         }
       }
@@ -2602,6 +2923,15 @@
         }
       }
     },
+    "Log %lld reps" : {
+
+    },
+    "Log %lld sets" : {
+
+    },
+    "Log a meal" : {
+
+    },
     "Log by voice" : {
       "localizations" : {
         "ar" : {
@@ -2632,6 +2962,12 @@
         }
       }
     },
+    "Log set" : {
+
+    },
+    "Log sets by voice" : {
+
+    },
     "Log to today" : {
       "localizations" : {
         "ar" : {
@@ -2651,6 +2987,9 @@
           }
         }
       }
+    },
+    "Log your first exercise" : {
+
     },
     "Log your first meal" : {
       "extractionState" : "stale",
@@ -2674,6 +3013,9 @@
         }
       }
     },
+    "Log your next session" : {
+
+    },
     "logged" : {
 
     },
@@ -2687,6 +3029,12 @@
           }
         }
       }
+    },
+    "Logged %lld sets" : {
+
+    },
+    "Logged 1 set" : {
+
     },
     "Logged to today" : {
 
@@ -2888,6 +3236,9 @@
         }
       }
     },
+    "Minimize" : {
+
+    },
     "Moderate exercise 3–5 days/week" : {
       "localizations" : {
         "ar" : {
@@ -2918,6 +3269,9 @@
         }
       }
     },
+    "More reps" : {
+
+    },
     "More servings" : {
       "localizations" : {
         "ar" : {
@@ -2927,6 +3281,9 @@
           }
         }
       }
+    },
+    "More weight" : {
+
     },
     "Morning" : {
       "localizations" : {
@@ -2948,6 +3305,12 @@
         }
       }
     },
+    "Muscles grow between the sets." : {
+
+    },
+    "Mute end-of-rest sound" : {
+
+    },
     "My meals" : {
       "localizations" : {
         "ar" : {
@@ -2959,6 +3322,9 @@
       }
     },
     "My recipe" : {
+
+    },
+    "My workouts" : {
 
     },
     "Name" : {
@@ -2997,6 +3363,9 @@
         }
       }
     },
+    "New exercise" : {
+
+    },
     "New here? Create an account" : {
       "localizations" : {
         "ar" : {
@@ -3010,6 +3379,9 @@
     "New password" : {
 
     },
+    "New session best — %@ kg 🏆" : {
+
+    },
     "New targets" : {
       "localizations" : {
         "ar" : {
@@ -3019,6 +3391,12 @@
           }
         }
       }
+    },
+    "Next" : {
+
+    },
+    "No exercises logged" : {
+
     },
     "No history yet" : {
       "localizations" : {
@@ -3071,6 +3449,18 @@
         }
       }
     },
+    "No sets logged." : {
+
+    },
+    "No workout types" : {
+
+    },
+    "No workouts here" : {
+
+    },
+    "No workouts yet" : {
+
+    },
     "Nobody's logged this yet — be the first." : {
       "localizations" : {
         "ar" : {
@@ -3081,7 +3471,13 @@
         }
       }
     },
+    "Nobody's watching. Do it for you." : {
+
+    },
     "Not set" : {
+
+    },
+    "Note" : {
 
     },
     "Nothing logged for %@ yet." : {
@@ -3161,11 +3557,19 @@
         }
       }
     },
+    "on target" : {
+
+    },
     "On target" : {
 
     },
+    "One quality set beats three sloppy ones." : {
+
+    },
+    "over" : {
+
+    },
     "Over goal" : {
-      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -3254,6 +3658,12 @@
         }
       }
     },
+    "Pick at least one type." : {
+
+    },
+    "Pick one below or type a custom name to get started." : {
+
+    },
     "Picked from the time of day — change it if you like." : {
       "localizations" : {
         "ar" : {
@@ -3308,7 +3718,7 @@
         }
       }
     },
-    "Preferences" : {
+    "Primary muscle — e.g. Chest" : {
 
     },
     "Product not found" : {
@@ -3350,6 +3760,9 @@
           }
         }
       }
+    },
+    "Protein must be between 10 and 500 g." : {
+
     },
     "Quick" : {
       "localizations" : {
@@ -3425,6 +3838,12 @@
         }
       }
     },
+    "Ready to train?" : {
+
+    },
+    "Recommended for you" : {
+
+    },
     "Refresh coach" : {
       "localizations" : {
         "ar" : {
@@ -3474,7 +3893,16 @@
         }
       }
     },
+    "Remove this exercise?" : {
+
+    },
     "Remove this meal?" : {
+
+    },
+    "reps" : {
+
+    },
+    "Reps" : {
 
     },
     "Request failed (%lld)." : {
@@ -3486,6 +3914,21 @@
           }
         }
       }
+    },
+    "Rest" : {
+
+    },
+    "Rest hard. Lift harder." : {
+
+    },
+    "Rest over" : {
+
+    },
+    "Rest over — GO 💥" : {
+
+    },
+    "Resting" : {
+
     },
     "Retake photo" : {
       "localizations" : {
@@ -3526,6 +3969,9 @@
           }
         }
       }
+    },
+    "Review your sets" : {
+
     },
     "Right on pace" : {
       "localizations" : {
@@ -3578,6 +4024,9 @@
         }
       }
     },
+    "Save goals" : {
+
+    },
     "Save the product to the shared meal database — into your meals and everyone's catalog." : {
 
     },
@@ -3590,6 +4039,12 @@
           }
         }
       }
+    },
+    "Say or type the sets you did" : {
+
+    },
+    "Say or type the sets you did first." : {
+
     },
     "Say or type what you ate" : {
       "localizations" : {
@@ -3663,6 +4118,9 @@
           }
         }
       }
+    },
+    "Search workouts" : {
+
     },
     "Searches the Egypt-first catalog, then the web." : {
       "localizations" : {
@@ -3744,6 +4202,33 @@
         }
       }
     },
+    "Session" : {
+
+    },
+    "Session not found" : {
+
+    },
+    "sessions" : {
+
+    },
+    "Sessions you finish show up here. Start one from the Workouts tab." : {
+
+    },
+    "Set" : {
+
+    },
+    "Set #%lld" : {
+
+    },
+    "Set %lld" : {
+
+    },
+    "Set the daily calories and macros Fuel tracks against. Numbers are up to you — the recommendation below comes from your details." : {
+
+    },
+    "Sets" : {
+
+    },
     "Sex" : {
       "localizations" : {
         "ar" : {
@@ -3753,6 +4238,15 @@
           }
         }
       }
+    },
+    "Shake it out. Stay loose." : {
+
+    },
+    "Shorten rest by 15 seconds" : {
+
+    },
+    "Show up. Log it. Level up." : {
+
     },
     "Sign in" : {
       "localizations" : {
@@ -3784,6 +4278,9 @@
           }
         }
       }
+    },
+    "Skip rest" : {
+
     },
     "Snack" : {
       "localizations" : {
@@ -3835,6 +4332,9 @@
         }
       }
     },
+    "Speech recognition isn't available for this language on this device. Type the sets instead." : {
+
+    },
     "Speech recognition isn't available for this language on this device. Type what you ate instead." : {
       "localizations" : {
         "ar" : {
@@ -3844,6 +4344,9 @@
           }
         }
       }
+    },
+    "Speech recognition stopped before it heard anything. Try again, or type the sets below." : {
+
     },
     "Speech recognition stopped before it heard anything. Try again, or type what you ate below." : {
       "localizations" : {
@@ -3865,6 +4368,9 @@
         }
       }
     },
+    "Start" : {
+
+    },
     "Start recording" : {
       "localizations" : {
         "ar" : {
@@ -3875,6 +4381,28 @@
         }
       }
     },
+    "Start rest timer" : {
+
+    },
+    "Start session" : {
+
+    },
+    "Started %@" : {
+
+    },
+    "Started %@ · finished %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Started %1$@ · finished %2$@"
+          }
+        }
+      }
+    },
+    "Steps" : {
+
+    },
     "Stop recording" : {
       "localizations" : {
         "ar" : {
@@ -3884,6 +4412,12 @@
           }
         }
       }
+    },
+    "Streak" : {
+
+    },
+    "Strong is built one set at a time." : {
+
     },
     "Suggested" : {
       "localizations" : {
@@ -3906,6 +4440,7 @@
       }
     },
     "Switch the app language in Settings. Fuel is available in English and Arabic." : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -3924,6 +4459,9 @@
           }
         }
       }
+    },
+    "Tap and say the sets you did" : {
+
     },
     "Tap and say what you ate" : {
       "localizations" : {
@@ -3945,6 +4483,9 @@
         }
       }
     },
+    "Tap to resume" : {
+
+    },
     "Tap to try again" : {
       "localizations" : {
         "ar" : {
@@ -3955,6 +4496,15 @@
         }
       }
     },
+    "Target reps" : {
+
+    },
+    "Target sets" : {
+
+    },
+    "Target volume" : {
+
+    },
     "That photo is too large to process. Try a smaller one." : {
       "localizations" : {
         "ar" : {
@@ -3964,6 +4514,9 @@
           }
         }
       }
+    },
+    "The catalog hasn't loaded any categories yet." : {
+
     },
     "The meals you've contributed to the catalog. Edit or remove them any time." : {
 
@@ -3998,6 +4551,9 @@
         }
       }
     },
+    "This marks the session complete and takes you to the summary. You can't resume it afterward." : {
+
+    },
     "This permanently deletes your account, profile and all logged meals. This cannot be undone. Type \"%@\" to confirm." : {
 
     },
@@ -4022,6 +4578,9 @@
         }
       }
     },
+    "This session was ended without logging anything." : {
+
+    },
     "This week" : {
       "localizations" : {
         "ar" : {
@@ -4031,6 +4590,9 @@
           }
         }
       }
+    },
+    "Time for the next set." : {
+
     },
     "Today" : {
       "localizations" : {
@@ -4084,6 +4646,9 @@
           }
         }
       }
+    },
+    "Try a different type — or add the first one to the catalog." : {
+
     },
     "Try again" : {
       "localizations" : {
@@ -4149,6 +4714,9 @@
         }
       }
     },
+    "Type the sets you did below" : {
+
+    },
     "Type what you ate and we'll pull the nutrition — official data where it exists, an AI estimate otherwise." : {
       "localizations" : {
         "ar" : {
@@ -4168,6 +4736,21 @@
           }
         }
       }
+    },
+    "Types" : {
+
+    },
+    "under" : {
+
+    },
+    "Under goal" : {
+
+    },
+    "Undo" : {
+
+    },
+    "Unmute end-of-rest sound" : {
+
     },
     "Up next" : {
       "localizations" : {
@@ -4198,6 +4781,9 @@
           }
         }
       }
+    },
+    "Use" : {
+
     },
     "Values are per 100 g." : {
       "localizations" : {
@@ -4239,6 +4825,9 @@
         }
       }
     },
+    "Volume" : {
+
+    },
     "Waking the server…" : {
       "localizations" : {
         "ar" : {
@@ -4248,6 +4837,9 @@
           }
         }
       }
+    },
+    "Water break. You've earned it." : {
+
     },
     "We sent a confirmation link to %@. Tap it, then come back and sign in." : {
       "localizations" : {
@@ -4268,6 +4860,9 @@
           }
         }
       }
+    },
+    "Weight in kilograms" : {
+
     },
     "Weight must be 30–400 kg." : {
       "localizations" : {
@@ -4298,6 +4893,9 @@
           }
         }
       }
+    },
+    "What are you training?" : {
+
     },
     "What did you eat?" : {
       "localizations" : {
@@ -4352,6 +4950,27 @@
         }
       }
     },
+    "Workout" : {
+
+    },
+    "Workout library" : {
+
+    },
+    "Workout name" : {
+
+    },
+    "Workouts" : {
+
+    },
+    "Workouts · History" : {
+
+    },
+    "Workouts · Library" : {
+
+    },
+    "Workouts %lld" : {
+
+    },
     "Yesterday" : {
       "localizations" : {
         "ar" : {
@@ -4381,6 +5000,9 @@
           }
         }
       }
+    },
+    "You vs. you — you're winning." : {
+
     },
     "You've been hitting your protein target most days this week." : {
       "localizations" : {

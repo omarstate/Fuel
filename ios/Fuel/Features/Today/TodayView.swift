@@ -48,8 +48,8 @@ struct TodayView: View {
         }
         .padding(.horizontal, 16)
         .padding(.top, 8)
-        // Clear the floating bottom bar so the last section card stays tappable.
-        .padding(.bottom, MainTabView.floatingBarClearance + 24)
+        // The stock tab bar insets the scroll view itself; this is just breath.
+        .padding(.bottom, 24)
       }
       .background(Color.fuelBackground.ignoresSafeArea())
       .scrollEdgeEffectStyle(.soft, for: .top)
@@ -140,6 +140,8 @@ struct TodayView: View {
         Text(FuelDateFormat.eyebrow(Date())).fuelEyebrow()
         Spacer(minLength: 8)
         if model.streaks.logging >= 1 { streakPill }
+        // The door to the workouts side — swaps the whole tab bar.
+        SideSwitcher()
       }
       greeting
         .font(.fuelMasthead)

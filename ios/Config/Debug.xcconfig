@@ -3,4 +3,4 @@
 // Local Express backend (cd backend && npm run dev), reached via the Mac's LAN IP so both
 // the simulator AND a physical iPhone on the same Wi-Fi can connect. If your Mac's IP
 // changes (check with `ipconfig getifaddr en0`), update it here.
-API_BASE_URL = http:/$()/192.168.1.10:4000/api
+API_BASE_URL = http:/$()/192.168.1.12:4000/api

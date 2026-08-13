@@ -21,7 +21,7 @@
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>Fuel turns what you say into text so your spoken meal can be matched to foods and logged.</string>
 	<key>NSHealthShareUsageDescription</key>
-	<string>Fuel reads your active energy from Health to show calories burned today.</string>
+	<string>Fuel reads your active energy, steps and heart rate from Health to show today's activity.</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>NSAppTransportSecurity</key>

@@ -7,6 +7,9 @@ struct PillBadge: View {
     case volt
     case citrus
     case gold
+    /// The workouts side's accent — the iOS equivalent of the web's
+    /// `--accent-tint` / `--accent-ink` pair on /dashboard/workouts.
+    case workout
     case destructive
 
     var fill: Color {
@@ -15,6 +18,7 @@ struct PillBadge: View {
       case .volt: return Color.fuelOlive.opacity(0.16)
       case .citrus: return Color.fuelCitrus.opacity(0.16)
       case .gold: return Color.fuelGold.opacity(0.18)
+      case .workout: return Color.fuelWorkout.opacity(0.16)
       case .destructive: return Color.fuelDestructive.opacity(0.14)
       }
     }
@@ -25,6 +29,7 @@ struct PillBadge: View {
       case .volt: return .fuelVoltInk
       case .citrus: return .fuelCitrusInk
       case .gold: return .fuelGoldInk
+      case .workout: return .fuelWorkoutInk
       case .destructive: return .fuelDestructive
       }
     }

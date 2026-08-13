@@ -33,13 +33,26 @@ enum VoiceLanguage: String, CaseIterable, Identifiable, Sendable {
     }
   }
 
-  /// An example utterance shown under the transcript field.
-  var example: String {
-    switch self {
-    case .arabic: return "أكلت تلات بيضات مسلوقين وتوستتين، ضيفهم على الفطار"
-    case .english: return "I ate three boiled eggs and two slices of toast, add to breakfast"
+  /// An example utterance shown under the transcript field, for the meal flow.
+  var example: String { example(for: .meal) }
+
+  /// The same, for whichever flow is asking — what you'd say about food and what
+  /// you'd say about a set share nothing but the language.
+  func example(for context: VoicePromptContext) -> String {
+    switch (context, self) {
+    case (.meal, .arabic): return "أكلت تلات بيضات مسلوقين وتوستتين، ضيفهم على الفطار"
+    case (.meal, .english): return "I ate three boiled eggs and two slices of toast, add to breakfast"
+    case (.workout, .arabic): return "بنش برس تمانين في تمانية، وبعدين خمسة وتمانين في ستة"
+    case (.workout, .english): return "bench press 80 for 8, then 85 for 6"
     }
   }
+}
+
+/// Which flow is prompting the user — the recorder itself is identical either
+/// way, only the example utterance differs.
+enum VoicePromptContext: Sendable {
+  case meal
+  case workout
 }
 
 @MainActor

@@ -10,7 +10,7 @@ import Observation
 @Observable
 final class TodayViewModel {
   private let repo = MealLogRepository()
-  private let health = HealthService()
+  private let health = HealthService.shared
 
   private(set) var meals: [LoggedMeal] = []
   /// Local dayKey → summed calories over the streak window (server snapshot).

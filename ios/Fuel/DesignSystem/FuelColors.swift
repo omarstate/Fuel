@@ -37,6 +37,12 @@ extension Color {
   static let fuelDestructive = Color("FuelDestructive")
   static let fuelGold = Color("FuelGold")
   static let fuelGoldInk = Color("FuelGoldInk")
+  /// The WORKOUTS side accent — warm orange (web `editorialAccent.workouts`,
+  /// `#ff6b35`). Workout-side screens tint primary actions/pills with this
+  /// instead of the green; the cream canvas and cards stay identical.
+  static let fuelWorkout = Color("FuelWorkout")
+  /// Workout orange for TEXT/icons (web `#b5431c`) — darkened to read on cream.
+  static let fuelWorkoutInk = Color("FuelWorkoutInk")
 }
 
 // Macro color convention (matches the light editorial mockup):

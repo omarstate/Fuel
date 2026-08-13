@@ -9,3 +9,12 @@ export const upsertProfileSchema = z.object({
   activityLevel: z.enum(["sedentary", "light", "moderate", "very", "extra"]),
   pace: z.enum(["mild", "standard", "aggressive"]),
 })
+
+// Manual daily-target overrides (PUT /profile/targets). Wide safety bounds
+// only — the computed recommendation stays available via PUT /profile.
+export const updateTargetsSchema = z.object({
+  calories: z.number().int().min(800).max(10000),
+  protein: z.number().int().min(10).max(500),
+  carbs: z.number().int().min(0).max(1000),
+  fat: z.number().int().min(0).max(500),
+})

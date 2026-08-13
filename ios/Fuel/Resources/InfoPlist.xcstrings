@@ -38,13 +38,13 @@
         "ar" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "يقرأ Fuel طاقتك النشطة من تطبيق الصحة لعرض السعرات المحروقة اليوم."
+            "value" : "يقرأ Fuel طاقتك النشطة وخطواتك ومعدل ضربات قلبك من تطبيق الصحة لعرض نشاطك اليوم."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Fuel reads your active energy from Health to show calories burned today."
+            "value" : "Fuel reads your active energy, steps and heart rate from Health to show today's activity."
           }
         }
       }

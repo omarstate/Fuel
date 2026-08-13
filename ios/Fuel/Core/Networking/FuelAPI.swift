@@ -17,6 +17,19 @@ enum FuelAPI {
     try await APIClient.shared.put("profile", body: input)
   }
 
+  /// Manual daily-target override (PUT /profile/targets). The next details
+  /// save (PUT /profile) recomputes and overwrites these.
+  struct TargetsInput: Codable, Equatable, Sendable {
+    var calories: Int
+    var protein: Int
+    var carbs: Int
+    var fat: Int
+  }
+
+  static func saveTargets(_ input: TargetsInput) async throws -> Profile {
+    try await APIClient.shared.put("profile/targets", body: input)
+  }
+
   struct DeleteResult: Decodable { let deleted: Bool }
 
   @discardableResult
@@ -127,6 +140,53 @@ enum FuelAPI {
     try await APIClient.shared.post("meals/photo-extract", body: PhotoExtractBody(image: imageBase64, mimeType: mimeType))
   }
 
+  // MARK: - Workouts (catalog)
+
+  /// GET /workout-categories (public) -> [WorkoutCategory], in sortOrder.
+  static func workoutCategories() async throws -> [WorkoutCategory] {
+    try await APIClient.shared.get("workout-categories", authorized: false)
+  }
+
+  /// GET /workouts/grouped (public) -> every category with its workouts. A
+  /// workout in several categories appears under each of them.
+  static func workoutsGrouped() async throws -> [GroupedWorkouts] {
+    try await APIClient.shared.get("workouts/grouped", authorized: false)
+  }
+
+  /// GET /workouts (public) -> { data: [Workout], count }. `category` is a
+  /// category SLUG, not an id. Omits empty filters.
+  static func workouts(
+    category: String?,
+    search: String,
+    limit: Int,
+    offset: Int
+  ) async throws -> (items: [Workout], count: Int) {
+    var query: [URLQueryItem] = [
+      URLQueryItem(name: "limit", value: String(limit)),
+      URLQueryItem(name: "offset", value: String(offset)),
+    ]
+    if let category, !category.isEmpty {
+      query.append(URLQueryItem(name: "category", value: category))
+    }
+    let trimmed = search.trimmingCharacters(in: .whitespacesAndNewlines)
+    if !trimmed.isEmpty {
+      query.append(URLQueryItem(name: "search", value: trimmed))
+    }
+    return try await APIClient.shared.list("workouts", query: query, authorized: false)
+  }
+
+  /// GET /workouts/:id (public) -> Workout; 404 if missing.
+  static func workout(id: String) async throws -> Workout {
+    try await APIClient.shared.get("workouts/\(id)", authorized: false)
+  }
+
+  /// POST /workouts -> the created Workout, categories resolved. The route is
+  /// open today; we send the bearer token anyway so locking it down later is a
+  /// backend-only change.
+  static func createWorkout(_ input: WorkoutInput) async throws -> Workout {
+    try await APIClient.shared.post("workouts", body: input)
+  }
+
   // MARK: - Voice logging
 
   /// POST /ai/meals/voice-log (auth) -> VoiceLogResponse. The spoken transcript
@@ -147,6 +207,44 @@ enum FuelAPI {
     try await APIClient.shared.post(
       "ai/meals/voice-log/commit",
       body: VoiceCommitBody(newMeals: newMeals, aliasUpdates: aliasUpdates)
+    )
+  }
+
+  // MARK: - Voice set logging
+
+  /// POST /ai/workouts/voice-log (auth) -> VoiceSetLogResponse. ONE ungrounded
+  /// Gemini call — typically 2–4s, unlike the meal voice-log's grounded fan-out,
+  /// which is why the flow shows an inline strip instead of a progress screen.
+  /// `sessionExercises` are the rows already on screen, so the model can resolve
+  /// "كمان سِت" / "same weight" and append instead of inventing a duplicate.
+  static func voiceSetLog(
+    transcript: String,
+    lang: String = AppLanguage.current,
+    unit: String = "kg",
+    sessionExercises: [VoiceSessionExerciseHint]
+  ) async throws -> VoiceSetLogResponse {
+    try await APIClient.shared.post(
+      "ai/workouts/voice-log",
+      body: VoiceSetLogBody(
+        transcript: transcript,
+        lang: lang,
+        unit: unit,
+        sessionExercises: sessionExercises
+      )
+    )
+  }
+
+  /// POST /ai/workouts/voice-log/commit (auth) -> VoiceWorkoutCommitResponse.
+  /// Teaches the catalog the phrase the user said and saves exercises they chose
+  /// to keep. Best-effort — the sets are written to Supabase regardless.
+  @discardableResult
+  static func commitVoiceSetLog(
+    aliasUpdates: [VoiceWorkoutAliasUpdate],
+    newWorkouts: [VoiceNewWorkoutInput]
+  ) async throws -> VoiceWorkoutCommitResponse {
+    try await APIClient.shared.post(
+      "ai/workouts/voice-log/commit",
+      body: VoiceWorkoutCommitBody(aliasUpdates: aliasUpdates, newWorkouts: newWorkouts)
     )
   }
 

@@ -1,25 +1,24 @@
 import SwiftUI
-import UIKit
 
-// The Profile tab. Every section is a self-contained card: current daily
-// targets, the editable BMR details (read-only until Edit), personal data
-// (name / email / password, read-only until Edit), and account actions.
+// The profile details screen, pushed from the More tab (it used to be its own
+// tab). Every section is a self-contained card: current daily targets, the
+// editable BMR details (read-only until Edit), and personal data (name /
+// email / password, read-only until Edit). Account actions (sign out, delete)
+// live on the More screen itself, not here.
 struct ProfileView: View {
   @Environment(AppState.self) private var app
 
   var body: some View {
-    NavigationStack {
-      Group {
-        if let profile = app.profile {
-          ProfileEditor(profile: profile)
-        } else {
-          ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
-        }
+    Group {
+      if let profile = app.profile {
+        ProfileEditor(profile: profile)
+      } else {
+        ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
       }
-      .background(Color.fuelBackground)
-      .navigationTitle("Profile")
-      .navigationBarTitleDisplayMode(.large)
     }
+    .background(Color.fuelBackground)
+    .navigationTitle("Profile")
+    .navigationBarTitleDisplayMode(.large)
   }
 }
 
@@ -103,7 +102,6 @@ private struct ReadOnlyRow: View {
 
 private struct ProfileEditor: View {
   @Environment(AppState.self) private var app
-  @Environment(\.openURL) private var openURL
 
   let profile: Profile
 
@@ -121,11 +119,6 @@ private struct ProfileEditor: View {
   @FocusState private var personalFocus: PersonalField?
   private enum PersonalField: Hashable { case name, password, confirm }
 
-  // Account / danger
-  @State private var showDeleteConfirm = false
-  @State private var deleteConfirmText = ""
-  @State private var deleteError: PresentableError?
-
   init(profile: Profile) {
     self.profile = profile
     _model = State(initialValue: ProfileFormModel(profile: profile))
@@ -137,9 +130,6 @@ private struct ProfileEditor: View {
         targetsCard
         detailsCard
         personalCard
-        preferencesCard
-        signOutCard
-        deleteAccountFooter
       }
       .padding(20)
     }
@@ -430,117 +420,6 @@ private struct ProfileEditor: View {
     withAnimation(.snappy) { editingPersonal = false }
   }
 
-  // MARK: - Account / danger zone
-
-  private var currentLanguageName: String {
-    let code = Locale.current.language.languageCode?.identifier ?? "en"
-    return Locale(identifier: code).localizedString(forLanguageCode: code)?.capitalized ?? code
-  }
-
-  // Language lives in its own Preferences card — not lumped under "Account".
-  private var preferencesCard: some View {
-    ProfileCard(eyebrow: "App", title: "Preferences") {
-      VStack(alignment: .leading, spacing: 8) {
-        Button {
-          if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
-        } label: {
-          HStack(spacing: 8) {
-            Image(systemName: "globe")
-              .foregroundStyle(Color.fuelCitrusInk)
-            Text("Language")
-              .foregroundStyle(Color.fuelInk)
-            Spacer()
-            Text(currentLanguageName)
-              .foregroundStyle(Color.fuelSubtle)
-            Image(systemName: "chevron.forward")
-              .font(.footnote.weight(.semibold))
-              .foregroundStyle(Color.fuelSubtle)
-          }
-          .font(.fuelBody(.subheadline, weight: 500))
-          .padding(.vertical, 6)
-          .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        Text("Switch the app language in Settings. Fuel is available in English and Arabic.")
-          .font(.fuelBody(.caption))
-          .foregroundStyle(Color.fuelSubtle)
-      }
-    }
-  }
-
-  // A Settings-style card row: red sign-out, full-width tappable, no pill.
-  private var signOutCard: some View {
-    AsyncButton(style: .plain, action: { await app.signOut() }) {
-      Text("Sign out")
-        .font(.fuelBody(.body, weight: 600))
-        .foregroundStyle(Color.fuelDestructive)
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 16)
-        .contentShape(Rectangle())
-    }
-    .fuelCard()
-  }
-
-  // The quiet footer at the very bottom: a compact destructive text button —
-  // deliberately NOT full-width, outside any card.
-  private var deleteAccountFooter: some View {
-    VStack(spacing: 10) {
-      if let deleteError {
-        ErrorBanner(error: deleteError, onDismiss: { self.deleteError = nil })
-      }
-      Button(role: .destructive) {
-        deleteConfirmText = ""
-        showDeleteConfirm = true
-      } label: {
-        Text("Delete account")
-          .font(.fuelBody(.footnote, weight: 600))
-          .foregroundStyle(Color.fuelDestructive)
-          .padding(.horizontal, 18)
-          .padding(.vertical, 10)
-      }
-      .buttonStyle(.plain)
-      Text("Permanently removes your account and all data.")
-        .font(.fuelBody(.caption2))
-        .foregroundStyle(Color.fuelSubtle)
-    }
-    .frame(maxWidth: .infinity)
-    .padding(.top, 4)
-    .padding(.bottom, 12)
-    .alert("Delete account?", isPresented: $showDeleteConfirm) {
-      TextField(String(localized: "Type \(deleteConfirmPhrase) to confirm"), text: $deleteConfirmText)
-        .textInputAutocapitalization(.never)
-      Button("Cancel", role: .cancel) {}
-      Button("Delete", role: .destructive) {
-        Task { await deleteAccount() }
-      }
-      .disabled(!deleteConfirmMatches)
-    } message: {
-      Text("This permanently deletes your account, profile and all logged meals. This cannot be undone. Type \"\(deleteConfirmPhrase)\" to confirm.")
-    }
-  }
-
-  // Type-your-name confirmation: the display name when set, otherwise the
-  // account email — always something the owner knows and a stranger might not.
-  private var deleteConfirmPhrase: String {
-    if let name = app.displayName, !name.isEmpty { return name }
-    return app.me?.email ?? "DELETE"
-  }
-
-  private var deleteConfirmMatches: Bool {
-    deleteConfirmText.trimmingCharacters(in: .whitespacesAndNewlines)
-      .compare(deleteConfirmPhrase, options: [.caseInsensitive]) == .orderedSame
-  }
-
-  private func deleteAccount() async {
-    guard deleteConfirmMatches else { return }
-    do {
-      try await FuelAPI.deleteAccount()
-      await app.handleAccountDeleted()
-    } catch {
-      deleteError = PresentableError(error)
-    }
-  }
-
   // MARK: - Helpers
 
   private func sexLabel(_ sex: Sex) -> String {
@@ -567,6 +446,6 @@ private extension View {
 }
 
 #Preview {
-  ProfileView()
+  NavigationStack { ProfileView() }
     .environment(AppState())
 }

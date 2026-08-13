@@ -19,12 +19,16 @@ struct StatTile: View {
         }
         Text(label)
           .fuelEyebrow()
+          .lineLimit(1)
+          .minimumScaleFactor(0.8)
       }
       HStack(alignment: .firstTextBaseline, spacing: 3) {
         Text(value)
           .font(.fuelMetric)
           .foregroundStyle(Color.fuelInk)
           .contentTransition(.numericText())
+          .lineLimit(1)
+          .minimumScaleFactor(0.7)
         if let unit {
           Text(unit)
             .font(.fuelMono(.caption, weight: 600))

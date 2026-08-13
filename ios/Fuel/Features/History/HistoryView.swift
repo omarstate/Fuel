@@ -1,11 +1,13 @@
 import SwiftUI
-import Charts
 
 // The History tab. Unlike Today (a single-day rings hero), History is a
-// 30-DAY view: twin trend charts (calories in green, protein in blue) with goal
-// lines and a four-up stats strip, then a tappable LIST of days — each day row
-// pushes a DayDetailView with the full meal-by-meal, meal-type and nutrition
-// breakdown for that day.
+// 30-DAY view built around READABLE NUMBERS, not charts: a "This week" rollup
+// (avg kcal/day, days on target, the direction-aware verdict from
+// WeekAggregation), a four-up stats strip, then a tappable LIST of days — each
+// row carries a goal-outcome dot and pushes a DayDetailView with the full
+// meal-by-meal breakdown. The twin 30-day trend charts that used to sit here
+// were removed deliberately (Omar: extracting data from them was useless) —
+// don't bring bar charts back; extend the numeric summaries instead.
 struct HistoryView: View {
   @Environment(AppState.self) private var app
   @State private var model = HistoryViewModel()
@@ -43,12 +45,9 @@ struct HistoryView: View {
       // MARK: 30-day hero
       Section {
         masthead.plainRow()
-        MonthTrendCard(
-          days: model.last30,
-          calorieGoal: model.targets.calories,
-          proteinGoal: model.targets.protein
-        )
-        .plainRow()
+        if model.weekSummary.hasData {
+          WeekSummaryCard(summary: model.weekSummary).plainRow()
+        }
         statsStrip.plainRow()
       }
 
@@ -66,12 +65,16 @@ struct HistoryView: View {
         Section {
           ForEach(model.days) { group in
             NavigationLink(value: group.key) {
-              DayRow(group: group)
+              DayRow(group: group, calorieGoal: model.targets.calories)
             }
             .listRowBackground(Color.fuelSurface)
           }
         } header: {
-          Text("Daily log").fuelEyebrow().textCase(nil)
+          HStack {
+            Text("Daily log").fuelEyebrow().textCase(nil)
+            Spacer()
+            outcomeLegend
+          }
         }
       }
     }
@@ -111,6 +114,24 @@ struct HistoryView: View {
     }
   }
 
+  /// Decodes the day-row dots: on target (filled green), over (filled red),
+  /// under (hollow). VoiceOver reads each row's outcome instead.
+  private var outcomeLegend: some View {
+    HStack(spacing: 10) {
+      legendItem(.onTarget, label: "on target")
+      legendItem(.over, label: "over")
+      legendItem(.under, label: "under")
+    }
+    .accessibilityHidden(true)
+  }
+
+  private func legendItem(_ outcome: WeekAggregation.Outcome, label: LocalizedStringKey) -> some View {
+    HStack(spacing: 4) {
+      OutcomeDot(outcome: outcome, size: 6)
+      Text(label).fuelEyebrow(size: 10).textCase(nil)
+    }
+  }
+
   private var emptyRow: some View {
     ContentUnavailableView {
       Label("No history yet", systemImage: "calendar")
@@ -126,11 +147,29 @@ struct HistoryView: View {
 
 private struct DayRow: View {
   let group: HistoryViewModel.DayGroup
+  let calorieGoal: Int
 
   private var mealCount: Int { group.meals.count }
 
+  /// Same ±10% band the streaks and week summary use, so every surface agrees
+  /// on what "on target" means.
+  private var outcome: WeekAggregation.Outcome {
+    WeekAggregation.outcome(calories: group.totals.calories, goal: calorieGoal)
+  }
+
+  private var outcomeText: LocalizedStringKey {
+    switch outcome {
+    case .onTarget: return "On target"
+    case .over: return "Over goal"
+    case .under: return "Under goal"
+    }
+  }
+
   var body: some View {
     HStack(spacing: 12) {
+      OutcomeDot(outcome: outcome, size: 8)
+        .accessibilityElement()
+        .accessibilityLabel(outcomeText)
       VStack(alignment: .leading, spacing: 3) {
         Text(FuelDateFormat.dayHeader(group.date))
           .font(.fuelHeading(.headline))
@@ -154,85 +193,59 @@ private struct DayRow: View {
   }
 }
 
-// MARK: - 30-day trend charts (calories + protein)
+// MARK: - This-week rollup (replaces the old trend charts)
 
-private struct MonthTrendCard: View {
-  let days: [HistoryViewModel.HistoryDay]
-  let calorieGoal: Int
-  let proteinGoal: Int
+// The numbers a coach would actually pull out of a chart, precomputed:
+// average intake, adherence count, and the direction-aware net verdict
+// ("On track to lose ≈0.3 kg"). All from WeekAggregation — no new math.
+private struct WeekSummaryCard: View {
+  let summary: WeekSummary
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 16) {
-      trend(title: "Calories", unit: "kcal", goal: calorieGoal, tint: .fuelOlive, warnOver: true) { $0.calories }
-      Divider().overlay(Color.fuelInk.opacity(0.06))
-      trend(title: "Protein", unit: "g", goal: proteinGoal, tint: .fuelBlue, warnOver: false) { $0.protein }
+    VStack(alignment: .leading, spacing: 12) {
+      HStack(alignment: .firstTextBaseline) {
+        Text("This week").fuelEyebrow(color: .fuelVoltInk)
+        Spacer()
+        Text("\(summary.daysOnTarget) of \(summary.trackedCount) days on target")
+          .font(.fuelMono(.caption, weight: 600))
+          .foregroundStyle(Color.fuelSubtle)
+      }
+
+      HStack(alignment: .firstTextBaseline, spacing: 6) {
+        Text("\(summary.dailyAverage)")
+          .font(.fuelMono(28, weight: 700, relativeTo: .title2))
+          .foregroundStyle(Color.fuelInk)
+          .contentTransition(.numericText())
+        Text("kcal/day average").fuelEyebrow()
+      }
+
+      Text(summary.text)
+        .font(.fuelBody(.footnote, weight: 500))
+        .foregroundStyle(summary.onTrack ? Color.fuelVoltInk : Color.fuelOver)
     }
     .padding(16)
-    .frame(maxWidth: .infinity)
+    .frame(maxWidth: .infinity, alignment: .leading)
     .fuelCard()
   }
+}
 
-  private func trend(
-    title: LocalizedStringKey,
-    unit: String,
-    goal: Int,
-    tint: Color,
-    warnOver: Bool,
-    value: @escaping (HistoryViewModel.HistoryDay) -> Int
-  ) -> some View {
-    VStack(alignment: .leading, spacing: 10) {
-      HStack(alignment: .firstTextBaseline) {
-        Text(title)
-          .font(.fuelHeading(.headline, weight: 600))
-          .foregroundStyle(Color.fuelInk)
-        Spacer()
-        Text("goal \(goal) \(unit)")
-          .font(.fuelMono(.caption2, weight: 500))
-          .foregroundStyle(Color.fuelSubtle)
-          .environment(\.layoutDirection, .leftToRight)
-      }
+// MARK: - Goal-outcome dot (day rows + legend)
 
-      Chart {
-        RuleMark(y: .value("Goal", goal))
-          .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 3]))
-          .foregroundStyle(Color.fuelSubtle.opacity(0.5))
+private struct OutcomeDot: View {
+  let outcome: WeekAggregation.Outcome
+  let size: CGFloat
 
-        ForEach(Array(days.enumerated()), id: \.element.id) { index, day in
-          if day.logged {
-            BarMark(
-              x: .value("Day", index),
-              y: .value(unit, value(day)),
-              width: .fixed(6)
-            )
-            .cornerRadius(3)
-            .foregroundStyle(barColor(for: value(day), goal: goal, tint: tint, warnOver: warnOver, isToday: day.isToday))
-          }
-        }
-      }
-      .frame(height: 104)
-      .chartXScale(domain: -0.5...29.5)
-      .chartYAxis(.hidden)
-      .chartXAxis {
-        AxisMarks(values: [0, 15, 29]) { value in
-          AxisValueLabel {
-            if let i = value.as(Int.self), days.indices.contains(i) {
-              Text(days[i].isToday ? String(localized: "Today") : shortDate(days[i].date))
-                .font(.fuelMono(.caption2))
-                .foregroundStyle(Color.fuelSubtle)
-            }
-          }
-        }
-      }
+  var body: some View {
+    switch outcome {
+    case .onTarget:
+      Circle().fill(Color.fuelVolt).frame(width: size, height: size)
+    case .over:
+      Circle().fill(Color.fuelOver).frame(width: size, height: size)
+    case .under:
+      Circle()
+        .strokeBorder(Color.fuelSubtle.opacity(0.6), lineWidth: 1.5)
+        .frame(width: size, height: size)
     }
-  }
-
-  private func barColor(for value: Int, goal: Int, tint: Color, warnOver: Bool, isToday: Bool) -> Color {
-    if warnOver && goal > 0 && value > goal { return isToday ? .fuelOver : Color.fuelOver.opacity(0.8) }
-    return isToday ? tint : tint.opacity(0.55)
-  }
-
-  private func shortDate(_ date: Date) -> String {
-    date.formatted(.dateTime.month(.abbreviated).day())
   }
 }
 
