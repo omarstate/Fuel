@@ -7,6 +7,10 @@ import SwiftUI
 struct SideSwitcher: View {
   @Environment(AppState.self) private var app
 
+  /// One shared pill that GLIDES between the two segments (and morphs
+  /// green ↔ orange on the way) instead of two independent fills popping.
+  @Namespace private var pill
+
   var body: some View {
     HStack(spacing: 2) {
       segment(.nutrition, systemImage: "fork.knife", label: "Nutrition")
@@ -27,7 +31,13 @@ struct SideSwitcher: View {
         .font(.system(size: 13, weight: .semibold))
         .foregroundStyle(isActive ? Color.white : Color.fuelSubtle)
         .frame(width: 40, height: 28)
-        .background(isActive ? fill(for: side) : Color.clear, in: Capsule())
+        .background {
+          if isActive {
+            Capsule()
+              .fill(fill(for: side))
+              .matchedGeometryEffect(id: "active", in: pill)
+          }
+        }
         .contentShape(Capsule())
     }
     .buttonStyle(.plain)

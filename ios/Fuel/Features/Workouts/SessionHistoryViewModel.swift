@@ -41,7 +41,7 @@ final class SessionHistoryViewModel {
       sessions = try await repo.history()
       error = nil
     } catch {
-      self.error = PresentableError(error)
+      self.error = PresentableError.presentable(error)
     }
   }
 }

@@ -69,7 +69,7 @@ final class ActiveSessionViewModel {
       session = try await repository.session(id: sessionId)
       error = nil
     } catch {
-      self.error = PresentableError(error)
+      self.error = PresentableError.presentable(error)
     }
   }
 

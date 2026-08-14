@@ -141,7 +141,7 @@ struct MyMealsView: View {
       meals = try await FuelAPI.myMeals()
       error = nil
     } catch {
-      self.error = PresentableError(error)
+      self.error = PresentableError.presentable(error)
     }
   }
 

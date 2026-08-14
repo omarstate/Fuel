@@ -50,7 +50,7 @@ final class WorkoutsHomeViewModel {
       history = past
       error = nil
     } catch {
-      self.error = PresentableError(error)
+      self.error = PresentableError.presentable(error)
     }
   }
 }

@@ -172,6 +172,9 @@
         }
       }
     },
+    "%@, already in this session" : {
+
+    },
     "%@%@%@%@" : {
       "localizations" : {
         "en" : {
@@ -990,6 +993,9 @@
         }
       }
     },
+    "Add \"%@\"" : {
+
+    },
     "Add %@ to today" : {
 
     },
@@ -1312,6 +1318,7 @@
       }
     },
     "Analyze" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -1421,6 +1428,9 @@
       }
     },
     "Breathe. The next set is yours." : {
+
+    },
+    "Browse all exercises" : {
 
     },
     "Browse the shared catalog and add your own, tagged with every type they belong to." : {
@@ -1623,6 +1633,7 @@
       }
     },
     "Clear" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -1672,6 +1683,9 @@
         }
       }
     },
+    "Confirm" : {
+
+    },
     "Confirm new password" : {
 
     },
@@ -1716,6 +1730,9 @@
       }
     },
     "Couldn't hear an exercise. Try “bench press 80 for 8”." : {
+
+    },
+    "Couldn't listen" : {
 
     },
     "Couldn't load workout types." : {
@@ -1825,9 +1842,6 @@
       }
     },
     "Custom" : {
-
-    },
-    "Custom exercise name" : {
 
     },
     "Cutting" : {
@@ -2000,6 +2014,7 @@
 
     },
     "e.g. %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -2100,6 +2115,7 @@
 
     },
     "Egyptian Arabic or English — say the amounts too, and the meal if you want one." : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -2108,9 +2124,6 @@
           }
         }
       }
-    },
-    "Egyptian Arabic or English — say the weight and the reps." : {
-
     },
     "Egyptian menus and portions are checked first." : {
       "localizations" : {
@@ -2278,6 +2291,9 @@
     "Extend rest by 15 seconds" : {
 
     },
+    "Extend rest by 30 seconds" : {
+
+    },
     "Extra active" : {
       "localizations" : {
         "ar" : {
@@ -2370,10 +2386,11 @@
     "Fuel · Version %@" : {
 
     },
-    "Fuel can't hear you — microphone or speech access is off. Turn it on in Settings, or just type the sets." : {
+    "Fuel can't hear you — microphone or speech access is off. Turn it on in Settings, or just type it below." : {
 
     },
     "Fuel can't hear you — microphone or speech access is off. Turn it on in Settings, or just type what you ate." : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -2716,6 +2733,9 @@
     "Last type" : {
 
     },
+    "Last: %@" : {
+
+    },
     "Leave blank to keep your current password. Minimum 6 characters." : {
 
     },
@@ -2773,6 +2793,7 @@
       }
     },
     "Listening… tap to stop" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -3474,6 +3495,9 @@
     "Nobody's watching. Do it for you." : {
 
     },
+    "Not in the catalog" : {
+
+    },
     "Not set" : {
 
     },
@@ -3622,6 +3646,9 @@
     "Passwords don't match." : {
 
     },
+    "Paused — tap the wave to resume" : {
+
+    },
     "People logging it" : {
       "localizations" : {
         "ar" : {
@@ -3658,10 +3685,13 @@
         }
       }
     },
-    "Pick at least one type." : {
+    "Pick a suggestion below or browse all exercises." : {
 
     },
-    "Pick one below or type a custom name to get started." : {
+    "Pick an exercise" : {
+
+    },
+    "Pick at least one type." : {
 
     },
     "Picked from the time of day — change it if you like." : {
@@ -3841,6 +3871,9 @@
     "Ready to train?" : {
 
     },
+    "Recent" : {
+
+    },
     "Recommended for you" : {
 
     },
@@ -3928,6 +3961,9 @@
 
     },
     "Resting" : {
+
+    },
+    "Resume recording" : {
 
     },
     "Retake photo" : {
@@ -4040,13 +4076,11 @@
         }
       }
     },
-    "Say or type the sets you did" : {
-
-    },
     "Say or type the sets you did first." : {
 
     },
     "Say or type what you ate" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -4108,6 +4142,9 @@
           }
         }
       }
+    },
+    "Search exercises" : {
+
     },
     "Search meals" : {
       "localizations" : {
@@ -4245,6 +4282,9 @@
     "Shorten rest by 15 seconds" : {
 
     },
+    "Shorten rest by 30 seconds" : {
+
+    },
     "Show up. Log it. Level up." : {
 
     },
@@ -4332,10 +4372,8 @@
         }
       }
     },
-    "Speech recognition isn't available for this language on this device. Type the sets instead." : {
-
-    },
     "Speech recognition isn't available for this language on this device. Type what you ate instead." : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -4345,10 +4383,11 @@
         }
       }
     },
-    "Speech recognition stopped before it heard anything. Try again, or type the sets below." : {
+    "Speech recognition isn't available on this device. Type it below instead." : {
 
     },
     "Speech recognition stopped before it heard anything. Try again, or type what you ate below." : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -4357,6 +4396,9 @@
           }
         }
       }
+    },
+    "Speech recognition stopped before it heard anything. Type it below instead." : {
+
     },
     "Standard" : {
       "localizations" : {
@@ -4372,6 +4414,7 @@
 
     },
     "Start recording" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -4460,10 +4503,8 @@
         }
       }
     },
-    "Tap and say the sets you did" : {
-
-    },
     "Tap and say what you ate" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -4474,6 +4515,7 @@
       }
     },
     "Tap to add more, or edit below" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -4487,6 +4529,7 @@
 
     },
     "Tap to try again" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -4694,6 +4737,9 @@
         }
       }
     },
+    "Type it instead" : {
+
+    },
     "Type the 8–14 digit number printed beneath the barcode." : {
       "localizations" : {
         "ar" : {
@@ -4714,9 +4760,6 @@
         }
       }
     },
-    "Type the sets you did below" : {
-
-    },
     "Type what you ate and we'll pull the nutrition — official data where it exists, an AI estimate otherwise." : {
       "localizations" : {
         "ar" : {
@@ -4728,6 +4771,7 @@
       }
     },
     "Type what you ate below" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -4921,6 +4965,7 @@
 
     },
     "What you said" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {

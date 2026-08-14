@@ -9,8 +9,6 @@ import SwiftUI
 // on-device transcription that stays EDITABLE so a denied mic degrades into
 // typing), leaner and in the workouts accent. Three deliberate differences:
 //
-//  • The mic auto-starts on appear. Unlike meals, the user already tapped a mic
-//    to get here — asking them to tap a second one is a wasted step.
 //  • Analyzing is an inline strip, not a full-screen progress view: this is ONE
 //    ungrounded call (2–4s), not the meal flow's grounded fan-out.
 //  • The sets are written straight to Supabase under RLS, one independent insert
@@ -36,6 +34,8 @@ struct VoiceSetLogFlow: View {
   /// The mic starts itself exactly once — re-entering the capture step after a
   /// "Back" from review must not seize the mic again.
   @State private var didAutoStart = false
+  /// Capture is a mini modal; only the review step earns the full sheet.
+  @State private var detent: PresentationDetent = .height(320)
   @FocusState private var keyboardActive: Bool
 
   private let repo = WorkoutSessionRepository()
@@ -46,8 +46,16 @@ struct VoiceSetLogFlow: View {
     recorder.transcript.trimmingCharacters(in: .whitespacesAndNewlines)
   }
 
+  /// Confirm is live WHILE recording — it stops the mic itself. Requiring a stop
+  /// first would put a second tap between the user and the only action here.
   private var canAnalyze: Bool {
-    !recorder.isRecording && !analyzing && trimmedTranscript.count >= 2
+    !analyzing && trimmedTranscript.count >= 2
+  }
+
+  /// The placeholder utterance, in the app's language. The recorder no longer
+  /// has a chosen language to ask.
+  private var example: String {
+    VoiceLanguage.appDefault.example(for: .workout)
   }
 
   /// Sets carrying a weight or reps — what "Log N sets" counts and writes.
@@ -59,7 +67,7 @@ struct VoiceSetLogFlow: View {
     NavigationStack {
       Group {
         switch step {
-        case .capture: captureForm
+        case .capture: captureStep
         case .review: reviewForm
         }
       }
@@ -68,9 +76,15 @@ struct VoiceSetLogFlow: View {
       .navigationBarTitleDisplayMode(.inline)
       .toolbar { toolbarContent }
     }
-    .presentationDetents([.large])
+    .presentationDetents([.height(320), .large], selection: $detent)
     .presentationDragIndicator(.visible)
     .interactiveDismissDisabled(analyzing)
+    .onChange(of: step) { _, newStep in
+      // The review step is a full form; capture is the mini modal it came from.
+      withAnimation(.snappy) {
+        detent = newStep == .review ? .large : .height(320)
+      }
+    }
     .task {
       guard !didAutoStart else { return }
       didAutoStart = true
@@ -84,21 +98,11 @@ struct VoiceSetLogFlow: View {
   @ToolbarContentBuilder
   private var toolbarContent: some ToolbarContent {
     if step == .capture {
+      // Capture has ONE action and it lives on the Confirm button under the
+      // wave, so the toolbar keeps only the way out.
       ToolbarItem(placement: .topBarLeading) {
         Button("Cancel") { dismiss() }
           .disabled(analyzing)
-      }
-      ToolbarItem(placement: .topBarTrailing) {
-        AsyncButton(
-          style: .glassProminent,
-          tint: .fuelWorkout,
-          action: { try await analyze() },
-          onError: { err in error = PresentableError(err) }
-        ) {
-          Label("Analyze", systemImage: "waveform")
-            .font(.fuelBody(.subheadline, weight: 600))
-        }
-        .disabled(!canAnalyze)
       }
     } else {
       ToolbarItem(placement: .topBarLeading) {
@@ -125,79 +129,42 @@ struct VoiceSetLogFlow: View {
 
   // MARK: - Capture step
 
-  private var captureForm: some View {
-    Form {
+  private var captureStep: some View {
+    VStack(spacing: 10) {
       if analyzing {
-        Section {
-          analyzingStrip
-            .listRowBackground(Color.clear)
-        }
+        analyzingStrip
+          .padding(.horizontal, 20)
+          .padding(.top, 8)
       }
-
-      Section {
-        languageChips
-      } header: {
-        Text("Language")
-      } footer: {
-        Text("Egyptian Arabic or English — say the weight and the reps.")
+      if let error {
+        ErrorBanner(error: error, onDismiss: { self.error = nil })
+          .padding(.horizontal, 20)
+          .padding(.top, analyzing ? 0 : 8)
       }
-
-      Section {
-        micButton
-        if let notice = permissionNotice {
-          VStack(alignment: .leading, spacing: 4) {
-            Text(notice)
-              .font(.fuelBody(.footnote))
-              .foregroundStyle(Color.fuelWorkoutInk)
-            // iOS has already localized its own failure text, so it is shown
-            // verbatim under our copy.
-            if recorder.state == .failed, let detail = recorder.failureDetail {
-              Text(detail)
-                .font(.fuelBody(.caption2))
-                .foregroundStyle(Color.fuelSubtle)
-            }
-          }
-          .listRowBackground(Color.clear)
-        }
-      }
-
-      Section {
-        TextField("Say or type the sets you did", text: $recorder.transcript, axis: .vertical)
-          .lineLimit(3...8)
-          .font(.fuelBody(.body))
-          .foregroundStyle(Color.fuelInk)
-          .focused($keyboardActive)
-      } header: {
-        HStack {
-          Text(recorder.isRecording ? "Listening…" : "What you said")
-          Spacer()
-          if !trimmedTranscript.isEmpty {
-            Button("Clear") {
-              withAnimation(.snappy) { recorder.reset() }
-            }
-            .font(.fuelBody(.caption, weight: 600))
-            .buttonStyle(.plain)
-            .foregroundStyle(Color.fuelWorkoutInk)
-            .textCase(nil)
-          }
-        }
-      } footer: {
-        Text("e.g. \(recorder.language.example(for: .workout))")
-      }
-
-      errorSection
-    }
-    .scrollContentBackground(.hidden)
-    .scrollDismissesKeyboard(.interactively)
-    .toolbar {
-      ToolbarItemGroup(placement: .keyboard) {
-        Spacer()
-        Button("Done") { keyboardActive = false }
-      }
+      VoiceCaptureView(
+        recorder: recorder,
+        accent: .fuelWorkout,
+        accentInk: .fuelWorkoutInk,
+        example: example,
+        isAnalyzing: analyzing,
+        canConfirm: canAnalyze,
+        onConfirm: confirm
+      )
     }
   }
 
-  // One short call, so the wait is a strip above the form rather than a screen
+  /// The mini modal's one action: stop listening, then analyze. Errors surface
+  /// in the banner above the wave rather than throwing out of the button.
+  private func confirm() async {
+    await recorder.finish()
+    do {
+      try await analyze()
+    } catch {
+      self.error = PresentableError(error)
+    }
+  }
+
+  // One short call, so the wait is a strip above the wave rather than a screen
   // that throws the transcript away.
   private var analyzingStrip: some View {
     HStack(spacing: 10) {
@@ -215,92 +182,6 @@ struct VoiceSetLogFlow: View {
       RoundedRectangle(cornerRadius: FuelRadius.small, style: .continuous)
         .fill(Color.fuelWorkout.opacity(0.12))
     )
-  }
-
-  private var languageChips: some View {
-    HStack(spacing: 10) {
-      ForEach(VoiceLanguage.allCases) { language in
-        let active = recorder.language == language
-        Button {
-          withAnimation(.snappy) { recorder.setLanguage(language) }
-        } label: {
-          Text(language.label)
-            .font(.fuelBody(.subheadline, weight: active ? 600 : 500))
-            .padding(.horizontal, 14)
-            .padding(.vertical, 8)
-        }
-        .buttonStyle(.plain)
-        .foregroundStyle(active ? Color.fuelWorkoutInk : Color.fuelSubtle)
-        .background(
-          Capsule().fill(active ? Color.fuelWorkout.opacity(0.16) : Color.fuelSubtle.opacity(0.12))
-        )
-        .accessibilityAddTraits(active ? [.isButton, .isSelected] : [.isButton])
-      }
-      Spacer(minLength: 0)
-    }
-  }
-
-  private var micButton: some View {
-    VStack(spacing: 12) {
-      ZStack {
-        if recorder.isRecording {
-          ListeningRing()
-        }
-        Button {
-          toggleRecording()
-        } label: {
-          Image(systemName: recorder.isRecording ? "stop.fill" : "mic.fill")
-            .font(.system(size: 32, weight: .semibold))
-            .frame(width: 88, height: 88)
-        }
-        .buttonStyle(.glassProminent)
-        .buttonBorderShape(.circle)
-        .tint(recorder.isRecording ? .fuelOver : .fuelWorkout)
-        .disabled(recorder.state == .requestingPermission)
-        .accessibilityLabel(recorder.isRecording ? "Stop recording" : "Start recording")
-      }
-      Text(micCaption)
-        .font(.fuelBody(.footnote))
-        .foregroundStyle(Color.fuelSubtle)
-        .multilineTextAlignment(.center)
-    }
-    .frame(maxWidth: .infinity)
-    .padding(.vertical, 10)
-    .listRowBackground(Color.clear)
-  }
-
-  private var micCaption: LocalizedStringKey {
-    switch recorder.state {
-    case .recording: return "Listening… tap to stop"
-    case .requestingPermission: return "Asking for permission…"
-    case .denied, .unavailable: return "Type the sets you did below"
-    case .failed: return "Tap to try again"
-    case .stopped: return trimmedTranscript.isEmpty ? "Tap to try again" : "Tap to add more, or edit below"
-    case .idle: return "Tap and say the sets you did"
-    }
-  }
-
-  private var permissionNotice: LocalizedStringKey? {
-    switch recorder.state {
-    case .denied:
-      return "Fuel can't hear you — microphone or speech access is off. Turn it on in Settings, or just type the sets."
-    case .unavailable:
-      return "Speech recognition isn't available for this language on this device. Type the sets instead."
-    case .failed:
-      return "Speech recognition stopped before it heard anything. Try again, or type the sets below."
-    default:
-      return nil
-    }
-  }
-
-  private func toggleRecording() {
-    if recorder.isRecording {
-      recorder.stop()
-      return
-    }
-    keyboardActive = false
-    error = nil
-    Task { await recorder.start() }
   }
 
   // MARK: - Review step
@@ -508,9 +389,12 @@ struct VoiceSetLogFlow: View {
     analyzing = true
     defer { analyzing = false }
 
+    // What the recognizers decided was actually spoken. Purely typed input never
+    // sets it, so the app's own language is the fallback.
+    let lang = recorder.detectedLanguage?.apiLang ?? VoiceLanguage.appDefault.apiLang
     let response = try await FuelAPI.voiceSetLog(
       transcript: transcript,
-      lang: recorder.language.apiLang,
+      lang: lang,
       sessionExercises: existingExercises.map(VoiceSessionExerciseHint.init)
     )
     let parsed = response.exercises.map { exercise in
@@ -626,27 +510,6 @@ struct VoiceSetLogFlow: View {
       return id
     }
     return existingExercises.first { VoiceAliases.sameText($0.name, row.trimmedName) }?.id
-  }
-}
-
-// MARK: - The "we're listening" halo
-
-// Expands and fades forever while recording. It exists only inside the recording
-// branch, so appearing starts the animation and disappearing resets it.
-private struct ListeningRing: View {
-  @State private var expanded = false
-
-  var body: some View {
-    Circle()
-      .stroke(Color.fuelWorkout.opacity(0.45), lineWidth: 3)
-      .frame(width: 88, height: 88)
-      .scaleEffect(expanded ? 1.45 : 1)
-      .opacity(expanded ? 0 : 0.85)
-      .animation(.easeOut(duration: 1.4).repeatForever(autoreverses: false), value: expanded)
-      .allowsHitTesting(false)
-      .onAppear { expanded = true }
-      .onDisappear { expanded = false }
-      .accessibilityHidden(true)
   }
 }
 

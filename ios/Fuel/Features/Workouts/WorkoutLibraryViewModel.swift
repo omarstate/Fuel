@@ -121,7 +121,7 @@ final class WorkoutLibraryViewModel {
       cache.store(state, for: key)
     } catch {
       guard key == query else { return }
-      self.error = PresentableError(error)
+      self.error = PresentableError.presentable(error)
     }
   }
 
@@ -148,7 +148,7 @@ final class WorkoutLibraryViewModel {
       cache.store(state, for: key)
     } catch {
       guard key == query else { return }
-      self.error = PresentableError(error)
+      self.error = PresentableError.presentable(error)
     }
   }
 

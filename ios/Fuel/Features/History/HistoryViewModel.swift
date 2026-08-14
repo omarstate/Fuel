@@ -140,7 +140,7 @@ final class HistoryViewModel {
       perDayCalories = perDay
       error = nil
     } catch {
-      self.error = PresentableError(error)
+      self.error = PresentableError.presentable(error)
     }
   }
 

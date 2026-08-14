@@ -57,6 +57,17 @@ struct MainTabView: View {
         Color.clear
       }
     }
+    // The side switch is a spatial move, not a reload: the two sides live as
+    // adjacent panes (nutrition ← → workouts), so the whole screen pushes in
+    // the direction of travel. `.id` gives each side its own view identity —
+    // that identity swap is what the transition animates — and both directions
+    // resolve against the NEW side, so entry and exit stay one coherent push.
+    // Leading/trailing (not left/right) so the panes mirror under RTL.
+    .id(app.side)
+    .transition(.push(from: app.side == .workouts ? .trailing : .leading))
+    .animation(.snappy, value: app.side)
+    // The switch should be felt in the hand, not just seen.
+    .sensoryFeedback(.impact(weight: .light), trigger: app.side)
     // Selection must stay valid when the side (and with it the tab set) swaps —
     // and on first appearance, since the persisted side may be workouts while
     // the initial @State selection is nutrition's home.

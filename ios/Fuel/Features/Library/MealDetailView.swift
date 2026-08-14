@@ -380,7 +380,7 @@ struct MealDetailView: View {
       detail = try await FuelAPI.mealDetail(id: summary.id)
       error = nil
     } catch {
-      self.error = PresentableError(error)
+      self.error = PresentableError.presentable(error)
     }
   }
 

@@ -26,6 +26,21 @@ struct PresentableError: Identifiable, Equatable {
     self.isRetryable = isRetryable
   }
 
+  /// Wrap for display — unless the error is a cancellation, which yields nil.
+  /// Read paths driven by `.refreshable`/`.task` get cancelled as a matter of
+  /// course (letting go of a pull, leaving the screen mid-load); that is not a
+  /// failure the user can act on, so it must never reach a banner.
+  static func presentable(_ error: Error) -> PresentableError? {
+    isCancellation(error) ? nil : PresentableError(error)
+  }
+
+  static func isCancellation(_ error: Error) -> Bool {
+    if error is CancellationError { return true }
+    if let urlError = error as? URLError, urlError.code == .cancelled { return true }
+    let nsError = error as NSError
+    return nsError.domain == NSURLErrorDomain && nsError.code == NSURLErrorCancelled
+  }
+
   static func == (lhs: PresentableError, rhs: PresentableError) -> Bool {
     lhs.id == rhs.id
   }

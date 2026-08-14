@@ -99,7 +99,7 @@ final class TodayViewModel {
       self.perDayCalories = p
       self.error = nil
     } catch {
-      self.error = PresentableError(error)
+      self.error = PresentableError.presentable(error)
     }
     self.burned = await burnedToday
   }
