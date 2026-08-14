@@ -8,11 +8,13 @@ import * as aiVoiceService from "../services/ai-voice.service.js"
 
 // Parse a spoken transcript into loggable items. Writes nothing — the app shows
 // a review sheet, then commits the catalog side and inserts its own log rows.
+// `transcripts` is optional: newer app builds send BOTH speech recognizers'
+// readings of the same audio and let the model pick the real one.
 export const parseVoiceLog = async (req, res) => {
   assertSupabaseConfigured()
   assertGeminiConfigured()
-  const { transcript, lang } = voiceLogRequestSchema.parse(req.body)
-  const data = await aiVoiceService.parseVoiceLog({ transcript, lang })
+  const { transcript, lang, transcripts } = voiceLogRequestSchema.parse(req.body)
+  const data = await aiVoiceService.parseVoiceLog({ transcript, lang, transcripts })
   res.json({ data })
 }
 

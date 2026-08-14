@@ -30,12 +30,25 @@ enum VoiceCandidateScore {
   /// separated by float noise instead of by how much they actually heard.
   static let confidenceEpsilon = 0.01
 
+  /// A final result only outranks a partial when it carries at least this much
+  /// confidence. A recognizer force-fed the WRONG language still finalizes — just
+  /// with rock-bottom confidence — and that gibberish must not beat the right
+  /// language's still-partial reading.
+  static let trustedFinalConfidence = 0.35
+
   /// Does `lhs` beat `rhs`? In order:
   ///
   ///  1. Anything beats an empty transcription — a recognizer that heard
   ///     nothing must never win just because it finished first.
-  ///  2. A FINAL result beats a partial one. Only finals carry real confidence,
-  ///     so a settled answer outranks a guess still in flight.
+  ///  2. A FINAL result beats a partial one, but ONLY once its confidence
+  ///     reaches `trustedFinalConfidence`. The two recognizers are not evenly
+  ///     matched: Arabic is server-backed and delivers its final half a second
+  ///     to a second late, while English runs on-device and finalizes fast. An
+  ///     unconditional "final wins" therefore handed Arabic speech to whatever
+  ///     lookalike English words the fast recognizer settled on. A final that
+  ///     confident-less is evidence of nothing, so it skips rule 3 (a partial
+  ///     reports 0 confidence and would lose that comparison on noise alone)
+  ///     and is judged on length instead.
   ///  3. Higher average confidence, beyond the epsilon above.
   ///  4. More text. A recognizer transcribing the wrong language typically
   ///     latches onto a few short lookalike words, so the one that produced
@@ -44,7 +57,16 @@ enum VoiceCandidateScore {
   ///     ever a tiebreak between two readings of the SAME utterance.)
   static func beats(_ lhs: Candidate, _ rhs: Candidate) -> Bool {
     if lhs.text.isEmpty != rhs.text.isEmpty { return rhs.text.isEmpty }
-    if lhs.isFinal != rhs.isFinal { return lhs.isFinal }
+    if lhs.isFinal != rhs.isFinal {
+      // Exactly one side is final. A trusted final settles it outright; an
+      // untrusted one has proved nothing the partial hasn't, so both drop
+      // straight to the length tiebreak.
+      let settled = lhs.isFinal ? lhs : rhs
+      guard settled.averageConfidence >= trustedFinalConfidence else {
+        return lhs.text.count > rhs.text.count
+      }
+      return lhs.isFinal
+    }
     if abs(lhs.averageConfidence - rhs.averageConfidence) > confidenceEpsilon {
       return lhs.averageConfidence > rhs.averageConfidence
     }

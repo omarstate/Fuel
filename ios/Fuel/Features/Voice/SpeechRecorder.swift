@@ -112,6 +112,31 @@ final class SpeechRecorder {
 
   var isRecording: Bool { state == .recording }
 
+  /// Every language's latest reading of the current audio, app language first —
+  /// the analyze call sends ALL of them and lets the model decide which is real.
+  ///
+  /// Candidates hold this run's text only; `committedPrefix` (an earlier run, or
+  /// text the user typed before hitting record) is deliberately not part of them.
+  /// So once a prefix exists the candidates no longer describe the whole
+  /// utterance, and sending them would ask the model to choose between two
+  /// half-sentences — in that case there is nothing to offer and the leader
+  /// transcript alone goes up.
+  var candidateTranscripts: [(language: VoiceLanguage, text: String)] {
+    guard committedPrefix.isEmpty else { return [] }
+    return activeLanguages.compactMap { language in
+      guard let candidate = candidates[language] else { return nil }
+      // The backend requires 2–1200 chars per reading; a 1-character lookalike
+      // from the losing recognizer must drop out here, not 400 the request.
+      let trimmed = candidate.text.trimmingCharacters(in: .whitespacesAndNewlines)
+      guard trimmed.count >= 2, trimmed.count <= 1200 else { return nil }
+      return (language, candidate.text)
+    }
+  }
+
+  /// True when the user has typed over the recognized text — their edit is then
+  /// the only truth and the raw recognizer candidates must not be sent.
+  var transcriptWasEdited: Bool { transcript != lastPublishedTranscript }
+
   // MARK: - Start
 
   func start() async {
@@ -234,9 +259,15 @@ final class SpeechRecorder {
   /// them is the difference between deciding the language on evidence and
   /// deciding it on a partial-result tiebreak. Bounded, so a wedged recognizer
   /// can never hold up the analyze call.
+  ///
+  /// The budget is generous because the race is lopsided: Arabic is server-backed
+  /// and its final regularly lands 0.5–1s after `endAudio`, long after the
+  /// on-device English one has settled. The analyze spinner is already on screen
+  /// by then, and that late final flips BOTH the winning transcript and
+  /// `detectedLanguage`, so the extra beat buys the whole decision.
   func finish() async {
     stop()
-    let deadline = Date().addingTimeInterval(0.4)
+    let deadline = Date().addingTimeInterval(1.2)
     while !pending.isEmpty, Date() < deadline {
       try? await Task.sleep(for: .milliseconds(40))
     }
@@ -300,8 +331,11 @@ final class SpeechRecorder {
       sawTextThisRun = true
       publishLeadingCandidate()
     } else if isFinal, var existing = candidates[language] {
-      // A final that adds no new words still promotes what we already heard —
-      // that promotion is what lets it outrank the other language's partial.
+      // A final that adds no new words still promotes what we already heard.
+      // With the trusted-confidence floor a zero-confidence promotion no longer
+      // outranks the other language's partial by itself — but it keeps this
+      // reading alive for the length tiebreak and the backend's dual-reading
+      // call, so the promotion is still worth recording.
       existing.isFinal = true
       candidates[language] = existing
     }

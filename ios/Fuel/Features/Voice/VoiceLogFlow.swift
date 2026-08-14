@@ -456,11 +456,21 @@ struct VoiceLogFlow: View {
       throw APIError.server(message: String(localized: "Say or type what you ate first."), status: 400)
     }
 
+    // Both recognizers transcribed the same audio, and picking a winner locally
+    // is a guess — when we still have both readings intact, send them and let the
+    // model judge which is real speech. A transcript the user typed over is their
+    // words, not a recognizer's, so that path sends only what's in the field.
+    let readings = recorder.transcriptWasEdited
+      ? []
+      : recorder.candidateTranscripts.map { VoiceTranscriptReading(lang: $0.language.apiLang, text: $0.text) }
+
     error = nil
     analyzing = true
     defer { analyzing = false }
 
-    let response = try await FuelAPI.voiceLog(transcript: transcript, lang: lang)
+    let response = readings.count >= 2
+      ? try await FuelAPI.voiceLog(transcript: transcript, lang: lang, readings: readings)
+      : try await FuelAPI.voiceLog(transcript: transcript, lang: lang)
     let parsed = response.items.map(VoiceRow.init(item:))
     guard !parsed.isEmpty else {
       throw APIError.server(

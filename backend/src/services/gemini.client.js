@@ -100,13 +100,29 @@ const callModel = async (model, body) => {
  * generateJson — send a prompt (optionally with an inline image) to Gemini and
  * parse the JSON reply.
  * @param {{ prompt: string, image?: { mimeType: string, data: string } | null,
- *   useSearch?: boolean, temperature?: number }} args
+ *   useSearch?: boolean, temperature?: number, json?: boolean,
+ *   thinkingBudget?: number }} args
  *   `image.data` is raw base64 (no data-URL prefix). When present it's sent as
  *   an inline_data part before the text, so Gemini reads the photo alongside
  *   the instructions — this is what powers label extraction.
+ *   `json: true` asks for a `application/json` response mime type. It is
+ *   incompatible with grounding, so `useSearch` wins when both are passed.
+ *   `thinkingBudget` (any finite number, `0` to disable thinking) sets
+ *   `generationConfig.thinkingConfig` on the PRIMARY call only — the fallback
+ *   model (gemini-flash-lite-latest) 400s on thinkingConfig, so the retry is
+ *   sent without it rather than dying on the very call meant to save us.
+ *   Replies are still run through the fence-stripping loose parser, because the
+ *   fallback model may ignore the mime type.
  * @returns {Promise<{ data: unknown, sources: {uri:string,title:string|null}[], modelUsed: string }>}
  */
-export const generateJson = async ({ prompt, image = null, useSearch = false, temperature = 0.2 }) => {
+export const generateJson = async ({
+  prompt,
+  image = null,
+  useSearch = false,
+  temperature = 0.2,
+  json = false,
+  thinkingBudget = undefined,
+}) => {
   const parts = []
   if (image) parts.push({ inline_data: { mime_type: image.mimeType, data: image.data } })
   parts.push({ text: prompt })
@@ -116,6 +132,9 @@ export const generateJson = async ({ prompt, image = null, useSearch = false, te
     generationConfig: { temperature },
   }
   if (useSearch) body.tools = [{ google_search: {} }]
+  // Structured-output mode and grounding cannot be combined — grounding wins.
+  if (json && !useSearch) body.generationConfig.responseMimeType = "application/json"
+  if (Number.isFinite(thinkingBudget)) body.generationConfig.thinkingConfig = { thinkingBudget }
 
   const primary = env.GEMINI_MODEL
   const fallback = env.GEMINI_FALLBACK_MODEL
@@ -124,7 +143,14 @@ export const generateJson = async ({ prompt, image = null, useSearch = false, te
   let modelUsed = primary
 
   if (!result.ok && RETRYABLE_STATUSES.has(result.status) && fallback && fallback !== primary) {
-    result = await callModel(fallback, body)
+    // The fallback model rejects thinkingConfig outright (400 INVALID_ARGUMENT),
+    // and a 400 is not retryable — strip it so the fallback can actually run.
+    let fallbackBody = body
+    if (body.generationConfig.thinkingConfig) {
+      const { thinkingConfig, ...generationConfig } = body.generationConfig
+      fallbackBody = { ...body, generationConfig }
+    }
+    result = await callModel(fallback, fallbackBody)
     modelUsed = fallback
   }
 

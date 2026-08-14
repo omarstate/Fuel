@@ -189,11 +189,19 @@ enum FuelAPI {
 
   // MARK: - Voice logging
 
-  /// POST /ai/meals/voice-log (auth) -> VoiceLogResponse. The spoken transcript
-  /// in, matched catalog meals + grounded estimates out. Slow (one parse call
-  /// plus a grounded call per unmatched item), but within the 75s timeout.
-  static func voiceLog(transcript: String, lang: String = AppLanguage.current) async throws -> VoiceLogResponse {
-    try await APIClient.shared.post("ai/meals/voice-log", body: VoiceLogBody(transcript: transcript, lang: lang))
+  /// POST /ai/meals/voice-log (auth) -> VoiceLogResponse. ONE Gemini call parses,
+  /// matches against the catalog, and estimates unmatched items — typically 3–6s.
+  /// When both recognizers heard something, both readings are sent and the model
+  /// decides which is the real speech.
+  static func voiceLog(
+    transcript: String,
+    lang: String = AppLanguage.current,
+    readings: [VoiceTranscriptReading] = []
+  ) async throws -> VoiceLogResponse {
+    try await APIClient.shared.post(
+      "ai/meals/voice-log",
+      body: VoiceLogBody(transcript: transcript, lang: lang, transcripts: readings.count >= 2 ? readings : nil)
+    )
   }
 
   /// POST /ai/meals/voice-log/commit (auth) -> VoiceCommitResponse. Persists the

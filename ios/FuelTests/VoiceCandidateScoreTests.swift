@@ -27,6 +27,28 @@ struct VoiceCandidateScoreTests {
     #expect(!VoiceCandidateScore.beats(stillGoing, settled))
   }
 
+  // The Arabic recognizer is server-backed and finalizes late; the English one
+  // runs on-device and finalizes fast — on Arabic speech it settles on lookalike
+  // words with rock-bottom confidence. That final must not outrank the real,
+  // still-partial Arabic reading.
+  @Test("A gibberish low-confidence final loses to a longer partial")
+  func lowConfidenceFinalLosesToLongerPartial() {
+    let gibberish = Candidate(text: "tell at bay button", averageConfidence: 0.1, isFinal: true)
+    let realButPartial = Candidate(text: "تلات بيضات مسلوقين وتوستتين", averageConfidence: 0, isFinal: false)
+    #expect(VoiceCandidateScore.beats(realButPartial, gibberish))
+    #expect(!VoiceCandidateScore.beats(gibberish, realButPartial))
+  }
+
+  // Distrusting a weak final only demotes it to the length tiebreak — it doesn't
+  // hand the win to a partial that heard less.
+  @Test("A low-confidence final still beats a SHORTER partial")
+  func lowConfidenceFinalBeatsShorterPartial() {
+    let settled = Candidate(text: "three boiled eggs and toast", averageConfidence: 0.1, isFinal: true)
+    let barelyStarted = Candidate(text: "تلات", averageConfidence: 0, isFinal: false)
+    #expect(VoiceCandidateScore.beats(settled, barelyStarted))
+    #expect(!VoiceCandidateScore.beats(barelyStarted, settled))
+  }
+
   @Test("Between two finals, the more confident one wins")
   func confidenceDecidesBetweenFinals() {
     let confident = Candidate(text: "eggs", averageConfidence: 0.85, isFinal: true)

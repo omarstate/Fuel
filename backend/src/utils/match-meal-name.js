@@ -119,9 +119,17 @@ export const deriveFactor = (quantity, unit, servingSize) => {
     }
   }
 
-  // "1 egg (50g)", "1 slice", "١ رغيف" — a per-piece serving scales by count.
-  if (/^[1١] /.test(serving) && Number.isInteger(quantity)) {
-    return Math.min(Math.max(quantity, 0.1), 20)
+  // "1 egg (50g)", "2 eggs", "١ رغيف" — a per-piece serving scales by the
+  // count of pieces it covers: spoken "3 eggs" against "2 eggs" → 1.5. Metric
+  // servings ("100 g") were handled above and must not be read as piece counts.
+  if (!metric && Number.isInteger(quantity)) {
+    const pieces = /^([0-9٠-٩]+) /.exec(serving)
+    if (pieces) {
+      const base = Number(pieces[1].replace(/[٠-٩]/g, (d) => "٠١٢٣٤٥٦٧٨٩".indexOf(d)))
+      if (Number.isFinite(base) && base > 0) {
+        return Math.min(Math.max(quantity / base, 0.1), 20)
+      }
+    }
   }
 
   return 1

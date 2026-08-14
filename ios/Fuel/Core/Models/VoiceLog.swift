@@ -12,9 +12,20 @@ import Foundation
 // error. Numerics decode leniently (int or double) like EstimatedMeal, since the
 // values originate from a language model.
 
+// One recognizer's reading of the utterance, tagged with the language it was
+// transcribed in.
+struct VoiceTranscriptReading: Encodable, Sendable {
+  let lang: String
+  let text: String
+}
+
 struct VoiceLogBody: Encodable, Sendable {
   let transcript: String
   let lang: String
+  /// Both recognizers' readings of the same audio, when available — the backend
+  /// model decides which one is the real speech. Nil for typed/edited input,
+  /// and synthesized `Encodable` drops the key entirely when it is.
+  let transcripts: [VoiceTranscriptReading]?
 }
 
 enum VoiceConfidence: String, Decodable, Equatable, Sendable {
