@@ -78,6 +78,20 @@ The `GEMINI_API_KEY` lives only in `backend/.env`; it must never reach the front
   >115% of remaining kcal) with reasons generated from the numbers. It fires on nearly every meal
   log, which made per-call AI impractical on a free-tier quota. Keep it deterministic.
 
+### Barcode lookup (Open Food Facts, three surfaces)
+OFF rate-limits per IP and Render's free tier shares egress IPs, so the deployed backend gets
+chronic 429s that a user's own device never sees. The design assumes that:
+- Backend `GET /api/meals/barcode/:code` (`services/barcode.service.js`) is cache-first — a
+  Supabase `barcode_products` table (migration 0012, fail-soft if not applied). Only 'off'-sourced
+  rows short-circuit; 'client'-sourced rows are unverified hints that never block a live OFF fetch
+  and are deleted when OFF denies the barcode.
+- On any 5xx/network failure, **both clients call OFF directly from the device** and best-effort
+  `POST /api/meals/barcode/:code` the result into the shared cache ('client' source, zod-bounded,
+  can never overwrite an 'off' row). 4xx errors surface to the user, never trigger the fallback.
+- The OFF normalization exists **three times on purpose**: `backend/src/services/barcode.service.js`,
+  `frontend/src/lib/openfoodfacts.ts`, `ios/Fuel/Core/Networking/OpenFoodFacts.swift`. If you change
+  one, change all three (string-number parsing is deliberately POSIX/`Number()`-strict everywhere).
+
 ### Nutrition targets (BMR)
 Mifflin-St Jeor math exists twice **on purpose**: `backend/src/utils/compute-targets.js`
 (authoritative, persists to `profiles`) and `frontend/src/lib/nutrition.ts` (mirror for live form

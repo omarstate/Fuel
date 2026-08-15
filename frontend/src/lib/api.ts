@@ -2,12 +2,24 @@
 // Personal-log writes still go straight through supabase-js — see use-meals.ts.
 
 import { supabase } from "@/lib/supabase"
+import { lookupBarcodeDirect } from "@/lib/openfoodfacts"
 import type { ActivityLevel, Pace, Sex } from "@/lib/nutrition"
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:4000/api"
 
 type ApiEnvelope<T> = { data: T }
 type ApiErrorEnvelope = { error: { message: string; details?: unknown } }
+
+/** Error from the backend API with the HTTP status attached; `status` is
+ * undefined when the request never reached the backend (network failure). */
+export class ApiRequestError extends Error {
+  readonly status?: number
+  constructor(message: string, status?: number) {
+    super(message)
+    this.name = "ApiRequestError"
+    this.status = status
+  }
+}
 
 export type Category = {
   id: string
@@ -91,7 +103,7 @@ async function requestBody<T = unknown>(path: string, init?: RequestInit): Promi
       ...init,
     })
   } catch {
-    throw new Error(
+    throw new ApiRequestError(
       "Couldn't reach the Fuel API. Start the backend with `cd backend && npm run dev`."
     )
   }
@@ -106,7 +118,7 @@ async function requestBody<T = unknown>(path: string, init?: RequestInit): Promi
   if (!res.ok) {
     const message =
       (body as ApiErrorEnvelope | null)?.error?.message ?? res.statusText ?? "Request failed"
-    throw new Error(message)
+    throw new ApiRequestError(message, res.status)
   }
 
   return body as T
@@ -331,10 +343,64 @@ export type BarcodeProduct = {
   note: string
 }
 
-/** Look up a product by barcode via the backend's Open Food Facts proxy. Never
- * throws for an unknown code — that comes back as `{ found: false }`. */
-export function lookupBarcode(code: string): Promise<BarcodeProduct> {
-  return request<BarcodeProduct>(`/meals/barcode/${encodeURIComponent(code)}`)
+const BARCODE_RE = /^\d{8,14}$/
+
+/** Look up a product by barcode. Tries the backend proxy first (it serves a
+ * shared Supabase cache); if that fails — most often because Open Food Facts
+ * rate-limits the backend's shared Render egress IP — falls back to calling
+ * OFF directly from the browser, then best-effort reports the result so the
+ * shared cache still fills. Never throws for an unknown code — that comes
+ * back as `{ found: false }`. */
+export async function lookupBarcode(code: string): Promise<BarcodeProduct> {
+  try {
+    return await request<BarcodeProduct>(`/meals/barcode/${encodeURIComponent(code)}`)
+  } catch (err) {
+    // A malformed code (the scanner can decode QR text) got a correct 400 —
+    // don't retry it against OFF, surface the backend's message.
+    if (!BARCODE_RE.test(code.trim())) throw err
+    // Mirror iOS shouldFallBackToDirectLookup: only server-side failures (5xx)
+    // and transport errors warrant the direct path. A 4xx — expired session,
+    // validation — is actionable and must surface, not be masked by a lookup
+    // the user can't act on (the follow-up log write would fail anyway).
+    const status = err instanceof ApiRequestError ? err.status : undefined
+    if (status !== undefined && status < 500) throw err
+    const product = await lookupBarcodeDirect(code)
+    if (canReport(product)) void reportBarcode(product).catch(() => {})
+    return product
+  }
+}
+
+/** Mirrors the backend's barcodeReportSchema bounds so junk OFF data (e.g. kJ
+ * typed into the kcal field) is shown to the scanning user — who can fix it in
+ * review — but never contributed to the shared cache. */
+function canReport(product: BarcodeProduct): boolean {
+  return (
+    product.ok &&
+    !!product.name &&
+    product.calories >= 1 &&
+    product.calories <= 1000 &&
+    product.protein <= 100 &&
+    product.carbs <= 100 &&
+    product.fat <= 100
+  )
+}
+
+/** Contribute a successful direct-OFF lookup to the backend's shared cache.
+ * Fire-and-forget: the user already has their product either way. */
+function reportBarcode(product: BarcodeProduct): Promise<unknown> {
+  return requestBody(`/meals/barcode/${encodeURIComponent(product.barcode)}`, {
+    method: "POST",
+    body: JSON.stringify({
+      name: product.name,
+      brand: product.brand,
+      servingSize: product.servingSize,
+      servingGrams: product.servingGrams,
+      calories: product.calories,
+      protein: product.protein,
+      carbs: product.carbs,
+      fat: product.fat,
+    }),
+  })
 }
 
 export type AiCatalogMealInput = {

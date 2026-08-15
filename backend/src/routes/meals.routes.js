@@ -12,6 +12,7 @@ import {
   estimateMeals,
   extractMealPhoto,
   lookupBarcode,
+  reportBarcode,
   createAiCatalogMeals,
 } from "../controllers/meals.controller.js"
 
@@ -24,6 +25,7 @@ mealsRouter.get("/meals/mine", requireAuth, asyncHandler(listMyMeals))
 mealsRouter.get("/meals", asyncHandler(listMeals))
 mealsRouter.get("/meals/:id", asyncHandler(getMealById))
 mealsRouter.get("/meals/barcode/:code", requireAuth, asyncHandler(lookupBarcode))
+mealsRouter.post("/meals/barcode/:code", requireAuth, asyncHandler(reportBarcode))
 mealsRouter.post("/meals/estimate", requireAuth, asyncHandler(estimateMeals))
 mealsRouter.post("/meals/photo-extract", requireAuth, asyncHandler(extractMealPhoto))
 mealsRouter.post("/meals/ai-catalog", requireAuth, asyncHandler(createAiCatalogMeals))

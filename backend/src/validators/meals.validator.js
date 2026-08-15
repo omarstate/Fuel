@@ -73,6 +73,41 @@ export const barcodeParamSchema = z
   .trim()
   .regex(/^\d{8,14}$/, "That doesn't look like a valid barcode.")
 
+// A product a client fetched from Open Food Facts directly (after this server
+// was rate-limited) being contributed to the shared barcode cache. Values are
+// per-100g, so macros are physically bounded at 100g and calories at ~900
+// (pure fat); anything outside that is bad OFF data we don't want cached.
+// Display strings are truncated rather than rejected — an over-long OFF
+// serving description shouldn't cost the cache a whole product. The numeric
+// bounds stay strict: they're the integrity-critical part, and both clients
+// mirror them before reporting.
+export const barcodeReportSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(1, "name is required")
+    .transform((value) => value.slice(0, 200)),
+  brand: z
+    .string()
+    .trim()
+    .nullish()
+    .transform((value) => (value || null)?.slice(0, 120) ?? null),
+  servingSize: z
+    .string()
+    .trim()
+    .optional()
+    .default("")
+    .transform((value) => value.slice(0, 120)),
+  servingGrams: z
+    .number()
+    .nullish()
+    .transform((value) => (value != null && value > 0 && value <= 5000 ? value : null)),
+  calories: z.number().int().min(1, "Only report products with calories.").max(1000),
+  protein: z.number().int().min(0).max(100),
+  carbs: z.number().int().min(0).max(100),
+  fat: z.number().int().min(0).max(100),
+})
+
 // Reviewed AI meals being committed to the shared catalog. Same macro rules as
 // a manual catalog meal, but no categoryId (the server forces the "AI"
 // category) and the note is carried in `description`.

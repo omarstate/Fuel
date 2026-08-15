@@ -128,9 +128,78 @@ enum FuelAPI {
   /// GET /meals/barcode/:code (auth) -> BarcodeProduct. `code` is 8–14 digits;
   /// an unknown code comes back as `found: false` (soft state), a real outage as
   /// a 503. Percent-encodes the code defensively even though it's digits-only.
+  ///
+  /// When the backend can't answer (its shared Render egress IP is often
+  /// rate-limited by Open Food Facts), falls back to calling OFF directly from
+  /// the device, then best-effort reports the result to the backend so the
+  /// shared cache still fills. `.unauthorized` is NOT retried — an expired
+  /// session needs a sign-in, and the follow-up log write would fail anyway.
   static func barcodeLookup(code: String) async throws -> BarcodeProduct {
     let encoded = code.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? code
-    return try await APIClient.shared.get("meals/barcode/\(encoded)")
+    do {
+      return try await APIClient.shared.get("meals/barcode/\(encoded)")
+    } catch let error as APIError where shouldFallBackToDirectLookup(error) {
+      let product = try await OpenFoodFactsDirect.lookup(code: code)
+      if let name = reportableName(of: product) {
+        Task { try? await reportBarcode(product, name: name) }
+      }
+      return product
+    }
+  }
+
+  private static func shouldFallBackToDirectLookup(_ error: APIError) -> Bool {
+    switch error {
+    case .timeout, .network, .decoding: return true
+    case let .server(_, status): return status >= 500
+    case .unauthorized: return false
+    }
+  }
+
+  /// Mirrors the backend's barcodeReportSchema bounds so junk OFF data (e.g.
+  /// kJ typed into the kcal field) is shown to the scanning user — who can fix
+  /// it in review — but never contributed to the shared cache. Returns the
+  /// name to report with, or nil when the product shouldn't be reported.
+  private static func reportableName(of product: BarcodeProduct) -> String? {
+    // Range checks stay in Double space: Int(hugeDouble) traps, and OFF junk
+    // data can be arbitrarily large.
+    guard product.ok, let name = product.name,
+          (1.0...1000.0).contains(product.calories.rounded()),
+          product.protein.rounded() <= 100,
+          product.carbs.rounded() <= 100,
+          product.fat.rounded() <= 100
+    else { return nil }
+    return name
+  }
+
+  private struct BarcodeReportBody: Encodable {
+    let name: String
+    let brand: String?
+    let servingSize: String
+    let servingGrams: Double?
+    let calories: Int
+    let protein: Int
+    let carbs: Int
+    let fat: Int
+  }
+
+  private struct BarcodeReportResult: Decodable { let saved: Bool }
+
+  /// POST /meals/barcode/:code (auth). Contributes a successful direct-OFF
+  /// lookup to the backend's shared cache. Fire-and-forget.
+  @discardableResult
+  private static func reportBarcode(_ product: BarcodeProduct, name: String) async throws -> BarcodeReportResult {
+    let encoded = product.barcode.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? product.barcode
+    let body = BarcodeReportBody(
+      name: name,
+      brand: product.brand,
+      servingSize: product.servingSize,
+      servingGrams: product.servingGrams,
+      calories: Int(product.calories.rounded()),
+      protein: Int(product.protein.rounded()),
+      carbs: Int(product.carbs.rounded()),
+      fat: Int(product.fat.rounded())
+    )
+    return try await APIClient.shared.post("meals/barcode/\(encoded)", body: body)
   }
 
   /// POST /meals/photo-extract (auth) -> ExtractedLabel. `imageBase64` is raw

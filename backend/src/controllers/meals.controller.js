@@ -6,12 +6,16 @@ import {
   estimateMealsSchema,
   extractMealPhotoSchema,
   barcodeParamSchema,
+  barcodeReportSchema,
   aiCatalogMealsSchema,
 } from "../validators/meals.validator.js"
 import * as mealsService from "../services/meals.service.js"
 import { estimateMeals as estimateMealsAi } from "../services/ai-nutrition.service.js"
 import { extractLabel } from "../services/ai-label.service.js"
-import { lookupBarcode as lookupBarcodeOff } from "../services/barcode.service.js"
+import {
+  lookupBarcode as lookupBarcodeOff,
+  reportBarcode as reportBarcodeToCache,
+} from "../services/barcode.service.js"
 
 const toPositiveInt = (value) => {
   const parsed = Number.parseInt(value, 10)
@@ -89,14 +93,26 @@ export const extractMealPhoto = async (req, res) => {
   res.json({ data })
 }
 
-// Look up a product's nutrition by barcode via Open Food Facts. No Supabase or
-// Gemini dependency. Returns the same normalized shape as photo extraction so
-// the client shares the review/scale/log step; an unknown code comes back as
-// { found: false } rather than an error.
+// Look up a product's nutrition by barcode — Supabase cache first (fails soft
+// if migration 0012 hasn't run), then Open Food Facts. Returns the same
+// normalized shape as photo extraction so the client shares the review/scale/
+// log step; an unknown code comes back as { found: false } rather than an
+// error. A 503 here tells clients to try OFF directly from the device.
 export const lookupBarcode = async (req, res) => {
   const code = barcodeParamSchema.parse(req.params.code)
   const data = await lookupBarcodeOff(code)
   res.json({ data })
+}
+
+// A client that fell back to a direct OFF lookup reports the product here so
+// the shared cache fills even while OFF rate-limits this server's IP. No
+// assertSupabaseConfigured: the report is best-effort and no-ops without
+// Supabase rather than making the client surface a pointless 503.
+export const reportBarcode = async (req, res) => {
+  const code = barcodeParamSchema.parse(req.params.code)
+  const product = barcodeReportSchema.parse(req.body)
+  await reportBarcodeToCache(code, product)
+  res.status(201).json({ data: { saved: true } })
 }
 
 // Commit reviewed AI meals to the shared catalog under the "AI" category.
