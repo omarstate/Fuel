@@ -7,9 +7,16 @@ import SwiftUI
 //
 // Read-only apart from "Add workout": picking an exercise happens inside a live
 // session, not here, so a card has no add button — unlike MealCatalogCard.
+//
+// Two ways in to "add", behind one Add menu: BROWSE pulls from the mirrored
+// free-exercise-db dataset (~870 movements, one tap each) and is the path
+// almost everyone wants; MANUAL is WorkoutForm, kept for the gym-specific
+// machine the dataset has never heard of.
 struct WorkoutLibraryView: View {
+  @Environment(AppState.self) private var app
   @State private var model = WorkoutLibraryViewModel()
   @State private var showCreate = false
+  @State private var showBrowse = false
 
   var body: some View {
     @Bindable var model = model
@@ -65,6 +72,15 @@ struct WorkoutLibraryView: View {
     .sheet(isPresented: $showCreate) {
       WorkoutForm { _ in Task { await model.invalidate() } }
     }
+    .sheet(isPresented: $showBrowse) {
+      // Fires only if something was actually added. The revision bump is what
+      // reaches the OTHER workout surfaces (home, the session's exercise
+      // picker); this screen's own cache is dropped directly.
+      ExerciseCatalogSheet {
+        app.bumpWorkoutRevision()
+        Task { await model.invalidate() }
+      }
+    }
   }
 
   // MARK: - Header
@@ -79,16 +95,26 @@ struct WorkoutLibraryView: View {
             .foregroundStyle(Color.fuelInk)
         }
         Spacer()
-        Button {
-          showCreate = true
+        Menu {
+          Button {
+            showBrowse = true
+          } label: {
+            Label("Browse exercises", systemImage: "square.grid.2x2")
+          }
+          Button {
+            showCreate = true
+          } label: {
+            Label("Add manually", systemImage: "square.and.pencil")
+          }
         } label: {
           Label("Add", systemImage: "plus")
             .font(.fuelBody(.subheadline, weight: 600))
         }
         .buttonStyle(.glassProminent)
         .tint(.fuelWorkout)
+        .accessibilityLabel("Add a workout")
       }
-      Text("Browse the shared catalog and add your own, tagged with every type they belong to.")
+      Text("Browse 800+ ready-made exercises or add your own, tagged with every type they belong to.")
         .font(.fuelBody(.subheadline))
         .foregroundStyle(Color.fuelSubtle)
     }
@@ -212,9 +238,12 @@ struct WorkoutLibraryView: View {
       } description: {
         Text("Try a different type — or add the first one to the catalog.")
       } actions: {
-        Button("Add a workout") { showCreate = true }
+        Button("Browse exercises") { showBrowse = true }
           .buttonStyle(.glassProminent)
           .tint(.fuelWorkout)
+        Button("Add manually") { showCreate = true }
+          .buttonStyle(.glass)
+          .tint(.fuelWorkoutInk)
       }
       .padding(.top, 40)
     }
@@ -223,4 +252,5 @@ struct WorkoutLibraryView: View {
 
 #Preview {
   WorkoutLibraryView()
+    .environment(AppState())
 }

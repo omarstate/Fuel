@@ -256,6 +256,55 @@ enum FuelAPI {
     try await APIClient.shared.post("workouts", body: input)
   }
 
+  // MARK: - Exercise catalog (free-exercise-db mirror)
+
+  /// GET /workouts/exercise-catalog (auth) -> { data: [CatalogExercise], count }.
+  /// Filters are all optional and omitted when empty. Returns a 503 naming
+  /// migration 0013 until the table exists — surfaced as a normal APIError, so
+  /// the picker shows it in its banner like any other failure.
+  static func exerciseCatalog(
+    search: String,
+    category: String?,
+    muscle: String?,
+    limit: Int,
+    offset: Int
+  ) async throws -> (items: [CatalogExercise], count: Int) {
+    var query: [URLQueryItem] = [
+      URLQueryItem(name: "limit", value: String(limit)),
+      URLQueryItem(name: "offset", value: String(offset)),
+    ]
+    let trimmed = search.trimmingCharacters(in: .whitespacesAndNewlines)
+    if !trimmed.isEmpty { query.append(URLQueryItem(name: "search", value: trimmed)) }
+    if let category, !category.isEmpty {
+      query.append(URLQueryItem(name: "category", value: category))
+    }
+    if let muscle, !muscle.isEmpty {
+      query.append(URLQueryItem(name: "muscle", value: muscle))
+    }
+    return try await APIClient.shared.list("workouts/exercise-catalog", query: query)
+  }
+
+  /// POST /workouts/exercise-catalog/:slug/add (auth) -> the curated Workout and
+  /// whether it was created now. Already-present is a 200 with `created: false`,
+  /// not an error.
+  static func addCatalogExercise(slug: String) async throws -> AddExerciseResult {
+    let encoded = slug.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? slug
+    return try await APIClient.shared.post(
+      "workouts/exercise-catalog/\(encoded)/add",
+      body: EmptyBody()
+    )
+  }
+
+  /// POST /workouts/exercise-catalog/import (auth, ADMIN only -> 403 otherwise).
+  /// Re-fetches the whole dataset and upserts it; safe to re-run.
+  @discardableResult
+  static func importExerciseCatalog() async throws -> ExerciseImportResult {
+    try await APIClient.shared.post("workouts/exercise-catalog/import", body: EmptyBody())
+  }
+
+  /// Placeholder `{}` body for POSTs whose input is entirely in the path.
+  private struct EmptyBody: Encodable {}
+
   // MARK: - Voice logging
 
   /// POST /ai/meals/voice-log (auth) -> VoiceLogResponse. ONE Gemini call parses,

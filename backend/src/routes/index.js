@@ -4,6 +4,7 @@ import { waitlistRouter } from "./waitlist.routes.js"
 import { categoriesRouter } from "./categories.routes.js"
 import { mealsRouter } from "./meals.routes.js"
 import { workoutCategoriesRouter } from "./workout-categories.routes.js"
+import { exerciseCatalogRouter } from "./exercise-catalog.routes.js"
 import { workoutsRouter } from "./workouts.routes.js"
 import { meRouter } from "./me.routes.js"
 import { profileRouter } from "./profile.routes.js"
@@ -19,6 +20,10 @@ apiRouter.use(waitlistRouter)
 apiRouter.use(categoriesRouter)
 apiRouter.use(mealsRouter)
 apiRouter.use(workoutCategoriesRouter)
+// MUST precede workoutsRouter: its routes sit under /workouts/exercise-catalog,
+// and workoutsRouter's GET /workouts/:id would otherwise match first and treat
+// "exercise-catalog" as a workout id.
+apiRouter.use(exerciseCatalogRouter)
 apiRouter.use(workoutsRouter)
 apiRouter.use(meRouter)
 apiRouter.use(profileRouter)

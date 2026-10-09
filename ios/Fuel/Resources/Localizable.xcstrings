@@ -15,6 +15,76 @@
         }
       }
     },
+    "A full meal or a restaurant order." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "وجبة كاملة أو طلب من مطعم."
+          }
+        }
+      }
+    },
+    "e.g. a medium banana" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "مثال: موزة متوسطة"
+          }
+        }
+      }
+    },
+    "Item" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "صنف"
+          }
+        }
+      }
+    },
+    "Just one item — add the portion if you know it." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "صنف واحد بس — اكتب الكمية لو تعرفها."
+          }
+        }
+      }
+    },
+    "Log to" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "سجّل في"
+          }
+        }
+      }
+    },
+    "Mode" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "النوع"
+          }
+        }
+      }
+    },
+    "One snack or dish — no place needed." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "صنف أو سناك واحد — من غير مكان."
+          }
+        }
+      }
+    },
     "·" : {
       "localizations" : {
         "ar" : {
@@ -174,6 +244,16 @@
     },
     "%@, already in this session" : {
 
+    },
+    "%@, already in your library" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@، موجود في مكتبتك"
+          }
+        }
+      }
     },
     "%@%@%@%@" : {
       "localizations" : {
@@ -999,6 +1079,16 @@
     "Add %@ to today" : {
 
     },
+    "Add %@ to your library" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ضيف %@ لمكتبتك"
+          }
+        }
+      }
+    },
     "Add a few meals to your library and suggestions will appear here." : {
       "localizations" : {
         "ar" : {
@@ -1276,6 +1366,16 @@
         }
       }
     },
+    "All categories" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "كل الفئات"
+          }
+        }
+      }
+    },
     "All meals" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1430,8 +1530,28 @@
     "Breathe. The next set is yours." : {
 
     },
+    "Browse 800+ ready-made exercises or add your own, tagged with every type they belong to." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "اتصفّح أكتر من ٨٠٠ تمرين جاهز أو ضيف بتاعك، متصنّف بكل الأنواع اللي بيتبعها."
+          }
+        }
+      }
+    },
     "Browse all exercises" : {
 
+    },
+    "Browse exercises" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تصفّح التمارين"
+          }
+        }
+      }
     },
     "Browse the shared catalog and add your own, tagged with every type they belong to." : {
 
@@ -1639,6 +1759,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "مسح"
+          }
+        }
+      }
+    },
+    "Clear filters" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "امسح الفلاتر"
           }
         }
       }
@@ -2288,6 +2418,16 @@
     "Exercises" : {
 
     },
+    "Exercises %lld" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تمارين %lld"
+          }
+        }
+      }
+    },
     "Extend rest by 15 seconds" : {
 
     },
@@ -2336,6 +2476,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "حصص أقل"
+          }
+        }
+      }
+    },
+    "Filter" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "فلترة"
           }
         }
       }
@@ -2618,6 +2768,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "كم تناولت؟"
+          }
+        }
+      }
+    },
+    "In library" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "في المكتبة"
           }
         }
       }
@@ -3419,6 +3579,16 @@
     "No exercises logged" : {
 
     },
+    "No exercises yet" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "مفيش تمارين لسه"
+          }
+        }
+      }
+    },
     "No history yet" : {
       "localizations" : {
         "ar" : {
@@ -3511,6 +3681,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "لم تُسجّل %@ بعد."
+          }
+        }
+      }
+    },
+    "Nothing matches those filters" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "مفيش حاجة مطابقة للفلاتر دي"
           }
         }
       }
@@ -4561,6 +4741,16 @@
     "The catalog hasn't loaded any categories yet." : {
 
     },
+    "The exercise dataset hasn't been imported yet. Ask an admin to run the import." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "بيانات التمارين لسه ما اتستوردتش. اطلب من الأدمن إنه يشغّل الاستيراد."
+          }
+        }
+      }
+    },
     "The meals you've contributed to the catalog. Edit or remove them any time." : {
 
     },
@@ -4676,6 +4866,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "جرّب فئة أخرى — أو أضِف واحدة إلى الكتالوج."
+          }
+        }
+      }
+    },
+    "Try a different muscle or category." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "جرّب عضلة أو فئة تانية."
           }
         }
       }
