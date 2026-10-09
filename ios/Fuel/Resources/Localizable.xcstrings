@@ -1037,6 +1037,16 @@
     "A workout can belong to several types — pick every one that fits." : {
 
     },
+    "About" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "نبذة"
+          }
+        }
+      }
+    },
     "About you" : {
       "localizations" : {
         "ar" : {
@@ -1184,7 +1194,14 @@
       }
     },
     "Add to library" : {
-
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ضيفه للمكتبة"
+          }
+        }
+      }
     },
     "Add to today" : {
 
@@ -1413,6 +1430,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "موجود في مكتبتك"
+          }
+        }
+      }
+    },
+    "Also works" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "كمان بيشغّل"
           }
         }
       }
@@ -2094,6 +2121,16 @@
     "Delete set" : {
 
     },
+    "Demo photo" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "صورة توضيحية"
+          }
+        }
+      }
+    },
     "Description — optional" : {
       "localizations" : {
         "ar" : {
@@ -2353,6 +2390,16 @@
         }
       }
     },
+    "Equipment" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "المعدات"
+          }
+        }
+      }
+    },
     "Equipment — e.g. Barbell" : {
 
     },
@@ -2512,6 +2559,16 @@
     },
     "Food" : {
 
+    },
+    "Force" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "دفع أو سحب"
+          }
+        }
+      }
     },
     "Free-tier servers nap after a while. This can take up to a minute." : {
       "localizations" : {
@@ -2801,6 +2858,16 @@
     "Include the weight — like \"1 bowl (250 g)\" — so it can be logged by exact grams, not just servings." : {
 
     },
+    "Instructions" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "الخطوات"
+          }
+        }
+      }
+    },
     "It may have been removed from another device." : {
 
     },
@@ -2911,6 +2978,16 @@
     },
     "Less weight" : {
 
+    },
+    "Level" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "المستوى"
+          }
+        }
+      }
     },
     "Library" : {
       "localizations" : {
@@ -3486,6 +3563,26 @@
         }
       }
     },
+    "Movement" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "الحركة"
+          }
+        }
+      }
+    },
+    "Muscle" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "العضلة"
+          }
+        }
+      }
+    },
     "Muscles grow between the sets." : {
 
     },
@@ -3576,6 +3673,16 @@
     "Next" : {
 
     },
+    "No demo photo" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "مفيش صورة توضيحية"
+          }
+        }
+      }
+    },
     "No exercises logged" : {
 
     },
@@ -3595,6 +3702,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "لا سجل بعد"
+          }
+        }
+      }
+    },
+    "No instructions for this exercise." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "مفيش خطوات للتمرين ده."
+          }
+        }
+      }
+    },
+    "No instructions for this workout." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "مفيش خطوات للتمرين ده."
           }
         }
       }
@@ -4468,6 +4595,26 @@
     "Show up. Log it. Level up." : {
 
     },
+    "Shows exercise details" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "يفتح تفاصيل التمرين"
+          }
+        }
+      }
+    },
+    "Shows workout details" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "يفتح تفاصيل التمرين"
+          }
+        }
+      }
+    },
     "Sign in" : {
       "localizations" : {
         "ar" : {
@@ -4719,6 +4866,16 @@
         }
       }
     },
+    "Target" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "الهدف"
+          }
+        }
+      }
+    },
     "Target reps" : {
 
     },
@@ -4727,6 +4884,16 @@
     },
     "Target volume" : {
 
+    },
+    "Targets" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "بيستهدف"
+          }
+        }
+      }
     },
     "That photo is too large to process. Try a smaller one." : {
       "localizations" : {
@@ -4982,7 +5149,14 @@
       }
     },
     "Types" : {
-
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "الأنواع"
+          }
+        }
+      }
     },
     "under" : {
 

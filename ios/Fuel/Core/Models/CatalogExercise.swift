@@ -35,13 +35,11 @@ struct CatalogExercise: Codable, Identifiable, Hashable, Sendable {
 
   /// Demo photo for the row thumbnail, or nil when the dataset has none (3 of
   /// ~870 entries ship without images).
-  var imageURL: URL? {
-    guard let path = images.first, !path.isEmpty else { return nil }
-    return URL(string: Self.imagePrefix + path)
-  }
+  var imageURL: URL? { imageURLs.first }
 
-  private static let imagePrefix =
-    "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/"
+  /// Every demo photo, in dataset order — see `ExerciseImages`, which `Workout`
+  /// resolves through too.
+  var imageURLs: [URL] { ExerciseImages.urls(images) }
 
   /// "Chest · Barbell · Beginner" — whichever parts exist, title-cased the same
   /// way the backend title-cases them on the way into `workouts`, so a row and

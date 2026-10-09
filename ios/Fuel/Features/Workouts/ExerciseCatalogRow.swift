@@ -3,18 +3,36 @@ import SwiftUI
 // One dataset exercise in the "Browse exercises" sheet: demo thumbnail, name,
 // a "CHEST · BARBELL · BEGINNER" eyebrow, and the add control.
 //
-// The whole row is NOT a button, unlike ExercisePickerSheet's rows: the only
-// action is Add, and a full-width tap target that silently writes to the shared
-// catalog is too easy to trigger while scrolling. The add button carries its own
-// state (idle → spinner → "In library") per DESIGN.md's "every async control
-// shows its state in place".
+// The row's two actions are split by region, not stacked: tapping the body
+// pushes ExerciseDetailView (read-only, free to trigger by accident), while Add
+// — which writes to the shared catalog — stays its own button and swallows its
+// own taps. That is why the tap gesture sits on the body HStack rather than on
+// the card: a full-width tap target over a silent write is too easy to hit
+// while scrolling. The add button carries its own state (idle → spinner →
+// "In library") per DESIGN.md's "every async control shows its state in place".
 struct ExerciseCatalogRow: View {
   let exercise: CatalogExercise
   let isInLibrary: Bool
   let isAdding: Bool
   let onAdd: () -> Void
+  /// Opens the exercise detail. Defaulted so the redacted skeleton rows and the
+  /// previews can stay one-liners.
+  var onOpen: () -> Void = {}
 
   var body: some View {
+    HStack(alignment: .center, spacing: 12) {
+      tappableBody
+      addControl
+    }
+    .padding(12)
+    .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+    .fuelCard()
+  }
+
+  // Everything except the add button — one accessibility element with the
+  // button trait, so VoiceOver offers "open detail" and "Add" as two distinct
+  // targets rather than merging them.
+  private var tappableBody: some View {
     HStack(alignment: .center, spacing: 12) {
       thumbnail
       VStack(alignment: .leading, spacing: 3) {
@@ -27,11 +45,15 @@ struct ExerciseCatalogRow: View {
         }
       }
       Spacer(minLength: 8)
-      addControl
+      Image(systemName: "chevron.right")
+        .font(.footnote.weight(.semibold))
+        .foregroundStyle(Color.fuelSubtle.opacity(0.7))
     }
-    .padding(12)
-    .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-    .fuelCard()
+    .contentShape(.rect)
+    .onTapGesture { onOpen() }
+    .accessibilityElement(children: .combine)
+    .accessibilityAddTraits(.isButton)
+    .accessibilityHint("Shows exercise details")
   }
 
   // MARK: - Thumbnail

@@ -54,6 +54,17 @@ const isMissingTable = (error) => {
   return message.includes("does not exist") || message.includes("schema cache")
 }
 
+// The same idea one level down, for `workouts.images` / `workouts.instructions`
+// (migration 0014): 42703 (undefined_column) straight from Postgres, or
+// PGRST204 ("Could not find the 'images' column of 'workouts' in the schema
+// cache") when PostgREST rejects the payload before Postgres ever sees it.
+const isUndefinedColumn = (error) => {
+  if (!error) return false
+  if (error.code === "42703" || error.code === "PGRST204") return true
+  const message = `${error.message ?? ""}`.toLowerCase()
+  return message.includes("column") && (message.includes("does not exist") || message.includes("schema cache"))
+}
+
 const missingTableError = () =>
   ApiError.serviceUnavailable(
     "The exercise catalog table doesn't exist yet. Run supabase/migrations/0013_exercise_catalog.sql in the Supabase SQL editor, then try again."
@@ -334,6 +345,33 @@ const findExistingWorkout = async (name) => {
   return Array.isArray(data) && data.length > 0 ? rowToWorkout(data[0]) : null
 }
 
+// The media half of the copy, kept separate from the text fields so the insert
+// can be retried without it when migration 0014 hasn't run.
+const mediaFrom = (exercise) => ({
+  images: toStringArray(exercise.images),
+  instructions: toStringArray(exercise.instructions),
+})
+
+// Re-adding an exercise that is already in the library is a no-op by design,
+// which would leave every workout added BEFORE migration 0014 (or before this
+// feature existed) permanently photo-less. So the dup path tops the row up:
+// only when it has no images of its own and the dataset has some, and entirely
+// best-effort — a pre-0014 schema throws undefined-column here, which is
+// swallowed exactly like the insert's retry.
+const backfillMedia = async (workout, exercise) => {
+  const media = mediaFrom(exercise)
+  if (media.images.length === 0 && media.instructions.length === 0) return
+  // Never overwrite media a row already carries (a hand-curated workout, or a
+  // future dataset release with fewer photos than the one that seeded it).
+  if ((workout.images ?? []).length > 0) return
+
+  const { error } = await supabase.from("workouts").update(media).eq("id", workout.id)
+  if (error) return
+
+  workout.images = media.images
+  workout.instructions = media.instructions
+}
+
 /**
  * Copy one catalog exercise into `workouts`, tagged with the workout categories
  * its primary muscles imply. Idempotent: a workout with the same name (any
@@ -344,29 +382,48 @@ export const addExerciseToWorkouts = async (userId, slug) => {
   const exercise = await getExerciseBySlug(slug)
 
   const existing = await findExistingWorkout(exercise.name)
-  if (existing) return { workout: existing, created: false }
+  if (existing) {
+    await backfillMedia(existing, exercise)
+    return { workout: existing, created: false }
+  }
 
-  const { data: workoutRow, error: insertError } = await supabase
-    .from("workouts")
-    .insert({
-      name: exercise.name,
-      description: descriptionFrom(exercise.instructions),
-      primary_muscle: titleCase((exercise.primary_muscles ?? [])[0]),
-      equipment: titleCase(exercise.equipment),
-      // The dataset has no prescription — sets/reps stay empty so the card
-      // shows no target pill rather than a made-up one.
-      target_sets: null,
-      target_reps: null,
-      created_by: userId,
-    })
-    .select("id")
-    .single()
+  const baseRow = {
+    name: exercise.name,
+    description: descriptionFrom(exercise.instructions),
+    primary_muscle: titleCase((exercise.primary_muscles ?? [])[0]),
+    equipment: titleCase(exercise.equipment),
+    // The dataset has no prescription — sets/reps stay empty so the card
+    // shows no target pill rather than a made-up one.
+    target_sets: null,
+    target_reps: null,
+    created_by: userId,
+  }
+
+  const insertWorkout = (row) =>
+    supabase.from("workouts").insert(row).select("id").single()
+
+  let { data: workoutRow, error: insertError } = await insertWorkout({
+    ...baseRow,
+    ...mediaFrom(exercise),
+  })
+
+  // Migration 0014 hasn't been run: `workouts` has no images/instructions
+  // columns yet. Adding an exercise is the whole point of this endpoint, so it
+  // retries without the media rather than failing — the text fields still land,
+  // and re-adding after the migration backfills the media (see backfillMedia).
+  // Same fail-soft posture as barcode.service.js's cache writes.
+  if (isUndefinedColumn(insertError)) {
+    ;({ data: workoutRow, error: insertError } = await insertWorkout(baseRow))
+  }
 
   if (insertError) {
     // Lost a race with a concurrent add of the same exercise — the other
     // request's row is the right answer.
     const raced = await findExistingWorkout(exercise.name)
-    if (raced) return { workout: raced, created: false }
+    if (raced) {
+      await backfillMedia(raced, exercise)
+      return { workout: raced, created: false }
+    }
     throw ApiError.badRequest("Failed to add the exercise", insertError.message)
   }
 

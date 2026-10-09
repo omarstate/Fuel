@@ -16,6 +16,10 @@ struct ExerciseCatalogSheet: View {
 
   @Environment(\.dismiss) private var dismiss
   @State private var model = ExerciseCatalogViewModel()
+  /// The exercise whose detail is pushed, if any. `navigationDestination(item:)`
+  /// rather than a NavigationLink per row, matching LibraryView — the row's Add
+  /// button must keep its own tap, which a link wrapping the whole row breaks.
+  @State private var detailExercise: CatalogExercise?
 
   var body: some View {
     @Bindable var model = model
@@ -53,7 +57,8 @@ struct ExerciseCatalogSheet: View {
                 exercise: exercise,
                 isInLibrary: model.isInLibrary(exercise),
                 isAdding: model.addingSlug == exercise.slug,
-                onAdd: { Task { await model.add(exercise) } }
+                onAdd: { Task { await model.add(exercise) } },
+                onOpen: { detailExercise = exercise }
               )
               .onAppear {
                 if exercise.slug == model.exercises.last?.slug {
@@ -81,6 +86,11 @@ struct ExerciseCatalogSheet: View {
         ToolbarItem(placement: .topBarTrailing) { categoryMenu }
       }
       .refreshable { await model.refresh() }
+      // The detail shares the view model, so adding from it drives this list's
+      // "In library" state too — there is nothing to hand back on pop.
+      .navigationDestination(item: $detailExercise) { exercise in
+        ExerciseDetailView(exercise: exercise, model: model)
+      }
     }
     .presentationDetents([.large])
     .presentationDragIndicator(.visible)

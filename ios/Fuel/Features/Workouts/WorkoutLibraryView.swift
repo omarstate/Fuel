@@ -17,6 +17,11 @@ struct WorkoutLibraryView: View {
   @State private var model = WorkoutLibraryViewModel()
   @State private var showCreate = false
   @State private var showBrowse = false
+  /// The workout whose detail is pushed, if any. `navigationDestination(item:)`
+  /// rather than a NavigationLink per card, matching ExerciseCatalogSheet —
+  /// and because the cards live in a LazyVStack, where a link per row would
+  /// build a destination for every card that scrolls past.
+  @State private var detailWorkout: Workout?
 
   var body: some View {
     @Bindable var model = model
@@ -46,7 +51,7 @@ struct WorkoutLibraryView: View {
             emptyState
           } else {
             ForEach(model.workouts) { workout in
-              WorkoutCatalogCard(workout: workout)
+              WorkoutCatalogCard(workout: workout, onOpen: { detailWorkout = workout })
                 .onAppear {
                   if workout.id == model.workouts.last?.id {
                     Task { await model.loadMore() }
@@ -65,6 +70,12 @@ struct WorkoutLibraryView: View {
       .toolbar(.hidden, for: .navigationBar)
       .statusBarFade()
       .refreshable { await model.refresh() }
+      // Read-only, so there is nothing to hand back on pop. The nav bar is
+      // hidden on the list itself (the masthead is in-content) but the pushed
+      // detail gets the real one back — that is where the back button lives.
+      .navigationDestination(item: $detailWorkout) { workout in
+        WorkoutDetailView(workout: workout)
+      }
     }
     .task { await model.start() }
     .onChange(of: model.searchText) { model.searchTextChanged() }

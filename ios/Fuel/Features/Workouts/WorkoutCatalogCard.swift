@@ -6,29 +6,23 @@ import SwiftUI
 // the category chips. Content on FuelSurface — never glass.
 struct WorkoutCatalogCard: View {
   let workout: Workout
+  /// Opens the workout's detail. Defaulted to nil so the redacted skeleton
+  /// cards and the previews stay one-liners — and so a card with nowhere to go
+  /// shows no chevron and takes no taps.
+  var onOpen: (() -> Void)? = nil
 
-  /// "4 × 8-12", or whichever half exists. Port of `setsReps` in
-  /// workouts/workout-card.tsx — targetReps is free-form ("AMRAP"), so it is
-  /// never parsed, only shown.
-  private var targetText: String? {
-    if let sets = workout.targetSets, let reps = workout.targetReps, !reps.isEmpty {
-      return "\(sets) × \(reps)"
-    }
-    if let reps = workout.targetReps, !reps.isEmpty { return reps }
-    if let sets = workout.targetSets { return String(localized: "\(sets) sets") }
-    return nil
-  }
-
-  private var metaLine: String? {
-    let parts = [workout.primaryMuscle, workout.equipment]
-      .compactMap { $0?.trimmingCharacters(in: .whitespaces) }
-      .filter { !$0.isEmpty }
-    return parts.isEmpty ? nil : parts.joined(separator: " · ")
-  }
+  private var targetText: String? { workout.targetText }
+  private var metaLine: String? { workout.metaLine }
 
   var body: some View {
     VStack(alignment: .leading, spacing: 12) {
       HStack(alignment: .top, spacing: 12) {
+        // Only when the workout was added from the exercise catalog AND
+        // migration 0014 has run; otherwise the row keeps its original
+        // text-only layout rather than reserving an empty box.
+        if let url = workout.imageURLs.first {
+          thumbnail(url)
+        }
         VStack(alignment: .leading, spacing: 3) {
           Text(workout.name)
             .font(.fuelBody(.body, weight: 600))
@@ -41,6 +35,12 @@ struct WorkoutCatalogCard: View {
         Spacer(minLength: 8)
         if let targetText {
           PillBadge(title: "\(targetText)", tone: .workout)
+        }
+        if onOpen != nil {
+          Image(systemName: "chevron.right")
+            .font(.footnote.weight(.semibold))
+            .foregroundStyle(Color.fuelSubtle.opacity(0.7))
+            .padding(.top, 2)
         }
       }
 
@@ -67,8 +67,42 @@ struct WorkoutCatalogCard: View {
     .padding(16)
     .frame(maxWidth: .infinity, alignment: .leading)
     .fuelCard()
+    // Whole-card tap, unlike ExerciseCatalogRow's split regions: a library card
+    // has no competing write action to protect, and the detail is read-only.
+    .contentShape(.rect)
+    .onTapGesture { onOpen?() }
     .accessibilityElement(children: .combine)
     .accessibilityLabel(accessibilityLabel)
+    .accessibilityAddTraits(onOpen == nil ? [] : .isButton)
+    .accessibilityHint(onOpen == nil ? Text("") : Text("Shows workout details"))
+  }
+
+  // MARK: - Thumbnail
+
+  // Same 56pt box, 12pt corner and hairline as ExerciseCatalogRow's, so the
+  // browse sheet and the library read as one set of photos. A failed fetch
+  // falls back to the same glyph as "no photo at all".
+  private func thumbnail(_ url: URL) -> some View {
+    AsyncImage(url: url, transaction: Transaction(animation: .snappy)) { phase in
+      switch phase {
+      case .success(let image):
+        image.resizable().scaledToFill()
+      case .empty:
+        ProgressView().controlSize(.small)
+      default:
+        Image(systemName: "figure.strengthtraining.traditional")
+          .font(.system(size: 20))
+          .foregroundStyle(Color.fuelSubtle.opacity(0.6))
+      }
+    }
+    .frame(width: 56, height: 56)
+    .background(Color.fuelInk.opacity(0.05))
+    .clipShape(RoundedRectangle(cornerRadius: FuelRadius.small, style: .continuous))
+    .overlay(
+      RoundedRectangle(cornerRadius: FuelRadius.small, style: .continuous)
+        .strokeBorder(Color.fuelInk.opacity(0.06), lineWidth: 1)
+    )
+    .accessibilityHidden(true)
   }
 
   private var accessibilityLabel: String {
