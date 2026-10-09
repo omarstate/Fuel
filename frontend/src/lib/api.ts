@@ -262,6 +262,9 @@ export type EstimatedMeal = {
   ok: boolean
   name: string
   servingSize: string
+  /** Grams in one serving when the AI could pin it down — used server-side to
+   * sanity-check the macros, and absent on older backends. */
+  servingGrams?: number | null
   calories: number
   protein: number
   carbs: number

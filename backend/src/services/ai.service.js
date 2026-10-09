@@ -4,6 +4,8 @@ import { generateJson } from "./gemini.client.js"
 import { getProfile } from "./profile.service.js"
 import { computeStreak } from "../utils/compute-streak.js"
 import { rankMealsForRemaining } from "../utils/score-meals.js"
+import { mealTokens } from "../utils/match-meal-name.js"
+import { reconcileNutrition, downgradeConfidence } from "../utils/validate-nutrition.js"
 import { aiMealArraySchema, normalizeAiMeal, insightsSchema } from "../validators/ai.validator.js"
 import { ApiError } from "../utils/api-error.js"
 
@@ -30,6 +32,7 @@ Use Google Search to find nutrition facts for EACH distinct item. Prefer the bra
 Reply with ONLY a JSON array (no prose, no markdown), each element:
 {"name": string (canonical, include brand, e.g. "McDonald's Big Mac"),
  "brand": string|null, "servingSize": string|null (e.g. "1 burger (219g)"),
+ "servingGrams": integer grams of ONE serving, or null if genuinely unknown,
  "calories": number, "protein": number, "carbs": number, "fat": number,   // grams, best point estimate
  "confidence": "official" | "estimate",   // "official" ONLY if values come from the brand's own site
  "ranges": {"calories":[min,max],"protein":[min,max],"carbs":[min,max],"fat":[min,max]} | null,
@@ -62,20 +65,100 @@ const getAiCategoryId = async () => {
   return firstCat?.id ?? null
 }
 
+// How many ilike candidates we pull before filtering them by token containment.
+const PRECHECK_CANDIDATES = 25
+// How many pre-check hits we hand back, matching the old limit(5).
+const PRECHECK_RESULTS = 5
+
+// A serving size that already states grams: "1 burger (219g)", "حصة 30 جم".
+// The `g` must not be the first letter of a word ("1 grilled breast").
+const SERVING_HAS_GRAMS = /[0-9٠-٩]\s*(?:g(?![a-zA-Z])|جم|جرام)/
+
+/**
+ * Does this catalog row actually answer the query, or does it merely contain it
+ * as a substring? `%coffee%` matches "Coffee cake"; token containment doesn't.
+ * Every significant query token must appear in the row's name/alias tokens.
+ */
+const rowAnswersQuery = (row, queryTokens) => {
+  const candidateTokens = mealTokens(
+    [row.name, ...(Array.isArray(row.aliases) ? row.aliases : [])].join(" ")
+  )
+  for (const token of queryTokens) {
+    if (!candidateTokens.has(token)) return false
+  }
+  return true
+}
+
+/**
+ * Arithmetic sanity pass over one normalized AI item. An "official" number that
+ * fails its own Atwater check isn't official — a brand's own page would add up —
+ * so a flagged item is demoted and keeps/gains a range instead of posing as
+ * fact. Ranges are widened rather than clipped so `min <= point <= max` holds.
+ */
+const reconcileLookupItem = (item) => {
+  const { calories, adjusted, flags } = reconcileNutrition({
+    calories: item.calories,
+    protein: item.protein,
+    carbs: item.carbs,
+    fat: item.fat,
+    servingGrams: item.servingGrams ?? null,
+  })
+
+  const suspect = adjusted || flags.length > 0
+  const confidence = suspect ? downgradeConfidence(item.confidence) : item.confidence
+
+  let ranges = item.ranges
+  if (ranges && ranges.calories) {
+    const [min, max] = ranges.calories
+    if (calories < min || calories > max) {
+      ranges = { ...ranges, calories: [Math.min(min, calories), Math.max(max, calories)] }
+    }
+  }
+
+  // The model often writes "1 cup" with no weight; folding the grams it DID
+  // report into the text keeps portion maths possible for whoever logs this.
+  let servingSize = item.servingSize ?? null
+  if (item.servingGrams != null && item.servingGrams > 0) {
+    servingSize = servingSize && SERVING_HAS_GRAMS.test(servingSize)
+      ? servingSize
+      : servingSize
+        ? `${servingSize} (${item.servingGrams}g)`
+        : `${item.servingGrams}g`
+  }
+
+  return { ...item, calories, confidence, ranges, servingSize }
+}
+
 export const lookupMeals = async (userId, query, lang = "en") => {
   // 1. Pre-check the catalog so we never duplicate an existing meal or spend a
-  //    Gemini call when we already have a match.
+  //    Gemini call when we already have a trustworthy match. Two filters, both
+  //    needed: ilike is a substring test (so "tea" matches "steak"), and an
+  //    ai_source of 'estimate' is one user's AI guess, not an answer — the same
+  //    rule the barcode cache applies to 'client'-sourced rows, which never
+  //    block a live fetch. Only null (hand-entered) or 'official' rows short-
+  //    circuit; otherwise one early hallucination would be everyone's permanent
+  //    answer, with no path back to a real source.
   const { data: existing, error: existingError } = await supabase
     .from("catalog_meals")
     .select(SELECT_WITH_CATEGORY)
     .ilike("name", `%${query}%`)
-    .limit(5)
+    .limit(PRECHECK_CANDIDATES)
 
   if (existingError) throw ApiError.badRequest("Failed to search meals", existingError.message)
 
-  if (existing && existing.length > 0) {
+  const queryTokens = mealTokens(query)
+  const matches =
+    queryTokens.size > 0 ? (existing ?? []).filter((row) => rowAnswersQuery(row, queryTokens)) : []
+  const verified = matches.filter((row) => row.ai_source == null || row.ai_source === "official")
+  // Unverified hits still matter: they're the rows a fresh official answer gets
+  // to overwrite in step 3a, instead of sitting next to a near-duplicate.
+  const unverified = matches.filter((row) => row.ai_source === "estimate")
+
+  if (verified.length > 0) {
     return {
-      items: existing.map((row) => ({ meal: rowToCatalogMeal(row), created: false })),
+      items: verified
+        .slice(0, PRECHECK_RESULTS)
+        .map((row) => ({ meal: rowToCatalogMeal(row), created: false })),
       usedAi: false,
     }
   }
@@ -92,20 +175,53 @@ export const lookupMeals = async (userId, query, lang = "en") => {
 
   const items = []
   for (const raw of parsed) {
-    const item = normalizeAiMeal(raw)
+    const item = reconcileLookupItem(normalizeAiMeal(raw))
 
-    // 3a. Per-item dedup by exact (case-insensitive) name. limit(1) rather than
-    // maybeSingle() — catalog names aren't unique, and maybeSingle throws on >1.
-    const { data: dups, error: dupError } = await supabase
-      .from("catalog_meals")
-      .select(SELECT_WITH_CATEGORY)
-      .ilike("name", item.name)
-      .limit(1)
+    // 3a. Per-item dedup by exact (case-insensitive) name. The unverified rows
+    // from step 1 are checked first — they came back from the same search, so a
+    // name hit there saves a round trip. limit(1) rather than maybeSingle() —
+    // catalog names aren't unique, and maybeSingle throws on >1.
+    let dup = unverified.find((row) => row.name.toLowerCase() === item.name.toLowerCase()) ?? null
 
-    if (dupError) throw ApiError.badRequest("Failed to check meal", dupError.message)
+    if (!dup) {
+      const { data: dups, error: dupError } = await supabase
+        .from("catalog_meals")
+        .select(SELECT_WITH_CATEGORY)
+        .ilike("name", item.name)
+        .limit(1)
 
-    if (dups && dups.length > 0) {
-      items.push({ meal: rowToCatalogMeal(dups[0]), created: false })
+      if (dupError) throw ApiError.badRequest("Failed to check meal", dupError.message)
+      dup = dups?.[0] ?? null
+    }
+
+    if (dup) {
+      // An 'estimate' row is a placeholder for exactly this moment: a verified
+      // official answer replaces it in place, so every log already pointing at
+      // that catalog id silently gets the real numbers (and loses its range).
+      if (dup.ai_source === "estimate" && item.confidence === "official") {
+        const { data: upgraded, error: upgradeError } = await supabase
+          .from("catalog_meals")
+          .update({
+            serving_size: item.servingSize ?? dup.serving_size,
+            calories: item.calories,
+            protein: item.protein,
+            carbs: item.carbs,
+            fat: item.fat,
+            ai_source: "official",
+            source_url: item.sourceUrl ?? fallbackSourceUri,
+            macro_ranges: null,
+          })
+          .eq("id", dup.id)
+          .select(SELECT_WITH_CATEGORY)
+          .single()
+
+        if (upgradeError) throw ApiError.badRequest("Failed to update meal", upgradeError.message)
+
+        items.push({ meal: rowToCatalogMeal(upgraded), created: false })
+        continue
+      }
+
+      items.push({ meal: rowToCatalogMeal(dup), created: false })
       continue
     }
 

@@ -30,6 +30,7 @@ import { rowToCatalogMeal } from "../models/catalog-meal.model.js"
 import { generateJson } from "./gemini.client.js"
 import { ApiError } from "../utils/api-error.js"
 import { matchMealName, deriveFactor } from "../utils/match-meal-name.js"
+import { reconcileNutrition, downgradeConfidence } from "../utils/validate-nutrition.js"
 import {
   voiceParseSchema,
   voiceParsedItemSchema,
@@ -55,6 +56,17 @@ const ALIASES_IN_PROMPT = 6
 const MANUAL_ENTRY_NOTE = {
   en: "Couldn't estimate this one automatically — enter its macros by hand.",
   ar: "مقدرناش نحسب العنصر ده لوحدنا — دخّل السعرات والماكروز بنفسك.",
+}
+
+// Appended to an estimate's note when the arithmetic checks in
+// utils/validate-nutrition.js fired on its BASE serving.
+const RECONCILED_NOTE = {
+  en: "Calories adjusted to match the macros.",
+  ar: "تم تعديل السعرات لتطابق الماكروز.",
+}
+const FLAGGED_NOTE = {
+  en: "These numbers look off against the serving size — double-check them.",
+  ar: "الأرقام دي مش متسقة مع حجم الحصة — راجعها.",
 }
 
 // -------------------------------------------------------------------------
@@ -185,7 +197,7 @@ Pick ONE natural base serving and give macros for THAT base serving only:
 - plated/composed dishes → one typical Egyptian serving, named clearly ("1 bowl (~350g)")
 Then set "factor" = (the amount the user spoke) ÷ (your base serving), exactly the rule from TASK 4: "3 slices" against "1 slice" → 3; "200ml" against "100 ml" → 2; "نص رغيف" against "1 رغيف" → 0.5; no amount spoken → 1.
 The macros are non-negative integers covering the BASE serving, NEVER the whole spoken amount — the app multiplies by "factor" itself. If a value is genuinely unknown, give your best reasonable estimate rather than 0. "ranges" bands the base serving too, with min <= point <= max; return null only when the numbers are solid enough that a band adds nothing. "note" is one short sentence on any assumption you made.
-For items you DID match to the catalog, set "servingSize", "calories", "protein", "carbs", "fat", "ranges" and "note" all to null — the app takes those from the catalog entry.
+For items you DID match to the catalog, set "servingSize", "servingGrams", "calories", "protein", "carbs", "fat", "ranges" and "note" all to null — the app takes those from the catalog entry.
 
 CATALOG (${catalogCount} entries):
 ${catalogLines}
@@ -204,6 +216,7 @@ Respond with ONLY a raw JSON object — no markdown, no code fences, no commenta
       "factor": number | null,
       "confidence": "high" | "medium" | "low",
       "servingSize": "the base serving the macros below cover, e.g. 1 egg (50g)" | null,
+      "servingGrams": integer grams in that base serving, or null if genuinely unknown,
       "calories": integer kcal for the base serving | null,
       "protein": integer grams | null,
       "carbs": integer grams | null,
@@ -233,6 +246,7 @@ const softFailEstimate = (item, lang) => {
     unit: item.unit,
     name: item.name || item.spoken,
     servingSize: "",
+    servingGrams: null,
     factor: 1,
     calories: 0,
     protein: 0,
@@ -326,6 +340,7 @@ export const parseVoiceLog = async ({ transcript, lang = "en", transcripts }) =>
       confidence: item.confidence ?? null,
       // Only meaningful when catalogId stays null — see the estimate branch.
       servingSize: item.servingSize ?? null,
+      servingGrams: item.servingGrams ?? null,
       calories: item.calories ?? null,
       protein: item.protein ?? null,
       carbs: item.carbs ?? null,
@@ -379,6 +394,42 @@ export const parseVoiceLog = async ({ transcript, lang = "en", transcripts }) =>
       return softFailEstimate(item, lang)
     }
 
+    // Cross-check the model's arithmetic on the BASE serving, before the app
+    // multiplies anything by `factor` — macros beat a stated calorie figure, and
+    // a failed check costs the item a confidence notch. Ranges are widened, not
+    // clipped, so `min <= point <= max` still holds after a rewrite.
+    const protein = roundInt(item.protein)
+    const carbs = roundInt(item.carbs)
+    const fat = roundInt(item.fat)
+    const servingGrams = Number(item.servingGrams)
+    const checked = reconcileNutrition({
+      calories: item.calories,
+      protein,
+      carbs,
+      fat,
+      servingGrams: Number.isFinite(servingGrams) && servingGrams > 0 ? servingGrams : null,
+    })
+
+    let ranges = normalizeRanges(item.ranges)
+    if (ranges && (checked.calories < ranges.calories[0] || checked.calories > ranges.calories[1])) {
+      ranges = {
+        ...ranges,
+        calories: [
+          Math.min(ranges.calories[0], checked.calories),
+          Math.max(ranges.calories[1], checked.calories),
+        ],
+      }
+    }
+
+    let confidence = item.confidence ?? null
+    let note = item.note?.trim() ?? ""
+    if (checked.adjusted || checked.flags.length > 0) {
+      confidence = downgradeConfidence(confidence)
+      const suffix = checked.adjusted ? RECONCILED_NOTE : FLAGGED_NOTE
+      const sentence = suffix[lang] ?? suffix.en
+      note = note ? `${note} ${sentence}` : sentence
+    }
+
     return {
       kind: "estimate",
       ok: true,
@@ -387,16 +438,17 @@ export const parseVoiceLog = async ({ transcript, lang = "en", transcripts }) =>
       unit: item.unit,
       name: item.name || item.spoken,
       servingSize: item.servingSize?.trim() ?? "",
+      servingGrams: Number.isFinite(servingGrams) && servingGrams > 0 ? Math.round(servingGrams) : null,
       factor: clampFactor(item.factor),
-      calories: roundInt(item.calories),
-      protein: roundInt(item.protein),
-      carbs: roundInt(item.carbs),
-      fat: roundInt(item.fat),
-      ranges: normalizeRanges(item.ranges),
+      calories: checked.calories,
+      protein,
+      carbs,
+      fat,
+      ranges,
       // This flow never searches the web, so there is never a source to cite.
       sourceUrl: null,
-      confidence: item.confidence ?? null,
-      note: item.note?.trim() ?? "",
+      confidence,
+      note,
     }
   })
 

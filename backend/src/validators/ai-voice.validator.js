@@ -72,6 +72,9 @@ export const voiceParsedItemSchema = z.object({
   factor: z.coerce.number().finite().nullish(),
   confidence: z.enum(["high", "medium", "low"]).nullish(),
   servingSize: z.string().trim().max(120).nullish(),
+  // Grams in that base serving, when the model can say. Not logged or persisted
+  // — it only feeds the arithmetic checks in utils/validate-nutrition.js.
+  servingGrams: z.coerce.number().finite().nullish(),
   calories: z.coerce.number().finite().nullish(),
   protein: z.coerce.number().finite().nullish(),
   carbs: z.coerce.number().finite().nullish(),

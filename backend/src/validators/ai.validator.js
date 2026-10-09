@@ -20,6 +20,9 @@ export const aiMealItemSchema = z.object({
   name: z.string().trim().min(1).max(120),
   brand: z.string().trim().optional().nullable(),
   servingSize: z.string().trim().optional().nullable(),
+  // Grams in ONE serving when the model could pin it down. Not persisted —
+  // it only feeds the arithmetic checks in utils/validate-nutrition.js.
+  servingGrams: z.number().nonnegative().optional().nullable(),
   calories: nonNegative,
   protein: nonNegative,
   carbs: nonNegative,
@@ -44,8 +47,9 @@ const roundInt = (value) => Math.max(0, Math.round(value))
 
 const MACRO_KEYS = ["calories", "protein", "carbs", "fat"]
 
-// Round point values to ints; validate/normalize ranges (min<=max, ints),
-// dropping the whole ranges object if any tuple is inconsistent.
+// Round point values to ints; normalize servingGrams to a positive int or null;
+// validate/normalize ranges (min<=max, ints), dropping the whole ranges object
+// if any tuple is inconsistent.
 export const normalizeAiMeal = (item) => {
   const normalized = {
     ...item,
@@ -53,6 +57,10 @@ export const normalizeAiMeal = (item) => {
     protein: roundInt(item.protein),
     carbs: roundInt(item.carbs),
     fat: roundInt(item.fat),
+    servingGrams:
+      item.servingGrams != null && Number.isFinite(Number(item.servingGrams)) && item.servingGrams > 0
+        ? roundInt(item.servingGrams)
+        : null,
     ranges: null,
   }
 

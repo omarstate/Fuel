@@ -8,6 +8,7 @@
 
 import { env } from "../config/env.js"
 import { ApiError } from "../utils/api-error.js"
+import { reconcileNutrition, downgradeConfidence } from "../utils/validate-nutrition.js"
 
 const GEMINI_ENDPOINT = (model) =>
   `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`
@@ -43,6 +44,7 @@ Respond with ONLY a raw JSON object — no markdown, no code fences, no commenta
 {
   "name": "concise meal name, e.g. McDonald's Big Mac",
   "servingSize": "human-readable serving, e.g. 1 sandwich (219g)",
+  "servingGrams": integer grams of ONE serving, or null if genuinely unknown,
   "calories": integer kcal,
   "protein": integer grams,
   "carbs": integer grams,
@@ -86,8 +88,27 @@ const clampInt = (value) => {
   return Number.isFinite(n) && n >= 0 ? n : 0
 }
 
+// Positive int or null — the model is told to send null when it can't tell.
+const toGrams = (value) => {
+  const n = Math.round(Number(value))
+  return Number.isFinite(n) && n > 0 ? n : null
+}
+
 const SOURCES = new Set(["egypt", "regional", "global"])
 const CONFIDENCE = new Set(["high", "medium", "low"])
+
+// Appended to `note` when the arithmetic checks fired, so the review step says
+// why the number moved instead of silently differing from what the model wrote.
+const RECONCILED_NOTE = {
+  en: "Calories adjusted to match the macros.",
+  ar: "تم تعديل السعرات لتطابق الماكروز.",
+}
+const FLAGGED_NOTE = {
+  en: "These numbers look off against the serving size — double-check them.",
+  ar: "الأرقام دي مش متسقة مع حجم الحصة — راجعها.",
+}
+
+const appendNote = (note, sentence) => (note ? `${note} ${sentence}` : sentence)
 
 async function estimateOne({ place, item, lang = "en" }) {
   let res
@@ -129,6 +150,7 @@ async function estimateOne({ place, item, lang = "en" }) {
       ok: false,
       name: item,
       servingSize: "",
+      servingGrams: null,
       calories: 0,
       protein: 0,
       carbs: 0,
@@ -139,18 +161,44 @@ async function estimateOne({ place, item, lang = "en" }) {
     }
   }
 
+  const protein = clampInt(parsed.protein)
+  const carbs = clampInt(parsed.carbs)
+  const fat = clampInt(parsed.fat)
+  const servingGrams = toGrams(parsed.servingGrams)
+
+  // Cross-check the model's own numbers before the user ever sees them: macros
+  // beat the stated calories, and anything that fails drops a confidence notch
+  // so the review step doesn't present a wobbly estimate as "high".
+  const { calories, adjusted, flags } = reconcileNutrition({
+    calories: parsed.calories,
+    protein,
+    carbs,
+    fat,
+    servingGrams,
+  })
+
+  let confidence = CONFIDENCE.has(parsed.confidence) ? parsed.confidence : null
+  let note = typeof parsed.note === "string" ? parsed.note.trim() : ""
+
+  if (adjusted || flags.length > 0) {
+    confidence = downgradeConfidence(confidence)
+    const suffix = adjusted ? RECONCILED_NOTE : FLAGGED_NOTE
+    note = appendNote(note, suffix[lang] ?? suffix.en)
+  }
+
   return {
     input: item,
     ok: true,
     name: typeof parsed.name === "string" && parsed.name.trim() ? parsed.name.trim() : item,
     servingSize: typeof parsed.servingSize === "string" ? parsed.servingSize.trim() : "",
-    calories: clampInt(parsed.calories),
-    protein: clampInt(parsed.protein),
-    carbs: clampInt(parsed.carbs),
-    fat: clampInt(parsed.fat),
+    servingGrams,
+    calories,
+    protein,
+    carbs,
+    fat,
     source: SOURCES.has(parsed.source) ? parsed.source : null,
-    confidence: CONFIDENCE.has(parsed.confidence) ? parsed.confidence : null,
-    note: typeof parsed.note === "string" ? parsed.note.trim() : "",
+    confidence,
+    note,
   }
 }
 

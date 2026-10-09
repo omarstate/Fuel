@@ -12,6 +12,7 @@
 // step, so a misread digit is caught by the user before anything is logged.
 
 import { generateJson } from "./gemini.client.js"
+import { reconcileNutrition, downgradeConfidence } from "../utils/validate-nutrition.js"
 
 const PROMPT = `You are a nutrition-label reader for a fitness app whose users are primarily in Egypt.
 
@@ -104,18 +105,47 @@ export const extractLabel = async ({ image, mimeType }) => {
     return unreadable(toNullableString(parsed?.note))
   }
 
+  const basis = BASIS.has(parsed.basis) ? parsed.basis : "per_serving"
+  const servingGrams = toPositiveNumber(parsed.servingGrams)
+  const protein = clampInt(parsed.protein)
+  const carbs = clampInt(parsed.carbs)
+  const fat = clampInt(parsed.fat)
+
+  // Misread digits are this flow's whole failure mode (a smudged "15" becoming
+  // "75"), and the macros and the calories are printed independently — so make
+  // them check each other. The weight the macros are stated against is 100 g on
+  // a per-100g label, NOT the serving column's grams.
+  const { calories, adjusted, flags } = reconcileNutrition({
+    calories: parsed.calories,
+    protein,
+    carbs,
+    fat,
+    servingGrams: basis === "per_100g" ? 100 : servingGrams,
+  })
+
+  let confidence = CONFIDENCE.has(parsed.confidence) ? parsed.confidence : null
+  let note = typeof parsed.note === "string" ? parsed.note.trim() : ""
+
+  if (adjusted || flags.length > 0) {
+    confidence = downgradeConfidence(confidence)
+    const sentence = adjusted
+      ? "Calories adjusted to match the macros — check the panel."
+      : "These numbers look off against the serving size — double-check them."
+    note = note ? `${note} ${sentence}` : sentence
+  }
+
   return {
     ok: true,
     readable: true,
     name: toNullableString(parsed.name),
-    basis: BASIS.has(parsed.basis) ? parsed.basis : "per_serving",
+    basis,
     servingSize: typeof parsed.servingSize === "string" ? parsed.servingSize.trim() : "",
-    servingGrams: toPositiveNumber(parsed.servingGrams),
-    calories: clampInt(parsed.calories),
-    protein: clampInt(parsed.protein),
-    carbs: clampInt(parsed.carbs),
-    fat: clampInt(parsed.fat),
-    confidence: CONFIDENCE.has(parsed.confidence) ? parsed.confidence : null,
-    note: typeof parsed.note === "string" ? parsed.note.trim() : "",
+    servingGrams,
+    calories,
+    protein,
+    carbs,
+    fat,
+    confidence,
+    note,
   }
 }
