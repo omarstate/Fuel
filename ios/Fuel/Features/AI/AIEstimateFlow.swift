@@ -9,6 +9,7 @@ struct AIEstimateFlow: View {
   @Environment(AppState.self) private var app
 
   @State private var step: Step = .input
+  @State private var mode: EstimateMode = .meal
   @State private var place = ""
   @State private var itemsText = ""
   @State private var mealType: MealType = MealTypeSuggestion.suggested()
@@ -21,11 +22,42 @@ struct AIEstimateFlow: View {
 
   private enum Step { case input, review }
 
+  /// What the sheet is logging. `.item` is one thing with no place (a snack, a
+  /// single dish) — the whole input is ONE item, commas and all. `.meal` is the
+  /// original flow: an optional place plus a comma-separated list. Both modes
+  /// share `itemsText`, so switching keeps whatever was typed.
+  private enum EstimateMode: String, CaseIterable, Identifiable {
+    case item
+    case meal
+
+    var id: String { rawValue }
+
+    var label: LocalizedStringKey {
+      switch self {
+      case .item: return "Item"
+      case .meal: return "Meal"
+      }
+    }
+
+    var hint: LocalizedStringKey {
+      switch self {
+      case .item: return "One snack or dish — no place needed."
+      case .meal: return "A full meal or a restaurant order."
+      }
+    }
+  }
+
   private var parsedItems: [String] {
-    itemsText
-      .split(separator: ",")
-      .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-      .filter { !$0.isEmpty }
+    switch mode {
+    case .item:
+      let single = itemsText.trimmingCharacters(in: .whitespacesAndNewlines)
+      return single.isEmpty ? [] : [single]
+    case .meal:
+      return itemsText
+        .split(separator: ",")
+        .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+        .filter { !$0.isEmpty }
+    }
   }
 
   private var usableCount: Int { rows.filter(\.isUsable).count }
@@ -98,27 +130,49 @@ struct AIEstimateFlow: View {
   private var inputForm: some View {
     Form {
       Section {
-        TextField("Where from? (optional) e.g. McDonald's Egypt", text: $place)
-          .focused($keyboardActive)
-      } header: {
-        Text("Place")
+        Picker("Mode", selection: $mode) {
+          ForEach(EstimateMode.allCases) { option in
+            Text(option.label).tag(option)
+          }
+        }
+        .pickerStyle(.segmented)
       } footer: {
-        Text("Egyptian menus and portions are checked first.")
+        Text(mode.hint)
+      }
+
+      if mode == .meal {
+        Section {
+          TextField("Where from? (optional) e.g. McDonald's Egypt", text: $place)
+            .focused($keyboardActive)
+        } header: {
+          Text("Place")
+        } footer: {
+          Text("Egyptian menus and portions are checked first.")
+        }
       }
 
       Section {
-        TextField("e.g. 2 eggs, foul sandwich, mango juice", text: $itemsText, axis: .vertical)
-          .lineLimit(2...5)
-          .focused($keyboardActive)
+        if mode == .item {
+          TextField("e.g. a medium banana", text: $itemsText)
+            .focused($keyboardActive)
+        } else {
+          TextField("e.g. 2 eggs, foul sandwich, mango juice", text: $itemsText, axis: .vertical)
+            .lineLimit(2...5)
+            .focused($keyboardActive)
+        }
       } header: {
         Text("What did you eat?")
       } footer: {
-        Text(parsedItems.isEmpty
-          ? "Separate each item with a comma."
-          : "\(parsedItems.count) items detected.")
+        if mode == .item {
+          Text("Just one item — add the portion if you know it.")
+        } else {
+          Text(parsedItems.isEmpty
+            ? "Separate each item with a comma."
+            : "\(parsedItems.count) items detected.")
+        }
       }
 
-      Section("Meal") {
+      Section("Log to") {
         Picker("Section", selection: $mealType) {
           ForEach(MealType.allCases) { type in
             Text(type.label).tag(type)
@@ -276,7 +330,11 @@ struct AIEstimateFlow: View {
     keyboardActive = false
     estimating = true
     error = nil
-    let trimmedPlace = place.trimmingCharacters(in: .whitespacesAndNewlines)
+    // Item mode is deliberately place-less — the field isn't even shown, so
+    // whatever is parked in `place` from a previous mode switch is ignored.
+    let trimmedPlace = mode == .meal
+      ? place.trimmingCharacters(in: .whitespacesAndNewlines)
+      : ""
     Task {
       defer { estimating = false }
       do {
