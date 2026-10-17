@@ -126,43 +126,79 @@ final class AppState {
 
   // MARK: - User data
 
+  /// Background live re-fetch after a cached bootstrap; cancelled on sign-out.
+  private var revalidationTask: Task<Void, Never>?
+
   /// Fetches GET /me + GET /profile and derives the phase.
+  ///
+  /// Stale-while-revalidate: sign-in itself already succeeded against
+  /// Supabase, so a returning user with a cached onboarded profile lands in
+  /// the app immediately (no waiting on a Render cold start or, for a Debug
+  /// build off the home Wi-Fi, a 75 s timeout) while the live fetch runs in
+  /// the background and silently replaces the cached data. Only a first-time
+  /// user, who has nothing cached, waits on the splash.
   func loadUserData() async {
+    if phase != .ready,
+       let userId = SupabaseService.shared.currentSession?.user.id.uuidString,
+       let cached = BootstrapCache.load(for: userId),
+       let profile = cached.profile {
+      self.me = cached.me
+      self.profile = profile
+      self.displayName = SupabaseService.shared.displayName
+      self.phase = .ready
+      scheduleRevalidation()
+      return
+    }
+
     isBootstrapping = true
     bootstrapError = nil
     defer { isBootstrapping = false }
     do {
-      async let meResult = FuelAPI.me()
-      async let profileResult = FuelAPI.profile()
-      let me = try await meResult
-      let profile = try await profileResult
-      self.me = me
-      self.profile = profile
-      self.displayName = SupabaseService.shared.displayName
-      self.phase = (profile == nil) ? .needsOnboarding : .ready
-      BootstrapCache.save(me: me, profile: profile)
+      try await fetchAndApplyUserData()
     } catch APIError.unauthorized {
       // Token no longer valid — treat as signed out.
       try? await SupabaseService.shared.signOut()
       setSignedOut()
     } catch {
-      // The backend is unreachable (Render cold start, or a Debug build away
-      // from the Mac). Sign-in itself already succeeded against Supabase, so a
-      // returning user with a cached onboarded profile goes straight in —
-      // everything Supabase-direct works, and backend-backed features show
-      // their own retry banners. Only a first-time user still waits here.
-      if phase != .ready,
-         let userId = SupabaseService.shared.currentSession?.user.id.uuidString,
-         let cached = BootstrapCache.load(for: userId),
-         let profile = cached.profile {
-        self.me = cached.me
-        self.profile = profile
-        self.displayName = SupabaseService.shared.displayName
-        self.phase = .ready
-        return
-      }
       bootstrapError = PresentableError(error)
       if phase != .ready { phase = .loading }
+    }
+  }
+
+  /// Live GET /me + GET /profile; applies the result, derives the phase and
+  /// refreshes the cache. Throws on any failure.
+  private func fetchAndApplyUserData() async throws {
+    async let meResult = FuelAPI.me()
+    async let profileResult = FuelAPI.profile()
+    let me = try await meResult
+    let profile = try await profileResult
+    self.me = me
+    self.profile = profile
+    self.displayName = SupabaseService.shared.displayName
+    self.phase = (profile == nil) ? .needsOnboarding : .ready
+    BootstrapCache.save(me: me, profile: profile)
+  }
+
+  /// Retry the live bootstrap with backoff so a backend that was asleep or out
+  /// of reach at launch still refreshes targets/admin status within minutes,
+  /// without blocking the auth stream that called loadUserData().
+  private func scheduleRevalidation() {
+    revalidationTask?.cancel()
+    revalidationTask = Task { [weak self] in
+      for delaySeconds in [0, 15, 45, 120] {
+        try? await Task.sleep(for: .seconds(delaySeconds))
+        guard !Task.isCancelled, let self else { return }
+        do {
+          try await self.fetchAndApplyUserData()
+          return
+        } catch APIError.unauthorized {
+          try? await SupabaseService.shared.signOut()
+          self.setSignedOut()
+          return
+        } catch {
+          continue
+        }
+      }
     }
   }
 
@@ -206,6 +242,8 @@ final class AppState {
   }
 
   private func setSignedOut() {
+    revalidationTask?.cancel()
+    revalidationTask = nil
     me = nil
     profile = nil
     displayName = nil
