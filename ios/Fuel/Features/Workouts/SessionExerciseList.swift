@@ -56,21 +56,20 @@ private struct ExerciseCard: View {
   }
 }
 
-// One logged set: "#2   82.5 × 8" with an optional note underneath. The numbers
-// are pinned left-to-right so an Arabic layout still reads weight-then-reps,
-// matching SetPill on the live screen.
+// One logged set: "#2   82.5 × 8  kg" with an optional note underneath. The
+// numbers are pinned left-to-right so an Arabic layout still reads
+// weight-then-reps, matching SetPill on the live screen. A bodyweight set
+// (nil weight) reads "BW × 8" with NO kg unit — "— × 8 kg" would claim a load
+// that was never there — and a reps-less set drops the "× reps" half.
 private struct SetRow: View {
   let set: SessionSet
   let index: Int
 
   private var weightText: String {
-    guard let weight = set.weight else { return "—" }
+    guard let weight = set.weight else {
+      return set.reps == nil ? "—" : SetFormat.bodyweight
+    }
     return DurationFormat.weight(weight)
-  }
-
-  private var repsText: String {
-    guard let reps = set.reps else { return "—" }
-    return String(reps)
   }
 
   var body: some View {
@@ -82,15 +81,19 @@ private struct SetRow: View {
           .frame(minWidth: 26, alignment: .leading)
         HStack(spacing: 4) {
           Text(weightText)
-          Text("×").foregroundStyle(Color.fuelSubtle)
-          Text(repsText)
+          if let reps = set.reps {
+            Text("×").foregroundStyle(Color.fuelSubtle)
+            Text(String(reps))
+          }
         }
         .font(.fuelMono(.subheadline, weight: 600))
         .foregroundStyle(Color.fuelInk)
         .environment(\.layoutDirection, .leftToRight)
-        Text("kg")
-          .font(.fuelMono(.caption2, weight: 500))
-          .foregroundStyle(Color.fuelSubtle)
+        if set.weight != nil {
+          Text("kg")
+            .font(.fuelMono(.caption2, weight: 500))
+            .foregroundStyle(Color.fuelSubtle)
+        }
         Spacer(minLength: 0)
       }
 
@@ -104,7 +107,7 @@ private struct SetRow: View {
     .padding(.vertical, 7)
     .accessibilityElement(children: .combine)
     .accessibilityLabel("Set \(index)")
-    .accessibilityValue("\(weightText) kilograms by \(repsText) reps")
+    .accessibilityValue(SetFormat.accessibilityValue(weight: set.weight, reps: set.reps))
   }
 }
 

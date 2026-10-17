@@ -12,6 +12,9 @@ import SwiftUI
 struct SetLoggerRow: View {
   let defaultWeight: Double?
   let defaultReps: Int?
+  /// Ghost readout of last time's matching set ("45 × 8"), shown under the
+  /// fields. nil hides the line entirely.
+  var lastTimeHint: String?
   /// Returns whether the set actually landed, so the burst/haptic only fire on
   /// a real write and the parent can start the rest timer.
   let onLog: (Double?, Int?) async -> Bool
@@ -31,9 +34,15 @@ struct SetLoggerRow: View {
 
   private static let weightStep = 2.5
 
-  init(defaultWeight: Double?, defaultReps: Int?, onLog: @escaping (Double?, Int?) async -> Bool) {
+  init(
+    defaultWeight: Double?,
+    defaultReps: Int?,
+    lastTimeHint: String? = nil,
+    onLog: @escaping (Double?, Int?) async -> Bool
+  ) {
     self.defaultWeight = defaultWeight
     self.defaultReps = defaultReps
+    self.lastTimeHint = lastTimeHint
     self.onLog = onLog
     _weight = State(initialValue: defaultWeight.map(DurationFormat.weight) ?? "")
     _reps = State(initialValue: defaultReps.map(String.init) ?? "")
@@ -75,6 +84,13 @@ struct SetLoggerRow: View {
       }
       .sensoryFeedback(.impact(weight: .light), trigger: stepTick)
 
+      if let lastTimeHint {
+        Text("Last: \(lastTimeHint)")
+          .font(.fuelMono(.caption2, weight: 500))
+          .foregroundStyle(Color.fuelSubtle.opacity(0.8))
+          .frame(maxWidth: .infinity, alignment: .leading)
+      }
+
       AsyncButton(
         style: .glassProminent,
         tint: .fuelWorkout,
@@ -103,7 +119,19 @@ struct SetLoggerRow: View {
         Button("Done") { focus = nil }
       }
     }
+    // The "last time" seed can land AFTER this row first renders (the history
+    // fetch is async) and @State ignores re-inits. Apply a changed default only
+    // while the fields still hold the previous defaults untouched — so a late
+    // seed fills pristine fields but never clobbers anything the user typed.
+    .onChange(of: [defaultWeightText, defaultRepsText]) { old, new in
+      guard weight == old[0], reps == old[1] else { return }
+      weight = new[0]
+      reps = new[1]
+    }
   }
+
+  private var defaultWeightText: String { defaultWeight.map(DurationFormat.weight) ?? "" }
+  private var defaultRepsText: String { defaultReps.map(String.init) ?? "" }
 
   // MARK: - Label
 
@@ -201,7 +229,7 @@ struct SetLoggerRow: View {
 
 #Preview {
   VStack(spacing: 20) {
-    SetLoggerRow(defaultWeight: 80, defaultReps: 8) { _, _ in true }
+    SetLoggerRow(defaultWeight: 80, defaultReps: 8, lastTimeHint: "82.5 × 6") { _, _ in true }
     SetLoggerRow(defaultWeight: nil, defaultReps: 12) { _, _ in true }
     SetLoggerRow(defaultWeight: nil, defaultReps: nil) { _, _ in true }
   }

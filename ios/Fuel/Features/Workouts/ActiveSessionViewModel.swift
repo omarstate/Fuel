@@ -23,6 +23,16 @@ final class ActiveSessionViewModel {
   private(set) var isLoading = false
   var error: PresentableError?
 
+  /// "Last time" sets per exercise name (lowercased key): what this exercise
+  /// looked like in the most recent completed session that had it. Filled
+  /// lazily by `loadLastTime(for:)`, one round trip per name per screen.
+  private(set) var lastTimeSets: [String: [SessionSet]] = [:]
+  /// Names with a fetch issued (in flight or landed), so a card re-appearing in
+  /// the lazy stack never refires the query.
+  @ObservationIgnored private var lastTimeRequested: Set<String> = []
+  /// Exercises with a set insert in flight — the double-tap guard. See `logSet`.
+  @ObservationIgnored private var setInsertsInFlight: Set<UUID> = []
+
   @ObservationIgnored private let repository = WorkoutSessionRepository()
 
   init(sessionId: UUID) {
@@ -70,6 +80,30 @@ final class ActiveSessionViewModel {
       error = nil
     } catch {
       self.error = PresentableError.presentable(error)
+    }
+  }
+
+  // MARK: - Last time
+
+  /// The cached "last time" sets for an exercise name; empty until (and unless)
+  /// `loadLastTime(for:)` finds history.
+  func lastTime(for name: String) -> [SessionSet] {
+    lastTimeSets[name.lowercased()] ?? []
+  }
+
+  /// Fetch the prior-session sets for one exercise name, once. Soft-fails on
+  /// error (guidance is a convenience, never a banner) but forgets the request
+  /// so re-entering the screen can retry.
+  func loadLastTime(for name: String) async {
+    let key = name.lowercased()
+    guard !lastTimeRequested.contains(key) else { return }
+    lastTimeRequested.insert(key)
+    do {
+      let sets = try await repository.lastCompletedSets(exerciseName: name)
+      guard !sets.isEmpty else { return }
+      lastTimeSets[key] = sets
+    } catch {
+      lastTimeRequested.remove(key)
     }
   }
 
@@ -134,6 +168,14 @@ final class ActiveSessionViewModel {
 
   @discardableResult
   func logSet(exerciseId: UUID, weight: Double?, reps: Int?, note: String? = nil) async -> Bool {
+    // In-flight guard: the set number is computed from current state after an
+    // await, so two overlapping logs for the same exercise would both stamp the
+    // same number and insert twice (real data holds a [1,2,2,3] from exactly
+    // this). A second tap while one is writing is dropped, not queued.
+    guard !setInsertsInFlight.contains(exerciseId) else { return false }
+    setInsertsInFlight.insert(exerciseId)
+    defer { setInsertsInFlight.remove(exerciseId) }
+
     let userID: UUID
     do {
       userID = try await repository.userID()

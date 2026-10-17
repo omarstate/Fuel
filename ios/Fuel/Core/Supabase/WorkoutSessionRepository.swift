@@ -84,12 +84,83 @@ struct WorkoutSessionRepository: Sendable {
       .value
   }
 
+  /// The sets logged for `exerciseName` (exact match on the snapshot name,
+  /// user-scoped) in the most recent COMPLETED session that included it — the
+  /// "last time" guidance shown in the active session. One round trip per
+  /// exercise; the view model caches the result.
+  ///
+  /// Recency is `session_exercises.created_at` rather than an order on the
+  /// embedded session's `started_at`: sessions never overlap (one in_progress
+  /// at a time), so the exercise row inserted last among completed sessions IS
+  /// the latest instance, and ordering parents by an embedded column is the
+  /// flakier PostgREST feature.
+  func lastCompletedSets(exerciseName: String) async throws -> [SessionSet] {
+    let userID = try await userID()
+    struct Row: Decodable {
+      let sets: [SessionSet]
+      enum CodingKeys: String, CodingKey {
+        case sets = "session_sets"
+      }
+    }
+    let rows: [Row] = try await client
+      .from("session_exercises")
+      .select("id, created_at, session_sets(*), workout_sessions!inner(status)")
+      .eq("user_id", value: userID.uuidString)
+      .eq("name", value: exerciseName)
+      .eq("workout_sessions.status", value: SessionStatus.completed.rawValue)
+      .order("created_at", ascending: false)
+      .limit(1)
+      .execute()
+      .value
+    return (rows.first?.sets ?? []).sorted { $0.setNumber < $1.setNumber }
+  }
+
   // MARK: - Writes
 
   /// Insert a client-generated session row. `session.userId` must be the
   /// session user for RLS to accept it — build it with `userID()`.
   func insertSession(_ session: WorkoutSession) async throws {
     try await client.from("workout_sessions").insert(session).execute()
+  }
+
+  /// Start a fresh in_progress session mirroring `source`: the same category
+  /// snapshots and the same exercise list (names, catalog links, order) with NO
+  /// sets — the "Repeat workout" action. Returns the new session's id.
+  func repeatSession(from source: SessionWithExercises) async throws -> UUID {
+    let userID = try await userID()
+    let session = WorkoutSession(
+      userId: userID,
+      categoryId: source.session.categoryId,
+      categoryName: source.session.categoryName,
+      categorySlug: source.session.categorySlug,
+      status: .inProgress,
+      startedAt: Date()
+    )
+    try await insertSession(session)
+
+    // Re-indexed 0..n-1 in source order: positions can be sparse after a
+    // mid-session delete, and the active screen assigns `exercises.count` to
+    // the next add — a fresh dense sequence keeps that invariant true.
+    let exercises = source.exercises.enumerated().map { index, entry in
+      SessionExercise(
+        sessionId: session.id,
+        userId: userID,
+        workoutId: entry.workoutId,
+        name: entry.name,
+        position: index
+      )
+    }
+    if !exercises.isEmpty {
+      do {
+        try await client.from("session_exercises").insert(exercises).execute()
+      } catch {
+        // Best-effort cleanup so a half-created repeat doesn't leave a stray
+        // empty in_progress session squatting on the resume banner.
+        try? await deleteSession(id: session.id)
+        throw error
+      }
+    }
+    return session.id
   }
 
   func insertExercise(_ exercise: SessionExercise) async throws {
@@ -99,6 +170,11 @@ struct WorkoutSessionRepository: Sendable {
   /// Removes the exercise; the sets under it go with it via ON DELETE CASCADE.
   func deleteExercise(id: UUID) async throws {
     try await client.from("session_exercises").delete().eq("id", value: id.uuidString).execute()
+  }
+
+  /// Removes a whole session; its exercises and sets cascade with it.
+  func deleteSession(id: UUID) async throws {
+    try await client.from("workout_sessions").delete().eq("id", value: id.uuidString).execute()
   }
 
   func insertSet(_ set: SessionSet) async throws {

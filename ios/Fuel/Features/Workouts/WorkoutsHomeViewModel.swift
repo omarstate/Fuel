@@ -17,6 +17,14 @@ final class WorkoutsHomeViewModel {
 
   var showSkeleton: Bool { !hasLoadedOnce && isRefreshing }
 
+  /// True when the running session was started so long ago (12h+) that it was
+  /// obviously forgotten, not paused — the banner swaps its ticking timer for
+  /// an "end this old session?" prompt.
+  var inProgressIsStale: Bool {
+    guard let inProgress else { return false }
+    return SessionStats.isStaleInProgress(startedAt: inProgress.startedAt)
+  }
+
   // MARK: - Stats (the 2×2 grid)
 
   var sessionsThisWeek: Int {
@@ -51,6 +59,27 @@ final class WorkoutsHomeViewModel {
       error = nil
     } catch {
       self.error = PresentableError.presentable(error)
+    }
+  }
+
+  /// Complete the forgotten session with its stored duration capped at the
+  /// display cap (ended_at = started_at + 6h, so the timestamps and
+  /// duration_seconds stay consistent) — the "End this old session?" action.
+  @discardableResult
+  func endStaleSession() async -> Bool {
+    guard let current = inProgress else { return false }
+    let cappedEnd = min(
+      Date(),
+      current.startedAt.addingTimeInterval(TimeInterval(DurationFormat.displayCapSeconds))
+    )
+    do {
+      try await repository.endSession(id: current.id, startedAt: current.startedAt, endedAt: cappedEnd)
+      inProgress = nil
+      await refresh()
+      return true
+    } catch {
+      self.error = PresentableError.presentable(error)
+      return false
     }
   }
 }

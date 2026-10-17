@@ -231,6 +231,7 @@ struct ActiveSessionView: View {
         ForEach(model.exercises) { exercise in
           ActiveExerciseCard(
             exercise: exercise,
+            lastTime: model.lastTime(for: exercise.name),
             onLogSet: { weight, reps in
               await logSet(exerciseId: exercise.id, weight: weight, reps: reps)
             },
@@ -240,6 +241,9 @@ struct ActiveSessionView: View {
             onDeleteSet: { setId in await model.deleteSet(id: setId) },
             onDeleteExercise: { await model.deleteExercise(exercise) }
           )
+          // Lazy, per-card, cached by name in the model — the "last time"
+          // guidance never blocks the logger.
+          .task(id: exercise.id) { await model.loadLastTime(for: exercise.name) }
         }
       }
 

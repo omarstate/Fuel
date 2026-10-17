@@ -8,6 +8,10 @@ import SwiftUI
 // floating over it gets the glass treatment.
 struct ActiveExerciseCard: View {
   let exercise: SessionExerciseWithSets
+  /// What this exercise looked like the last time it was done (most recent
+  /// completed session, sets in order). Empty = no history, no "Last time"
+  /// line, no seeding beyond this session's own sets.
+  var lastTime: [SessionSet] = []
   /// weight, reps → whether the set landed. The parent starts the rest timer
   /// and checks milestones off the result.
   let onLogSet: (Double?, Int?) async -> Bool
@@ -29,9 +33,50 @@ struct ActiveExerciseCard: View {
 
   private var lastSet: SessionSet? { exercise.sets.last }
 
+  /// Last time's counterpart of the set about to be logged (set N for this
+  /// session's upcoming Nth set), clamped to last time's final set when this
+  /// session has gone past it.
+  private var lastTimeMatch: SessionSet? {
+    guard !lastTime.isEmpty else { return nil }
+    return lastTime[min(exercise.sets.count, lastTime.count - 1)]
+  }
+
+  /// Seed for the logger: this session's previous set wins; before the first
+  /// set it falls back to last time's opening set.
+  private var seedSet: SessionSet? { lastSet ?? lastTime.first }
+
+  /// "45×10 · 45×8" — the whole prior exercise on one line.
+  private var lastTimeLine: String? {
+    guard !lastTime.isEmpty else { return nil }
+    return lastTime
+      .map { SetFormat.compact(weight: $0.weight, reps: $0.reps) }
+      .joined(separator: " · ")
+  }
+
+  /// The logger's ghost hint. Only once this session has sets of its own — for
+  /// set 1 the fields already hold last time's values and the "Last time" line
+  /// sits right above, so the hint would just repeat them.
+  private var loggerHint: String? {
+    guard !exercise.sets.isEmpty, let match = lastTimeMatch,
+          match.weight != nil || match.reps != nil
+    else { return nil }
+    return SetFormat.pair(weight: match.weight, reps: match.reps)
+  }
+
   var body: some View {
     VStack(alignment: .leading, spacing: 12) {
       header
+
+      if let lastTimeLine {
+        HStack(spacing: 8) {
+          Text("Last time").fuelEyebrow()
+          Text(lastTimeLine)
+            .font(.fuelMono(.caption, weight: 600))
+            .foregroundStyle(Color.fuelSubtle)
+            .lineLimit(1)
+        }
+        .transition(.opacity)
+      }
 
       if !exercise.sets.isEmpty {
         FlowLayout(spacing: 6, lineSpacing: 6) {
@@ -74,8 +119,9 @@ struct ActiveExerciseCard: View {
         .overlay(Color.fuelInk.opacity(0.08))
 
       SetLoggerRow(
-        defaultWeight: lastSet?.weight,
-        defaultReps: lastSet?.reps,
+        defaultWeight: seedSet?.weight,
+        defaultReps: seedSet?.reps,
+        lastTimeHint: loggerHint,
         onLog: onLogSet
       )
       // Keyed by exercise so the prefill belongs to THIS exercise's last set and
@@ -84,6 +130,9 @@ struct ActiveExerciseCard: View {
     }
     .padding(16)
     .fuelCard()
+    // The "Last time" line lands async after the history fetch — fade it in
+    // rather than popping the card taller.
+    .animation(.snappy, value: lastTimeLine)
     .confirmationDialog(
       "Remove this exercise?",
       isPresented: $confirmingDelete,
@@ -152,6 +201,11 @@ struct ActiveExerciseCard: View {
   return ScrollView {
     ActiveExerciseCard(
       exercise: exercise,
+      lastTime: [
+        SessionSet(sessionExerciseId: UUID(), userId: userID, setNumber: 1, weight: 30, reps: 12),
+        SessionSet(sessionExerciseId: UUID(), userId: userID, setNumber: 2, weight: 32.5, reps: 9),
+        SessionSet(sessionExerciseId: UUID(), userId: userID, setNumber: 3, weight: nil, reps: 15),
+      ],
       onLogSet: { _, _ in true },
       onUpdateSet: { _, _, _, _ in true },
       onDeleteSet: { _ in true },

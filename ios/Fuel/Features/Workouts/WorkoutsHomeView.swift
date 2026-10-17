@@ -39,7 +39,11 @@ struct WorkoutsHomeView: View {
           }
 
           if let session = model.inProgress {
-            resumeBanner(session)
+            if model.inProgressIsStale {
+              staleSessionCard(session)
+            } else {
+              resumeBanner(session)
+            }
           } else {
             startHero
           }
@@ -158,6 +162,77 @@ struct WorkoutsHomeView: View {
     .buttonStyle(.plain)
   }
 
+  // MARK: - Stale session (forgot to end)
+
+  // The resume banner's honest sibling for a session started 12h+ ago: no
+  // ticking 71-hour timer — a static "when" instead, plus an inline offer to
+  // end it with the stored duration capped at 6h. Tapping the top half still
+  // resumes, for the one person who really is mid-ultramarathon.
+  private func staleSessionCard(_ session: WorkoutSession) -> some View {
+    VStack(alignment: .leading, spacing: 12) {
+      Button {
+        activeSession = SessionRoute(id: session.id)
+      } label: {
+        HStack(spacing: 12) {
+          VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 6) {
+              Circle()
+                .fill(Color.fuelWorkout)
+                .frame(width: 7, height: 7)
+              Text("Still in progress").fuelEyebrow(color: .fuelWorkoutInk)
+            }
+            Text(session.categoryName ?? String(localized: "Workout"))
+              .font(.fuelBody(.title3, weight: 600))
+              .foregroundStyle(Color.fuelInk)
+          }
+          Spacer(minLength: 8)
+          VStack(alignment: .trailing, spacing: 4) {
+            Text(relativeDayText(session.startedAt))
+              .font(.fuelMono(.subheadline, weight: 600))
+              .foregroundStyle(Color.fuelWorkoutInk)
+            Text("Tap to resume")
+              .font(.fuelBody(.footnote))
+              .foregroundStyle(Color.fuelSubtle)
+          }
+        }
+        .contentShape(.rect)
+      }
+      .buttonStyle(.plain)
+
+      Divider().overlay(Color.fuelInk.opacity(0.08))
+
+      HStack(alignment: .center, spacing: 12) {
+        VStack(alignment: .leading, spacing: 2) {
+          Text("End this old session?")
+            .font(.fuelBody(.subheadline, weight: 600))
+            .foregroundStyle(Color.fuelInk)
+          Text("Looks forgotten — it'll be saved capped at 6h.")
+            .font(.fuelBody(.footnote))
+            .foregroundStyle(Color.fuelSubtle)
+        }
+        Spacer(minLength: 8)
+        AsyncButton(
+          style: .glass,
+          tint: .fuelWorkout,
+          successHaptic: true,
+          action: endStaleSession,
+          onError: { _ in }
+        ) {
+          Text("End now")
+            .font(.fuelBody(.subheadline, weight: 600))
+        }
+      }
+    }
+    .padding(16)
+    .background(Color.fuelWorkout.opacity(0.1))
+    .fuelCard()
+  }
+
+  private func endStaleSession() async {
+    guard await model.endStaleSession() else { return }
+    app.bumpWorkoutRevision()
+  }
+
   // MARK: - Start hero
 
   private var startHero: some View {
@@ -202,7 +277,11 @@ struct WorkoutsHomeView: View {
 
   private var lastSessionText: String {
     guard let last = model.lastSession else { return "—" }
-    switch WorkoutHistoryStats.relativeDay(last.startedAt, now: Date()) {
+    return relativeDayText(last.startedAt)
+  }
+
+  private func relativeDayText(_ date: Date) -> String {
+    switch WorkoutHistoryStats.relativeDay(date, now: Date()) {
     case .today: return String(localized: "Today")
     case .yesterday: return String(localized: "Yesterday")
     case .daysAgo(let n): return String(localized: "\(n)d ago")

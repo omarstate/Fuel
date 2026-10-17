@@ -10,6 +10,8 @@ import SwiftUI
 struct SessionHistoryView: View {
   @Environment(AppState.self) private var app
   @State private var model = SessionHistoryViewModel()
+  @State private var pendingDelete: HistorySession?
+  @State private var deleteTick = 0
 
   var body: some View {
     NavigationStack {
@@ -17,7 +19,9 @@ struct SessionHistoryView: View {
         LazyVStack(alignment: .leading, spacing: 12) {
           masthead
 
-          if let error = model.error, model.sessions.isEmpty {
+          // No isEmpty gate (matches the meals History banner): a failed
+          // delete must surface even when the list still has rows.
+          if let error = model.error {
             ErrorBanner(
               error: error,
               onRetry: { Task { await model.refresh() } },
@@ -38,6 +42,16 @@ struct SessionHistoryView: View {
                 SessionHistoryRow(session: session)
               }
               .buttonStyle(.plain)
+              // Cards in a ScrollView have no swipe actions — like the Today
+              // meal rows, the long-press menu routes through the same
+              // confirmation dialog as any other destructive action.
+              .contextMenu {
+                Button(role: .destructive) {
+                  pendingDelete = session
+                } label: {
+                  Label("Delete session", systemImage: "trash")
+                }
+              }
             }
           }
         }
@@ -59,6 +73,28 @@ struct SessionHistoryView: View {
     // Ending a session on the Home tab bumps the revision, so this list is
     // already fresh when the user swipes over.
     .onChange(of: app.workoutRevision) { Task { await model.refresh() } }
+    .sensoryFeedback(.impact(weight: .medium), trigger: deleteTick)
+    .confirmationDialog(
+      "Delete this session?",
+      isPresented: Binding(get: { pendingDelete != nil }, set: { if !$0 { pendingDelete = nil } }),
+      titleVisibility: .visible,
+      presenting: pendingDelete
+    ) { session in
+      Button("Delete session", role: .destructive) { delete(session) }
+      Button("Cancel", role: .cancel) { pendingDelete = nil }
+    } message: { _ in
+      Text("This session and everything logged in it will be removed from your history.")
+    }
+  }
+
+  // Non-optimistic: the row only animates out after the DB delete lands (the
+  // model's deleteSession is DB-then-drop).
+  private func delete(_ session: HistorySession) {
+    Task {
+      guard await model.deleteSession(session) else { return }
+      deleteTick += 1
+      app.bumpWorkoutRevision()
+    }
   }
 
   // MARK: - Chrome
@@ -100,9 +136,16 @@ struct SessionHistoryRow: View {
   /// Injected so previews and tests can pin "today".
   var now: Date = Date()
 
+  // Durations over the 6h display cap mean "never ended", so the row says
+  // "6h+ · auto-capped" instead of parroting a 71-hour number (display only —
+  // the stored row is untouched).
   private var durationText: String {
     guard let seconds = session.durationSeconds else { return "—" }
-    return DurationFormat.elapsed(seconds)
+    return DurationFormat.elapsedDisplay(seconds)
+  }
+
+  private var isDurationCapped: Bool {
+    (session.durationSeconds ?? 0) > DurationFormat.displayCapSeconds
   }
 
   private var startTime: String {
@@ -139,7 +182,14 @@ struct SessionHistoryRow: View {
         }
 
         HStack(spacing: 14) {
-          stat("clock", durationText)
+          HStack(spacing: 5) {
+            stat("clock", durationText)
+            if isDurationCapped {
+              Text("auto-capped")
+                .font(.fuelBody(.caption2))
+                .foregroundStyle(Color.fuelSubtle.opacity(0.8))
+            }
+          }
           stat("dumbbell", exercisesLabel)
           stat("square.stack.3d.up", setsLabel)
         }
@@ -226,6 +276,17 @@ extension HistorySession {
             startedAt: now.addingTimeInterval(-12 * 24 * 3_600), durationSeconds: 5_400
           ),
           exerciseCount: 7, setCount: 24
+        ),
+        now: now
+      )
+      // The forgot-to-end shape from real data (71h) — reads "6h+ · auto-capped".
+      SessionHistoryRow(
+        session: HistorySession(
+          session: WorkoutSession(
+            userId: userID, categoryName: "Pull", status: .completed,
+            startedAt: now.addingTimeInterval(-5 * 24 * 3_600), durationSeconds: 258_034
+          ),
+          exerciseCount: 4, setCount: 11
         ),
         now: now
       )

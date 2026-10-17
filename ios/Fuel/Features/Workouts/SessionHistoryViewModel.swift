@@ -44,4 +44,27 @@ final class SessionHistoryViewModel {
       self.error = PresentableError.presentable(error)
     }
   }
+
+  // MARK: - Delete
+
+  /// Non-optimistic, split like the meals-side deletes: the DB write first,
+  /// the local drop only once it lands — a history row is a receipt, and a
+  /// receipt should not vanish before the delete is real.
+  @discardableResult
+  func deleteSession(_ session: HistorySession) async -> Bool {
+    do {
+      try await repo.deleteSession(id: session.id)
+      dropSession(session.id)
+      return true
+    } catch {
+      self.error = PresentableError.presentable(error)
+      return false
+    }
+  }
+
+  /// Local-state half of the split (also lets the detail screen reconcile the
+  /// list after it deleted the row itself).
+  func dropSession(_ id: UUID) {
+    sessions.removeAll { $0.id == id }
+  }
 }

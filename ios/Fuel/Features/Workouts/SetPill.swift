@@ -2,7 +2,8 @@ import SwiftUI
 
 // A logged set, as a tappable capsule: "#2  80 × 8". Port of the SetPill in
 // workouts/session/active-exercise-card.tsx. A set with no weight is bodyweight,
-// which reads "— × 8" rather than "0 × 8" — zero would be a lie about the load.
+// which reads "BW × 8" (SetFormat) — "—" or 0 would both lie about the load.
+// A set with no reps drops the "× reps" half instead of rendering "× —".
 // The dot on the right means the set carries a note.
 struct SetPill: View {
   let set: SessionSet
@@ -13,13 +14,10 @@ struct SetPill: View {
   let onTap: () -> Void
 
   private var weightText: String {
-    guard let weight = set.weight else { return "—" }
+    guard let weight = set.weight else {
+      return set.reps == nil ? "—" : SetFormat.bodyweight
+    }
     return DurationFormat.weight(weight)
-  }
-
-  private var repsText: String {
-    guard let reps = set.reps else { return "—" }
-    return String(reps)
   }
 
   var body: some View {
@@ -30,8 +28,10 @@ struct SetPill: View {
           .foregroundStyle(Color.fuelSubtle)
         HStack(spacing: 3) {
           Text(weightText)
-          Text("×").foregroundStyle(Color.fuelSubtle)
-          Text(repsText)
+          if let reps = set.reps {
+            Text("×").foregroundStyle(Color.fuelSubtle)
+            Text(String(reps))
+          }
         }
         .font(.fuelMono(.subheadline, weight: 600))
         .foregroundStyle(Color.fuelInk)
@@ -57,7 +57,7 @@ struct SetPill: View {
     }
     .buttonStyle(.plain)
     .accessibilityLabel("Set \(index)")
-    .accessibilityValue("\(weightText) kilograms by \(repsText) reps")
+    .accessibilityValue(SetFormat.accessibilityValue(weight: set.weight, reps: set.reps))
     .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : [.isButton])
   }
 }

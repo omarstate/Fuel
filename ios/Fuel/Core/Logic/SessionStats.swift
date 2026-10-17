@@ -47,4 +47,13 @@ enum SessionStats {
   static func elapsedSeconds(from: Date, to: Date) -> Int {
     max(0, Int(to.timeIntervalSince(from).rounded(.down)))
   }
+
+  /// An in_progress session started longer ago than this (12h) was forgotten,
+  /// not paused — real data holds a 71-hour "session" from exactly this. The
+  /// home banner offers to end it instead of resuming a ticking timer.
+  static let staleInProgressSeconds = 12 * 3600
+
+  static func isStaleInProgress(startedAt: Date, now: Date = Date()) -> Bool {
+    now.timeIntervalSince(startedAt) > TimeInterval(staleInProgressSeconds)
+  }
 }

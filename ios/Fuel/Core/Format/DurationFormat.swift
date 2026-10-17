@@ -35,4 +35,16 @@ enum DurationFormat {
     guard kg.isFinite else { return "0" }
     return kg == kg.rounded() ? String(format: "%.0f", kg) : String(format: "%.1f", kg)
   }
+
+  /// Display-only honesty cap (6h). A stored duration longer than this almost
+  /// certainly means the session was never ended, not that someone trained for
+  /// three days — readouts show "6h+" instead of repeating the raw number.
+  /// The row itself is never rewritten; this is purely how it reads.
+  static let displayCapSeconds = 6 * 3600
+
+  /// `elapsed(_:)` unless the value is over `displayCapSeconds` — then the
+  /// literal "6h+" (machine-shaped like the rest of this file, not localized).
+  static func elapsedDisplay(_ seconds: Int) -> String {
+    seconds > displayCapSeconds ? "6h+" : elapsed(seconds)
+  }
 }

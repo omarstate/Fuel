@@ -212,6 +212,16 @@
         }
       }
     },
+    "%@ kilograms" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ كيلو"
+          }
+        }
+      }
+    },
     "%@ kilograms by %@ reps" : {
       "localizations" : {
         "en" : {
@@ -1476,6 +1486,16 @@
         }
       }
     },
+    "auto-capped" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "اتقفلت لوحدها"
+          }
+        }
+      }
+    },
     "Avg calories" : {
 
     },
@@ -1537,6 +1557,16 @@
     },
     "Bodyweight" : {
 
+    },
+    "Bodyweight, %@ reps" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "وزن الجسم، %@ عدّات"
+          }
+        }
+      }
     },
     "Both optional — they're a suggestion shown on the card, not a rule." : {
 
@@ -1600,7 +1630,14 @@
 
     },
     "BW" : {
-
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "وزن الجسم"
+          }
+        }
+      }
     },
     "Calorie split" : {
       "localizations" : {
@@ -2118,8 +2155,28 @@
         }
       }
     },
+    "Delete session" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "امسح الجلسة"
+          }
+        }
+      }
+    },
     "Delete set" : {
 
+    },
+    "Delete this session?" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تمسح الجلسة دي؟"
+          }
+        }
+      }
     },
     "Demo photo" : {
       "localizations" : {
@@ -2321,8 +2378,28 @@
     "Email changes aren't supported yet." : {
 
     },
+    "End now" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "اقفلها دلوقتي"
+          }
+        }
+      }
+    },
     "End session" : {
 
+    },
+    "End this old session?" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تقفل الجلسة القديمة دي؟"
+          }
+        }
+      }
     },
     "End this session?" : {
 
@@ -2557,6 +2634,16 @@
         }
       }
     },
+    "Finish your current session first" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "خلّص الجلسة اللي شغالة الأول"
+          }
+        }
+      }
+    },
     "Food" : {
 
     },
@@ -2676,6 +2763,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "عالمي"
+          }
+        }
+      }
+    },
+    "Go to session" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "روح للجلسة"
           }
         }
       }
@@ -2957,11 +3054,28 @@
     "Last session" : {
 
     },
+    "Last time" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "آخر مرة"
+          }
+        }
+      }
+    },
     "Last type" : {
 
     },
     "Last: %@" : {
-
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "آخر مرة: %@"
+          }
+        }
+      }
     },
     "Leave blank to keep your current password. Minimum 6 characters." : {
 
@@ -3353,6 +3467,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "جارٍ البحث عن %@…"
+          }
+        }
+      }
+    },
+    "Looks forgotten — it'll be saved capped at 6h." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "شكلها اتنست — هتتسجل بحد أقصى ٦ ساعات."
           }
         }
       }
@@ -4239,6 +4363,16 @@
     "Remove this meal?" : {
 
     },
+    "Repeat workout" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "كرّر التمرين"
+          }
+        }
+      }
+    },
     "reps" : {
 
     },
@@ -4773,6 +4907,16 @@
     "Steps" : {
 
     },
+    "Still in progress" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "لسه شغالة"
+          }
+        }
+      }
+    },
     "Stop recording" : {
       "localizations" : {
         "ar" : {
@@ -4974,6 +5118,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "سيؤدي هذا إلى إزالته من الكتالوج المشترك. لا يمكن التراجع عن هذا."
+          }
+        }
+      }
+    },
+    "This session and everything logged in it will be removed from your history." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "الجلسة دي وكل اللي اتسجل فيها هيتشال من سجلك."
           }
         }
       }
@@ -5396,6 +5550,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "أمس"
+          }
+        }
+      }
+    },
+    "You already have a workout in progress. Jump back in and end it before starting a new one." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "في تمرين شغال دلوقتي. ارجع له واقفله قبل ما تبدأ واحد جديد."
           }
         }
       }
