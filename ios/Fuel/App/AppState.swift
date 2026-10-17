@@ -140,11 +140,27 @@ final class AppState {
       self.profile = profile
       self.displayName = SupabaseService.shared.displayName
       self.phase = (profile == nil) ? .needsOnboarding : .ready
+      BootstrapCache.save(me: me, profile: profile)
     } catch APIError.unauthorized {
       // Token no longer valid — treat as signed out.
       try? await SupabaseService.shared.signOut()
       setSignedOut()
     } catch {
+      // The backend is unreachable (Render cold start, or a Debug build away
+      // from the Mac). Sign-in itself already succeeded against Supabase, so a
+      // returning user with a cached onboarded profile goes straight in —
+      // everything Supabase-direct works, and backend-backed features show
+      // their own retry banners. Only a first-time user still waits here.
+      if phase != .ready,
+         let userId = SupabaseService.shared.currentSession?.user.id.uuidString,
+         let cached = BootstrapCache.load(for: userId),
+         let profile = cached.profile {
+        self.me = cached.me
+        self.profile = profile
+        self.displayName = SupabaseService.shared.displayName
+        self.phase = .ready
+        return
+      }
       bootstrapError = PresentableError(error)
       if phase != .ready { phase = .loading }
     }
@@ -156,6 +172,7 @@ final class AppState {
       let profile = try await FuelAPI.profile()
       self.profile = profile
       self.phase = (profile == nil) ? .needsOnboarding : .ready
+      if let profile { BootstrapCache.save(profile: profile) }
     } catch {
       bootstrapError = PresentableError(error)
     }
@@ -165,6 +182,7 @@ final class AppState {
   func applyProfile(_ profile: Profile) {
     self.profile = profile
     self.phase = .ready
+    BootstrapCache.save(profile: profile)
   }
 
   /// Reflect a display-name change made from the Profile tab.
@@ -193,5 +211,6 @@ final class AppState {
     displayName = nil
     bootstrapError = nil
     phase = .signedOut
+    BootstrapCache.clear()
   }
 }
